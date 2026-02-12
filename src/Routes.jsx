@@ -51,6 +51,7 @@ import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
 
+
 const ProtectedLayout = ({ children }) => {
   return (
     <>
@@ -285,7 +286,6 @@ const Routes = () => {
     </ProtectedRoute>
   }
 />
-
 
 
               <Route path="/mentorship">
