@@ -50,7 +50,7 @@ import MyRequests from "pages/Mentorship/components/myRequest.jsx";
 import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
-import JobsPage from "pages/jobPage/jobpage.jsx";
+
 
 const ProtectedLayout = ({ children }) => {
   return (
@@ -286,18 +286,6 @@ const Routes = () => {
     </ProtectedRoute>
   }
 />
-
-<Route
-  path="/jobs"
-  element={
-    <ProtectedRoute>
-      <ProtectedLayout>
-        <JobsPage />
-      </ProtectedLayout>
-    </ProtectedRoute>
-  }
-/>
-
 
 
               <Route path="/mentorship">
