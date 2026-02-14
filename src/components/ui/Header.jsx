@@ -7,10 +7,10 @@ import { useNotification } from '../../context/notificationContext';
 
 // --- Define Role Permissions ---
 const roleFeatures = {
-  admin: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Admin Dashboard', 'Jobs & Internships'],
-  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Jobs & Internships'],
-  alumni: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Profile', 'Explore', 'Chat', 'Announcement', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Jobs & Internships'],
-  teacher: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories','Startup Page', 'Jobs & Internships'],
+  admin: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Admin Dashboard'],
+  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page'],
+  alumni: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Profile', 'Explore', 'Chat', 'Announcement', 'Alumni Stories', 'Mentorship', 'Startup Page'],
+  teacher: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories','Startup Page'],
 };
 
 const Header = () => {
@@ -34,7 +34,6 @@ const Header = () => {
     { name: 'Announcement', path: '/announcements', icon: 'Megaphone' },
     { name: 'Events', path: '/events', icon: 'Calendar' },
     {name: 'Startup Page', path: '/startups', icon: 'Rocket'},
-    {name: 'Jobs & Internships', path: '/jobs', icon: 'Briefcase'},
     {name: 'Admin Dashboard', path: '/admin', icon: 'ShieldCheck' },
     { name: 'Chat', path: '/chatPage', icon: 'MessageSquare' },
     { name: 'Alumni Stories', path: '/feedback', icon: 'Quote' },
