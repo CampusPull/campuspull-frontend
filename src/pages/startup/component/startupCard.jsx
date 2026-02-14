@@ -1,4 +1,12 @@
 const StartupCard = ({ startup }) => {
+
+  const formatUrl = (url) => {
+  if (!url) return "#";
+  return url.startsWith("http://") || url.startsWith("https://")
+    ? url
+    : `https://${url}`;
+};
+
   return (
     <div className="border rounded-lg p-4 bg-white">
       <div className="h-16 mb-3 flex items-center">
@@ -30,7 +38,7 @@ const StartupCard = ({ startup }) => {
       <div className="flex gap-3 mt-3 text-sm">
         {startup.links?.website && (
           <a
-            href={startup.links.website}
+            href={formatUrl(startup.links.website)}
             target="_blank"
             rel="noreferrer"
             className="text-blue-600 hover:underline"
@@ -40,7 +48,7 @@ const StartupCard = ({ startup }) => {
         )}
         {startup.links?.linkedin && (
           <a
-            href={startup.links.linkedin}
+            href={formatUrl(startup.links.linkedin)}
             target="_blank"
             rel="noreferrer"
             className="text-blue-600 hover:underline"
@@ -50,7 +58,7 @@ const StartupCard = ({ startup }) => {
         )}
         {startup.links?.instagram && (
           <a
-            href={startup.links.instagram}
+            href={formatUrl(startup.links.instagram)}
             target="_blank"
             rel="noreferrer"
             className="text-blue-600 hover:underline"
