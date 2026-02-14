@@ -21,7 +21,7 @@ const StartupPage = () => {
             Student Startups
           </h1>
           <p className="text-gray-600">
-            Startups built by students of ABESIT
+            Startups of the students of our college. Explore and support their ventures!
           </p>
         </div>
 
