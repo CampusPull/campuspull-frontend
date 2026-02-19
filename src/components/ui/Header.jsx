@@ -8,7 +8,7 @@ import { useNotification } from '../../context/notificationContext';
 // --- Define Role Permissions ---
 const roleFeatures = {
   admin: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Admin Dashboard'],
-  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page'],
+  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Internships'],
   alumni: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Profile', 'Explore', 'Chat', 'Announcement', 'Alumni Stories', 'Mentorship', 'Startup Page'],
   teacher: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories','Startup Page'],
 };
@@ -39,6 +39,7 @@ const Header = () => {
     { name: 'Alumni Stories', path: '/feedback', icon: 'Quote' },
     { name: 'Profile', path: '/profile', icon: 'User' },
     { name: 'About CampusPull', path: '/about-link-mate', icon: 'Info' },
+    { name: 'Internships', path: '/internships', icon: 'Briefcase' },
   ];
 
   const allowedFeatures = roleFeatures[user?.role] || [];
@@ -94,7 +95,11 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          {/* <nav className="hidden lg:flex items-center space-x-1"> */}
+          {/* <nav className="flex items-center space-x-1"> */}
+          <nav className="flex items-center space-x-1 overflow-x-auto scrollbar-hide">
+
+
             {mainNavItems.map((item) => (
               <Link
                 key={item.path}
@@ -204,6 +209,7 @@ const Header = () => {
 
         </div>
       </div>
+      
     </header>
   );
 };

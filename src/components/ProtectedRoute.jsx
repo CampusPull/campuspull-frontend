@@ -28,3 +28,19 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export default ProtectedRoute;
+
+
+
+// import React from "react";
+
+// /*
+//   TEMPORARY AUTH BYPASS
+//   Allows access to all protected routes without login.
+//   Revert this before pushing PR.
+// */
+
+// const ProtectedRoute = ({ children }) => {
+//   return children;
+// };
+  
+// export default ProtectedRoute;

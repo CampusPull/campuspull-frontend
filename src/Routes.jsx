@@ -51,6 +51,10 @@ import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
 
+import Internships from "./pages/Internships.jsx";
+import InternshipDetails from "./pages/InternshipDetails.jsx";
+
+
 
 const ProtectedLayout = ({ children }) => {
   return (
@@ -83,6 +87,30 @@ const Routes = () => {
 
             <RouterRoutes>
               {/* Protected Routes - All nested providers removed from here */}
+              <Route
+  path="/internships"
+  element={
+    <ProtectedRoute>
+      <ProtectedLayout>
+        <Internships />
+      </ProtectedLayout>
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/internships/:id"
+  element={
+    <ProtectedRoute>
+      <ProtectedLayout>
+        <InternshipDetails />
+      </ProtectedLayout>
+    </ProtectedRoute>
+  }
+/>
+
+
+
               <Route
                 path="/"
                 element={
