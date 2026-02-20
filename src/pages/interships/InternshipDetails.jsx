@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { mockInternships } from "../data/mockInternships";
+import { mockInternships } from "../../data/mockInternships";
 
 const InternshipDetails = () => {
   const { id } = useParams();
@@ -7,7 +7,7 @@ const InternshipDetails = () => {
   const internship = mockInternships.find(
     (item) => item.id === id
   );
-
+    
   if (!internship) {
     return <div className="p-6 text-center">Internship not found.</div>;
   }

@@ -51,8 +51,8 @@ import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
 
-import Internships from "./pages/Internships.jsx";
-import InternshipDetails from "./pages/InternshipDetails.jsx";
+import Internships from "./pages/interships/Internships.jsx";
+import InternshipDetails from "./pages/interships/InternshipDetails.jsx";
 
 
 

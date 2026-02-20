@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { mockInternships } from "../data/mockInternships";
-import InternshipCard from "../components/internships/InternshipCard";
+import { mockInternships } from "../../data/mockInternships";
+import InternshipCard from "../../components/internships/InternshipCard";
 
 const Internships = () => {
   const [loading] = useState(false);
