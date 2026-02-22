@@ -7,10 +7,10 @@ import { useNotification } from '../../context/notificationContext';
 
 // --- Define Role Permissions ---
 const roleFeatures = {
-  admin: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Admin Dashboard'],
-  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup Page', 'Internships'],
-  alumni: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Profile', 'Explore', 'Chat', 'Announcement', 'Alumni Stories', 'Mentorship', 'Startup Page'],
-  teacher: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories','Startup Page'],
+  admin: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup', 'Admin Dashboard','Internships'],
+  student: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories', 'Mentorship', 'Startup', 'Internships'],
+  alumni: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Community', 'Events', 'Profile', 'Explore', 'Chat', 'Announcement', 'Alumni Stories', 'Mentorship', 'Startup','Internships'],
+  teacher: ['Home', 'Feed', 'Resources Hub', 'About CampusPull', 'Events', 'Announcement', 'Profile', 'Explore', 'Chat', 'Alumni Stories','Startup'],
 };
 
 const Header = () => {
@@ -33,7 +33,7 @@ const Header = () => {
     { name: 'Community', path: '/community', icon: 'Users' },
     { name: 'Announcement', path: '/announcements', icon: 'Megaphone' },
     { name: 'Events', path: '/events', icon: 'Calendar' },
-    {name: 'Startup Page', path: '/startups', icon: 'Rocket'},
+    {name: 'Startup', path: '/startups', icon: 'Rocket'},
     {name: 'Admin Dashboard', path: '/admin', icon: 'ShieldCheck' },
     { name: 'Chat', path: '/chatPage', icon: 'MessageSquare' },
     { name: 'Alumni Stories', path: '/feedback', icon: 'Quote' },
@@ -47,7 +47,7 @@ const Header = () => {
     allowedFeatures.includes(item.name)
   );
 
-  const hamburgerItemNames = [ 'Profile', 'About CampusPull', 'Alumni Stories', 'Admin Dashboard' ]; // These will go in the hamburger menu
+  const hamburgerItemNames = [ 'Profile', 'About CampusPull', 'Alumni Stories', 'Admin Dashboard','Chat' ]; // These will go in the hamburger menu
   const mainNavItems = authorizedItems.filter(item => !hamburgerItemNames.includes(item.name));
   const menuNavItems = authorizedItems.filter(item => hamburgerItemNames.includes(item.name));
 

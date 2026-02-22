@@ -50,9 +50,9 @@ import MyRequests from "pages/Mentorship/components/myRequest.jsx";
 import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
-
 import Internships from "./pages/interships/Internships.jsx";
 import InternshipDetails from "./pages/interships/InternshipDetails.jsx";
+import { InternshipProvider } from "./context/internshipContext.jsx";
 
 
 
@@ -74,6 +74,7 @@ const Routes = () => {
         <SocketProvider>  
         <NotificationProvider>
         <EventProvider> 
+        <InternshipProvider>
         <CommunityProvider>
         <ExploreProvider>
         <ProfileProvider>
@@ -388,6 +389,7 @@ const Routes = () => {
         </ProfileProvider>
         </ExploreProvider>
         </CommunityProvider>
+        </InternshipProvider>
         </EventProvider>
         </NotificationProvider>
       </SocketProvider>
