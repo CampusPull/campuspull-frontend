@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useInternships } from "../../../context/InternshipContext";
+import { useInternships } from "../../../context/internshipContext";
 import { useAuth } from "context/AuthContext";
 
 const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
