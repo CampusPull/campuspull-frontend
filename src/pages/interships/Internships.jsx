@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useInternships } from "../../context/internshipContext";
 import InternshipCard from "./components/internshipCard";
-import InternshipFilter from "./components/internshipFilter";
+import InternshipFilter from "./components/internshipfilter";
 import Pagination from "./components/pagination";
 import CreateInternshipModal from "./components/createInternshipModal";
 import { useAuth } from "../../context/AuthContext"; // if you have this
