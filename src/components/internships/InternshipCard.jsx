@@ -21,14 +21,14 @@ const InternshipCard = ({ internship }) => {
         </div>
 
         <div className="text-sm text-gray-600 space-y-1">
-          <p><strong>Stipend:</strong> {internship.stipend}</p>
+          <p><strong>Stipend:</strong> ₹{internship.stipend}</p>
           <p><strong>Duration:</strong> {internship.duration}</p>
           <p><strong>Location:</strong> {internship.location}</p>
         </div>
       </div>
 
       <Link
-        to={`/internships/${internship.id}`}
+        to={`/internships/${internship._id}`}
         className="mt-4 bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition"
       >
         View Details
