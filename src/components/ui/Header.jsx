@@ -42,7 +42,27 @@ const Header = () => {
     { name: 'Internships', path: '/internships', icon: 'Briefcase' },
   ];
 
-  const allowedFeatures = roleFeatures[user?.role] || [];
+  // const allowedFeatures = roleFeatures[user?.role] || [];
+  const isGuest = !user;
+
+const guestFeatures = [
+  "Resources Hub",
+  "Explore",
+  "Mentorship",
+  "Community",
+  "Events",
+  "Startup Page",
+  "Internships",
+  "About CampusPull"
+];
+
+const allowedFeatures = isGuest
+  ? guestFeatures
+  : roleFeatures[user?.role] || [];
+
+
+
+
   const authorizedItems = allNavigationItems.filter(item =>
     allowedFeatures.includes(item.name)
   );

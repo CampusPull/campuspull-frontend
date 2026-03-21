@@ -36,7 +36,17 @@ import { SocketProvider } from "context/socketContext.jsx";
 import { NotificationProvider } from "./context/notificationContext.jsx";
 import { ToastContainer } from "react-toastify";
 import ChatPage from "./pages/chat/chatPage.jsx";  
-import Header from "./components/ui/Header.jsx";  
+import Header from "./components/ui/Header.jsx"; 
+const Layout = ({ children }) => {
+  return (
+    <>
+      <Header />
+      <div className="pt-16">{children}</div>
+    </>
+  );
+};
+
+ 
 import { FeedProvider } from "./context/feedContext.jsx";
 import { FeedbackProvider } from "./context/feedbackContext.jsx";
 import FeedbackPage from "pages/feedback/feedbackPage.jsx";
@@ -53,7 +63,7 @@ import StartupPage from "pages/startup/startupPage.jsx";
 import Internships from "./pages/interships/Internships.jsx";
 import InternshipDetails from "./pages/interships/InternshipDetails.jsx";
 import { InternshipProvider } from "./context/internshipContext.jsx";
-
+import { Navigate } from "react-router-dom";
 
 
 const ProtectedLayout = ({ children }) => {
@@ -91,28 +101,24 @@ const Routes = () => {
               <Route
   path="/internships"
   element={
-    <ProtectedRoute>
-      <ProtectedLayout>
-        <Internships />
-      </ProtectedLayout>
-    </ProtectedRoute>
+    <ProtectedLayout>
+      <Internships />
+    </ProtectedLayout>
   }
 />
 
 <Route
   path="/internships/:id"
   element={
-    <ProtectedRoute>
-      <ProtectedLayout>
-        <InternshipDetails />
-      </ProtectedLayout>
-    </ProtectedRoute>
+    <ProtectedLayout>
+      <InternshipDetails />
+    </ProtectedLayout>
   }
 />
 
 
 
-              <Route
+{/*               <Route
                 path="/"
                 element={
                   <ProtectedRoute>
@@ -121,7 +127,17 @@ const Routes = () => {
                     </ProtectedLayout>
                   </ProtectedRoute>
                 }
-              />
+              /> */}
+              <Route
+  path="/homepage"
+  element={
+    <Layout>
+      <Homepage />
+    </Layout>
+  }
+/>
+
+
               <Route 
                 path="/notifications" 
                 element={
@@ -142,16 +158,17 @@ const Routes = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/homepage"
-                element={
-                  <ProtectedRoute>
-                    <ProtectedLayout>
-                      <Homepage />
-                    </ProtectedLayout>
-                  </ProtectedRoute>
-                }
-              />
+
+              <Route
+  path="/"
+  element={
+    <Layout>
+      <Homepage />
+    </Layout>
+  }
+/>
+
+
               <Route
                 path="/chatPage"
                 element={
@@ -206,11 +223,11 @@ const Routes = () => {
               <Route
                 path="/resources-hub"
                 element={
-                  <ProtectedRoute>
+                  
                     <ProtectedLayout>
                       <ResourcesHub />
                     </ProtectedLayout>
-                  </ProtectedRoute>
+                 
                 }
               />
               <Route
@@ -233,7 +250,7 @@ const Routes = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
+{/*               <Route
                 path="/community"
                 element={
                   <ProtectedRoute>
@@ -242,7 +259,10 @@ const Routes = () => {
                     </ProtectedLayout>
                   </ProtectedRoute>
                 }
-              />
+              /> */} 
+              <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />
+
+
               <Route
             path="/announcements"
             element={
@@ -253,7 +273,7 @@ const Routes = () => {
               </ProtectedRoute>
             }
           />
-              <Route
+{/*               <Route
                 path="/events"
                 element={
                   <ProtectedRoute>
@@ -262,17 +282,24 @@ const Routes = () => {
                     </ProtectedLayout>
                   </ProtectedRoute>
                 }
-              />
-              <Route
+              /> */}
+              <Route path="/events" element={<ProtectedLayout><Events /></ProtectedLayout>} />
+
+{/*               <Route
                 path="/explore"
                 element={
-                  <ProtectedRoute>
+                  
                     <ProtectedLayout>
                       <Explore />
                     </ProtectedLayout>
-                  </ProtectedRoute>
+                  
                 }
-              />
+              /> */}
+              <Route path="/explore" element={<ProtectedLayout><Explore /></ProtectedLayout>} />
+
+
+
+
               <Route
                 path="/connections"
                 element={
@@ -306,13 +333,13 @@ const Routes = () => {
 <Route
   path="/startups"
   element={
-    <ProtectedRoute>
+    
       <StartupProvider>
         <ProtectedLayout>
           <StartupPage />
         </ProtectedLayout>
       </StartupProvider>
-    </ProtectedRoute>
+    
   }
 />
 
@@ -321,11 +348,11 @@ const Routes = () => {
   <Route
     path="mentors"
     element={
-      <ProtectedRoute>
+      
         <ProtectedLayout>
           <MentorDiscoveryPage />
         </ProtectedLayout>
-      </ProtectedRoute>
+      
     }
   />
   <Route
