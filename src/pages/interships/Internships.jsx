@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import InternshipCard from "../../components/internships/InternshipCard";
-import { getInternships } from "../../services/internshipService";
-import { useAuth } from "../../context/AuthContext";
-import SignupModal from "../../components/ui/SignupModal";
+import { useInternships } from "../../context/internshipContext";
+import InternshipCard from "./components/internshipCard";
+import InternshipFilter from "./components/internshipfilter";
+import Pagination from "./components/pagination";
+import CreateInternshipModal from "./components/createInternshipModal";
+import { useAuth } from "../../context/AuthContext"; // if you have this
 
 const Internships = () => {
   const { user } = useAuth();
