@@ -1,19 +1,9 @@
-// FIX: accept isGuest and onRestrictedAction
-const MentorCard = ({ mentor, onRequest, isGuest, onRestrictedAction }) => {
+const MentorCard = ({ mentor, onRequest }) => {
   const user = mentor.userId;
-
-  const handleRequest = () => {
-    // FIX: guest clicks Request Mentorship → open modal
-    if (isGuest) {
-      onRestrictedAction?.();
-      return;
-    }
-    onRequest(mentor);
-  };
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-
+      
       {/* Top gradient accent */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
 
@@ -70,10 +60,9 @@ const MentorCard = ({ mentor, onRequest, isGuest, onRestrictedAction }) => {
         </div>
 
         <button
-          onClick={handleRequest}
+          onClick={() => onRequest(mentor)}
           className="w-full rounded-xl bg-slate-900 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-slate-800"
         >
-          {/* FIX: same button text for guests — click triggers modal */}
           Request Mentorship
         </button>
       </div>

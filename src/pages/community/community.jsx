@@ -5,7 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useCommunity } from '../../context/communityContext';
 import { CreateQuestionModal } from './components/createQuestionModal';
 import { QuestionFeed } from './components/questionFeed';
-import SignupModal from '../../components/ui/SignupModal';
 
 // Button Component
 const Button = ({ children, onClick, disabled, className, type = 'button', size = 'md' }) => (
@@ -21,20 +20,11 @@ const Button = ({ children, onClick, disabled, className, type = 'button', size 
 );
 
 const CommunityPage = () => {
-    const {
-        questions,
-        loading,
-        error,
-        isGuest,           // FIX: from communityContext
-        showAuthModal,     // FIX: from communityContext
-        setShowAuthModal,  // FIX: from communityContext
-    } = useCommunity();
-
+    const { questions, loading, error } = useCommunity();
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    // FIX: guests cannot post — only logged-in students/alumni/admin can
     const canPost = user && ['student', 'alumni', 'admin'].includes(user.role);
 
     const filteredQuestions = useMemo(() => {
@@ -50,30 +40,15 @@ const CommunityPage = () => {
 
     return (
         <div className="min-h-screen bg-[#F3F4FD] text-[#1E293B] py-10 px-6 pt-16">
-
             {/* HEADER */}
             <div className="max-w-7xl mx-auto text-center mb-10">
                 <h1 className="text-4xl font-extrabold text-[#3B82F6]">🎓 Global Discussion Forum</h1>
                 <p className="text-[#475569] mt-2 text-lg">Ask questions, get help, and share knowledge.</p>
             </div>
 
-            {/* FIX: Guest banner */}
-            {isGuest && (
-                <div className="w-full md:w-4/5 mx-auto mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
-                    <p className="text-blue-700 font-medium text-sm">
-                        👋 You're browsing as a guest. Create an account to ask questions and join discussions.
-                    </p>
-                    <button
-                        onClick={() => setShowAuthModal(true)}
-                        className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
-                    >
-                        Join Now
-                    </button>
-                </div>
-            )}
-
             <div className="sticky top-16 z-30 bg-[#F3F4FD] py-4 mb-8">
                 <div className="w-full md:w-4/5 mx-auto">
+                    {/* Search Bar & Create Button */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="relative w-full sm:max-w-xl">
                             <input
@@ -86,30 +61,22 @@ const CommunityPage = () => {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         </div>
 
-                        {/* FIX: guests see "Ask Question" but it triggers modal instead */}
-                        {canPost ? (
+                        {canPost && (
                             <Button
                                 onClick={() => setShowCreateModal(true)}
                                 className="w-auto bg-gradient-to-r from-[#3B82F6] to-[#6366F1] text-white shadow-md rounded-xl flex items-center"
                             >
                                 <PlusCircle size={18} className="mr-1" /> Ask Question
                             </Button>
-                        ) : isGuest ? (
-                            <Button
-                                onClick={() => setShowAuthModal(true)}
-                                className="w-auto bg-gradient-to-r from-[#3B82F6] to-[#6366F1] text-white shadow-md rounded-xl flex items-center"
-                            >
-                                <PlusCircle size={18} className="mr-1" /> Ask Question
-                            </Button>
-                        ) : null}
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="w-full md:w-4/5 mx-auto space-y-8">
-                <h2 className="text-2xl font-semibold text-[#3B82F6]">
-                    {searchTerm ? `Results (${filteredQuestions.length})` : "Latest Discussions"}
-                </h2>
+            <div className="w-full md:w-4/5 mx-auto space-y-8"> {/* Changed to max-w-3xl for a tighter feed */}
+
+                {/* Q&A Feed Section */}
+                <h2 className="text-2xl font-semibold text-[#3B82F6]">{searchTerm ? `Results (${filteredQuestions.length})` : "Latest Discussions"}</h2>
 
                 {loading && (
                     <div className="flex justify-center py-10">
@@ -122,13 +89,11 @@ const CommunityPage = () => {
                     <QuestionFeed
                         questions={filteredQuestions}
                         searchTerm={searchTerm}
-                        isGuest={isGuest}
-                        onRestrictedAction={() => setShowAuthModal(true)}
                     />
                 )}
             </div>
 
-            {/* Create Question Modal - only for logged-in users */}
+            {/* Modals */}
             <AnimatePresence>
                 {showCreateModal && (
                     <CreateQuestionModal
@@ -137,15 +102,6 @@ const CommunityPage = () => {
                     />
                 )}
             </AnimatePresence>
-
-            {/* FIX: Signup modal for guest restricted actions */}
-            {showAuthModal && (
-                <SignupModal
-                    isOpen={showAuthModal}
-                    onClose={() => setShowAuthModal(false)}
-                    message="Create an account to ask questions and join discussions"
-                />
-            )}
         </div>
     );
 };

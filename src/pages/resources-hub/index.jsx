@@ -13,7 +13,7 @@ import Button from '../../components/ui/Button';
 import { ResourceContext } from '../../context/resourceContext';
 import UploadModal from './components/uploadModel';
 import EditResourceModal from './components/EditResourceModal';
-import SignupModal from '../../components/ui/SignupModal'; // FIX
+import DeleteResourceModal from './components/DeleteResouceModal';
 import { useAuth } from '../../context/AuthContext';
 
 const ResourcesHub = () => {
@@ -24,9 +24,6 @@ const ResourcesHub = () => {
     loading,
     canEditResource,
     deleteResource,
-    isGuest,          // FIX
-    showAuthModal,    // FIX
-    setShowAuthModal, // FIX
   } = useContext(ResourceContext);
 
   const { user } = useAuth();
@@ -39,36 +36,47 @@ const ResourcesHub = () => {
   const [activeSection, setActiveSection] = useState('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
+  const [deletingResource, setDeletingResource] = useState(null);
+
 
   const handleFilterChange = (section, values) => {
     setFilters(prev => ({ ...prev, [section]: values }));
   };
+
   const handleClearFilters = () => setFilters({});
 
-  // FIX: guests can never upload
-  const canUploadNotes = !isGuest && ['admin', 'teacher', 'alumni'].includes(user?.role);
-  const canUploadAll = !isGuest && user?.role === 'admin';
+  // ===== Upload permissions (backend-aligned)
+  const canUploadNotes = ['admin', 'teacher', 'alumni'].includes(user?.role);
+  const canUploadAll = user?.role === 'admin';
   const canUpload = canUploadNotes || canUploadAll;
 
+  // ===== Filter logic
   const filteredResources = resources?.filter(resource => {
     if (
       searchQuery &&
       !resource?.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
       !resource?.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) return false;
+    )
+      return false;
+
     for (const [key, values] of Object.entries(filters)) {
       if (values?.length > 0 && !values.includes(resource?.[key])) return false;
     }
+
     return true;
   });
 
   const sortedResources = [...(filteredResources || [])].sort((a, b) => {
     switch (sortBy) {
-      case 'newest': return new Date(b.createdAt) - new Date(a.createdAt);
+      case 'newest':
+        return new Date(b.createdAt) - new Date(a.createdAt);
       case 'popular':
-      case 'downloads': return (b.downloads || 0) - (a.downloads || 0);
-      case 'rating': return (b.rating || 0) - (a.rating || 0);
-      default: return 0;
+      case 'downloads':
+        return (b.downloads || 0) - (a.downloads || 0);
+      case 'rating':
+        return (b.rating || 0) - (a.rating || 0);
+      default:
+        return 0;
     }
   });
 
@@ -79,17 +87,29 @@ const ResourcesHub = () => {
   );
 
   const filteredPyqs = pyqs?.filter(p =>
-    !searchQuery || p.company?.toLowerCase().includes(searchQuery.toLowerCase())
+    !searchQuery ||
+    p.company?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // ===== Counts
   let displayedCount = 0;
   if (activeSection === 'all') {
-    displayedCount = (sortedResources?.length || 0) + (filteredRoadmaps?.length || 0) + (filteredPyqs?.length || 0);
-  } else if (activeSection === 'notes') displayedCount = sortedResources?.length || 0;
-  else if (activeSection === 'roadmaps') displayedCount = filteredRoadmaps?.length || 0;
-  else if (activeSection === 'pyqs') displayedCount = filteredPyqs?.length || 0;
+    displayedCount =
+      (sortedResources?.length || 0) +
+      (filteredRoadmaps?.length || 0) +
+      (filteredPyqs?.length || 0);
+  } else if (activeSection === 'notes') {
+    displayedCount = sortedResources?.length || 0;
+  } else if (activeSection === 'roadmaps') {
+    displayedCount = filteredRoadmaps?.length || 0;
+  } else if (activeSection === 'pyqs') {
+    displayedCount = filteredPyqs?.length || 0;
+  }
 
-  const totalRawCount = (resources?.length || 0) + (roadmaps?.length || 0) + (pyqs?.length || 0);
+  const totalRawCount =
+    (resources?.length || 0) +
+    (roadmaps?.length || 0) +
+    (pyqs?.length || 0);
 
   if (loading) {
     return (
@@ -143,27 +163,15 @@ const ResourcesHub = () => {
           <div className="flex-1 min-w-0 p-4 lg:p-6 space-y-6">
             {/* Hero */}
             <div className="bg-gradient-to-r from-academic-blue to-credibility-indigo rounded-2xl p-8 text-white">
-              <h1 className="font-poppins font-bold text-3xl lg:text-4xl mb-4">Resources Hub</h1>
+              <h1 className="font-poppins font-bold text-3xl lg:text-4xl mb-4">
+                Resources Hub
+              </h1>
               <p className="text-lg text-white text-opacity-90 mb-6">
                 Discover comprehensive study materials, career roadmaps, and interview questions.
               </p>
             </div>
 
-            {/* FIX: Guest banner */}
-            {isGuest && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
-                <p className="text-blue-700 font-medium text-sm">
-                  👋 You're browsing as a guest. Create an account to download resources and bookmark them.
-                </p>
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
-                >
-                  Join Now
-                </button>
-              </div>
-            )}
-
+            {/* Search */}
             <SearchBar
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -202,69 +210,95 @@ const ResourcesHub = () => {
               onSortChange={setSortBy}
             />
 
-            {/* NOTES */}
+            {/* ===== NOTES ===== */}
             {(activeSection === 'all' || activeSection === 'notes') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
-                  <h3 className="text-xl font-bold text-wisdom-charcoal">Study Notes</h3>
+                  <h3 className="text-xl font-bold text-wisdom-charcoal">
+                    Study Notes
+                  </h3>
                 )}
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+
+                <div className={`grid gap-6 ${
+                  viewMode === 'grid'
+                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                    : 'grid-cols-1'
+                }`}>
                   {sortedResources.map(resource => (
                     <ResourceCard
                       key={resource._id}
                       resource={resource}
                       viewMode={viewMode}
-                      canEdit={!isGuest && canEditResource(resource, 'notes')}
-                      onEditClick={() => setEditingResource({ data: resource, type: 'notes' })}
-                      onDeleteClick={() => deleteResource(resource._id, 'notes')}
-                      isGuest={isGuest}                           // FIX
-                      onRestrictedAction={() => setShowAuthModal(true)} // FIX
+                      canEdit={canEditResource(resource, 'notes')}
+                      onEditClick={() =>
+                        setEditingResource({ data: resource, type: 'notes' })
+                      }
+                      onDeleteClick={() =>
+                        deleteResource(resource._id, 'notes')
+                      }
                     />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ROADMAPS — guests don't see roadmaps (not in /public/resources) */}
-            {!isGuest && (activeSection === 'all' || activeSection === 'roadmaps') && (
+            {/* ===== ROADMAPS ===== */}
+            {(activeSection === 'all' || activeSection === 'roadmaps') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
-                  <h3 className="text-xl font-bold text-wisdom-charcoal">Career Roadmaps</h3>
+                  <h3 className="text-xl font-bold text-wisdom-charcoal">
+                    Career Roadmaps
+                  </h3>
                 )}
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+
+                <div className={`grid gap-6 ${
+                  viewMode === 'grid'
+                    ? 'grid-cols-1 lg:grid-cols-2'
+                    : 'grid-cols-1'
+                }`}>
                   {filteredRoadmaps.map(roadmap => (
                     <CareerRoadmapCard
                       key={roadmap._id}
                       roadmap={roadmap}
                       viewMode={viewMode}
                       canEdit={canEditResource(roadmap, 'roadmaps')}
-                      onEditClick={() => setEditingResource({ data: roadmap, type: 'roadmaps' })}
-                      onDeleteClick={() => deleteResource(roadmap._id, 'roadmaps')}
+                      onEditClick={() =>
+                        setEditingResource({ data: roadmap, type: 'roadmaps' })
+                      }
+                      onDeleteClick={() =>
+                        deleteResource(roadmap._id, 'roadmaps')
+                      }
                     />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* PYQS — guests don't see pyqs */}
-            {!isGuest && (activeSection === 'all' || activeSection === 'pyqs') && (
+            {/* ===== PYQS ===== */}
+            {(activeSection === 'all' || activeSection === 'pyqs') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
-                  <h3 className="text-xl font-bold text-wisdom-charcoal">Interview PYQs</h3>
+                  <h3 className="text-xl font-bold text-wisdom-charcoal">
+                    Interview PYQs
+                  </h3>
                 )}
+
                 <InterviewPYQSection
                   pyqs={filteredPyqs}
                   viewMode={viewMode}
                   canEdit={pyq => canEditResource(pyq, 'pyqs')}
-                  onEditClick={pyq => setEditingResource({ data: pyq, type: 'pyqs' })}
-                  onDeleteClick={pyq => deleteResource(pyq._id, 'pyqs')}
+                  onEditClick={pyq =>
+                    setEditingResource({ data: pyq, type: 'pyqs' })
+                  }
+                  onDeleteClick={pyq =>
+                    deleteResource(pyq._id, 'pyqs')
+                  }
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* Upload button — logged-in managers only */}
         {canUpload && (
           <button
             className="fixed bottom-6 right-6 bg-academic-blue hover:bg-academic-blue-dark text-white p-4 rounded-full shadow-lg z-50 flex items-center justify-center transition-transform hover:scale-105"
@@ -290,15 +324,6 @@ const ResourcesHub = () => {
             resource={editingResource.data}
             type={editingResource.type}
             onClose={() => setEditingResource(null)}
-          />
-        )}
-
-        {/* FIX: Signup modal */}
-        {showAuthModal && (
-          <SignupModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            message="Create an account to download and bookmark resources"
           />
         )}
       </div>

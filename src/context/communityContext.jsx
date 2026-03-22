@@ -1,21 +1,14 @@
 import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
-import api from '../utils/api';
-import { useAuth } from './AuthContext';
+import api from '../utils/api'; // Your API utility
+import { useAuth } from './AuthContext'; // Your AuthContext
 
 export const CommunityContext = createContext();
 
 export const CommunityProvider = ({ children }) => {
     const { user, accessToken } = useAuth();
-
-    // FIX: single isGuest flag used throughout
-    const isGuest = !user;
-
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    // FIX: modal state for guest restricted actions
-    const [showAuthModal, setShowAuthModal] = useState(false);
 
     const getAuthHeaders = useCallback(() => ({
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -23,63 +16,56 @@ export const CommunityProvider = ({ children }) => {
 
     // --- Initial Data Load ---
     const fetchQuestions = useCallback(async () => {
+        if (!accessToken) return;
         setLoading(true);
         setError(null);
         try {
-            // FIX: guests call /public/community, logged-in call /community/questions
-            if (isGuest) {
-                const res = await api.get('/public/community');
-                const data = res.data.data || res.data || [];
-                setQuestions(data);
-            } else {
-                const res = await api.get('/community/questions', getAuthHeaders());
-                const sortedQuestions = res.data.map(q => ({
-                    ...q,
-                    answers: (q.answers || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-                }));
-                setQuestions(sortedQuestions);
-            }
+            const res = await api.get('/community/questions', getAuthHeaders());
+            // Ensure answers and replies are sorted correctly
+            const sortedQuestions = res.data.map(q => ({
+                ...q,
+                answers: (q.answers || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+            }));
+            setQuestions(sortedQuestions);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load feed.');
             console.error("Fetch Questions Error:", err);
         } finally {
             setLoading(false);
         }
-    }, [accessToken, isGuest, getAuthHeaders]);
+    }, [accessToken, getAuthHeaders]);
 
-    // FIX: fetch for both guests and logged-in users
+    // Initial fetch on token change
     useEffect(() => {
-        fetchQuestions();
-    }, [fetchQuestions]);
+        if (accessToken) {
+            fetchQuestions();
+        }
+    }, [accessToken, fetchQuestions]);
 
     // =============================================================
-    // --- QUESTION CRUD (protected — guests trigger modal) ---
+    // --- ❓ QUESTION CRUD ---
     // =============================================================
 
     const createQuestion = useCallback(async (data) => {
-        // FIX: guest guard
-        if (isGuest) { setShowAuthModal(true); return; }
+        // data = { title, body, tags }
         const res = await api.post('/community/questions', data, getAuthHeaders());
-        setQuestions(prev => [res.data, ...prev]);
+        setQuestions(prev => [res.data, ...prev]); // Add new question to top
         return res.data;
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const updateQuestion = useCallback(async (questionId, data) => {
-        if (isGuest) { setShowAuthModal(true); return; }
+        // data = { title, body }
         const res = await api.put(`/community/questions/${questionId}`, data, getAuthHeaders());
         setQuestions(prev => prev.map(q => q._id === questionId ? res.data : q));
         return res.data;
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const deleteQuestion = useCallback(async (questionId) => {
-        if (isGuest) { setShowAuthModal(true); return; }
         await api.delete(`/community/questions/${questionId}`, getAuthHeaders());
         setQuestions(prev => prev.filter(q => q._id !== questionId));
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const toggleQuestionUpvote = useCallback(async (questionId) => {
-        // FIX: guest guard
-        if (isGuest) { setShowAuthModal(true); return; }
         const userId = user._id;
         // Optimistic Update
         setQuestions(prev => prev.map(q => {
@@ -92,32 +78,33 @@ export const CommunityProvider = ({ children }) => {
             }
             return q;
         }));
+        // API Call
         try {
             await api.post(`/community/questions/${questionId}/upvote`, {}, getAuthHeaders());
         } catch (err) {
             console.error("Toggle Question Upvote failed:", err);
+            // Rollback on error
             fetchQuestions();
         }
-    }, [getAuthHeaders, isGuest, user?._id, fetchQuestions]);
+    }, [getAuthHeaders, user?._id, fetchQuestions]);
 
     // =============================================================
-    // --- ANSWER CRUD (protected — guests trigger modal) ---
+    // --- 💬 ANSWER CRUD ---
     // =============================================================
 
     const addAnswer = useCallback(async (questionId, body) => {
-        if (isGuest) { setShowAuthModal(true); return; }
         const res = await api.post(`/community/questions/${questionId}/answers`, { body }, getAuthHeaders());
         setQuestions(prev => prev.map(q => {
             if (q._id === questionId) {
+                // Add new answer to top of its list
                 return { ...q, answers: [res.data, ...q.answers] };
             }
             return q;
         }));
         return res.data;
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const updateAnswer = useCallback(async (answerId, body) => {
-        if (isGuest) { setShowAuthModal(true); return; }
         const res = await api.put(`/community/answers/${answerId}`, { body }, getAuthHeaders());
         const updatedAnswer = res.data;
         setQuestions(prev => prev.map(q => ({
@@ -125,10 +112,9 @@ export const CommunityProvider = ({ children }) => {
             answers: q.answers.map(a => a._id === answerId ? updatedAnswer : a)
         })));
         return updatedAnswer;
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const deleteAnswer = useCallback(async (questionId, answerId) => {
-        if (isGuest) { setShowAuthModal(true); return; }
         await api.delete(`/community/answers/${answerId}`, getAuthHeaders());
         setQuestions(prev => prev.map(q => {
             if (q._id === questionId) {
@@ -136,11 +122,11 @@ export const CommunityProvider = ({ children }) => {
             }
             return q;
         }));
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
 
     const toggleAnswerUpvote = useCallback(async (answerId) => {
-        if (isGuest) { setShowAuthModal(true); return; }
         const userId = user._id;
+        // Optimistic Update
         setQuestions(prev => prev.map(q => ({
             ...q,
             answers: q.answers.map(a => {
@@ -154,36 +140,39 @@ export const CommunityProvider = ({ children }) => {
                 return a;
             })
         })));
+        // API Call
         try {
             await api.post(`/community/answers/${answerId}/upvote`, {}, getAuthHeaders());
         } catch (err) {
             console.error("Toggle Answer Upvote failed:", err);
-            fetchQuestions();
+            fetchQuestions(); // Rollback
         }
-    }, [getAuthHeaders, isGuest, user?._id, fetchQuestions]);
+    }, [getAuthHeaders, user?._id, fetchQuestions]);
 
     // =============================================================
-    // --- REPLY CRUD ---
+    // --- ↪️ REPLY CRUD (NEW) ---
     // =============================================================
 
     const createReply = useCallback(async (answerId, body) => {
-        if (isGuest) { setShowAuthModal(true); return; }
+        // Backend returns the *entire updated answer* with the new reply
         const res = await api.post(`/community/answers/${answerId}/replies`, { body }, getAuthHeaders());
         const updatedAnswer = res.data;
+
         setQuestions(prev => prev.map(q => ({
             ...q,
             answers: q.answers.map(a => a._id === answerId ? updatedAnswer : a)
         })));
         return updatedAnswer;
-    }, [getAuthHeaders, isGuest]);
+    }, [getAuthHeaders]);
+
+    // (Add updateReply and deleteReply here if you have routes for them)
+
+    // =============================================================
 
     const value = useMemo(() => ({
         questions,
         loading,
         error,
-        isGuest,              // FIX: expose so community.jsx can use it
-        showAuthModal,        // FIX: expose for modal rendering
-        setShowAuthModal,     // FIX: expose for modal close
         fetchQuestions,
         createQuestion,
         updateQuestion,
@@ -193,12 +182,12 @@ export const CommunityProvider = ({ children }) => {
         updateAnswer,
         deleteAnswer,
         toggleAnswerUpvote,
-        createReply,
+        createReply, // <-- ADDED
     }), [
-        questions, loading, error, isGuest, showAuthModal,
-        fetchQuestions, createQuestion, updateQuestion, deleteQuestion,
-        toggleQuestionUpvote, addAnswer, updateAnswer, deleteAnswer,
-        toggleAnswerUpvote, createReply
+        questions, loading, error, fetchQuestions,
+        createQuestion, updateQuestion, deleteQuestion, toggleQuestionUpvote,
+        addAnswer, updateAnswer, deleteAnswer, toggleAnswerUpvote,
+        createReply
     ]);
 
     return (
