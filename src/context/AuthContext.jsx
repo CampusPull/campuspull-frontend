@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       setAccessToken("");
       setAuthHeader(null);
       setUser(null);
-      navigate("/auth", { replace: true });
+      navigate("/homepage", { replace: true });
     }
   }, [navigate]);
 
