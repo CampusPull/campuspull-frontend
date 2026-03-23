@@ -102,9 +102,11 @@ const Header = () => {
 
   const guestFeatures = [
     "Resources Hub",
+    "Explore",
     "Mentorship",
     "Community",
     "Events",
+    "Startup",
     "Internships",
     "About CampusPull",
   ];
