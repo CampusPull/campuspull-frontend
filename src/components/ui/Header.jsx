@@ -151,35 +151,24 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-brand-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-sm supports-[backdrop-filter]:bg-white/10">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center">
-            <Link to="/homepage" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-academic-blue to-credibility-indigo rounded-lg flex items-center justify-center shadow-brand-sm group-hover:shadow-brand-md transition-all duration-300">
-                  <Icon name="GraduationCap" size={24} color="white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-achievement-amber rounded-full flex items-center justify-center">
-                  <Icon name="Sparkles" size={10} color="white" />
-                </div>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-poppins font-bold text-wisdom-charcoal group-hover:text-academic-blue transition-colors duration-300">
-                  CampusPull
-                </h1>
-                <p className="text-xs text-insight-gray font-inter">
-                  Knowledge Without Boundaries
-                </p>
-              </div>
+            <Link to="/homepage" className="flex items-center group">
+              <img 
+                src="/assets/images/logocampus.png" 
+                alt="CampusPull Logo" 
+                className="h-10 w-auto object-contain group-hover:opacity-90 transition-opacity duration-300"
+              />
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           {/* <nav className="hidden lg:flex items-center space-x-1"> */}
           {/* <nav className="flex items-center space-x-1"> */}
-          <nav className="flex items-center space-x-1 overflow-x-auto scrollbar-hide">
+          <nav className="hidden xl:flex items-center space-x-1">
             {mainNavItems.map((item) => (
               <Link
                 key={item.path}
@@ -202,20 +191,40 @@ const Header = () => {
 
           {/* Right Side Actions (Notifications + Hamburger) */}
           <div className="flex items-center gap-2" ref={menuRef}>
-            {/* 3. NOTIFICATION BELL ICON */}
-            <Link
-              to="/notifications"
-              className="relative p-2 rounded-full text-wisdom-charcoal hover:bg-slate-100 transition-colors mr-1"
-            >
-              <Icon name="Bell" size={24} />
+            {/* Guest Auth Buttons (Desktop only) */}
+            {isGuest && (
+              <div className="hidden lg:flex items-center gap-2 mr-2">
+                <Link
+                  to="/auth"
+                  className="px-4 py-2 text-sm font-medium text-academic-blue bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/auth?signup=true"
+                  className="px-4 py-2 text-sm font-medium text-white bg-academic-blue hover:bg-blue-700 shadow-md rounded-full transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
 
-              {/* The Red Badge Logic */}
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </Link>
+            {/* NOTIFICATION BELL ICON (Only for authenticated users) */}
+            {!isGuest && (
+              <Link
+                to="/notifications"
+                className="relative p-2 rounded-full text-wisdom-charcoal hover:bg-slate-100 transition-colors mr-1"
+              >
+                <Icon name="Bell" size={24} />
+
+                {/* The Red Badge Logic */}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Hamburger Button */}
             <div className="relative">
@@ -231,8 +240,8 @@ const Header = () => {
               {/* Dropdown Menu */}
               {isMenuOpen && (
                 <div className="absolute top-12 right-0 w-64 bg-white border border-slate-200 rounded-xl shadow-brand-lg overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
-                  {/* Mobile-only: Main items list */}
-                  <div className="lg:hidden border-b border-slate-100 pb-2 mb-2">
+                  {/* Mobile/Tablet: Main items list (hidden on xl when desktop nav shows) */}
+                  <div className="xl:hidden border-b border-slate-100 pb-2 mb-2">
                     {mainNavItems.map((item) => (
                       <Link
                         key={item.path}

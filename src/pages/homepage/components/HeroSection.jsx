@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function HeroSection() {
+  const { user } = useAuth();
   const [showContent, setShowContent] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
@@ -83,11 +85,26 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Link to="/explore">
-              <button className="px-5 py-2 sm:px-8 sm:py-3 bg-purple-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-lg">
-                Get Started
-              </button>
-            </Link>
+            {!user ? (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/auth?signup=true">
+                  <button className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-bold rounded-lg shadow-lg transition-transform hover:scale-105">
+                    Join CampusPull
+                  </button>
+                </Link>
+                <Link to="/explore">
+                  <button className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/50 text-white text-sm sm:text-base font-bold rounded-lg shadow-lg transition-transform hover:scale-105">
+                    Explore as Guest
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <Link to="/explore">
+                <button className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm sm:text-base font-bold rounded-lg shadow-lg transition-transform hover:scale-105">
+                  Explore Platform
+                </button>
+              </Link>
+            )}
           </motion.div>
         </div>
       )}
