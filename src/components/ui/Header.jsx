@@ -239,7 +239,7 @@ const Header = () => {
 
               {/* Dropdown Menu */}
               {isMenuOpen && (
-                <div className="absolute top-12 right-0 w-64 bg-white border border-slate-200 rounded-xl shadow-brand-lg overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-12 right-0 w-64 sm:w-72 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-xl shadow-brand-lg overflow-y-auto max-h-[85vh] py-2 animate-in fade-in zoom-in-95 duration-200">
                   {/* Mobile/Tablet: Main items list (hidden on xl when desktop nav shows) */}
                   <div className="xl:hidden border-b border-slate-100 pb-2 mb-2">
                     {mainNavItems.map((item) => (
