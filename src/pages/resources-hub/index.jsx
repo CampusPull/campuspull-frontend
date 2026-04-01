@@ -258,8 +258,8 @@ const ResourcesHub = () => {
               </div>
             )}
 
-            {/* ROADMAPS — guests don't see roadmaps (not in /public/resources) */}
-            {!isGuest && (activeSection === 'all' || activeSection === 'roadmaps') && (
+            {/* ROADMAPS */}
+            {(activeSection === 'all' || activeSection === 'roadmaps') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
                   <h3 className="text-xl font-bold text-wisdom-charcoal">Career Roadmaps</h3>
@@ -285,8 +285,8 @@ const ResourcesHub = () => {
               </div>
             )}
 
-            {/* PYQS — guests don't see pyqs */}
-            {!isGuest && (activeSection === 'all' || activeSection === 'pyqs') && (
+            {/* PYQS */}
+            {(activeSection === 'all' || activeSection === 'pyqs') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
                   <h3 className="text-xl font-bold text-wisdom-charcoal">Interview PYQs</h3>

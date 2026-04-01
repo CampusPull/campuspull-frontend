@@ -9,7 +9,7 @@ import { useNotification } from "../../context/notificationContext";
 const roleFeatures = {
   admin: [
     "Home",
-    "Feed",
+      "Feed", 
     "Resources Hub",
     "About CampusPull",
     "Community",
@@ -100,7 +100,7 @@ const Header = () => {
   // const allowedFeatures = roleFeatures[user?.role] || [];
   const isGuest = !user;
 
-  const guestFeatures = [
+    const guestFeatures = [ 
     "Resources Hub",
     "Explore",
     "Mentorship",
@@ -162,7 +162,7 @@ const Header = () => {
                 alt="CampusPull Logo" 
                 className="h-10 w-auto object-contain group-hover:opacity-90 transition-opacity duration-300"
               />
-            </Link>
+            </Link> 
           </div>
 
           {/* Desktop Navigation */}

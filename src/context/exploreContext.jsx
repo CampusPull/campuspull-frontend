@@ -344,15 +344,17 @@ export const ExploreProvider = ({ children }) => {
 
       try {
         // FIX: guests call /public/users, logged-in users call /connection/suggestions
+        const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
         if (isGuest) {
           const { data } = await api.get(
-            `/public/users?page=${pageNum}&limit=20`
+            `/public/users?page=${pageNum}&limit=20${roleQuery}`
           );
           const newUsers = data.data || data.users || [];
           setSuggestions((prev) =>
             isLoadMore ? [...prev, ...newUsers] : newUsers
           );
-          setHasMore(data.hasMore ?? false);
+          const more = data.pagination ? data.pagination.page < data.pagination.pages : (data.hasMore ?? false);
+          setHasMore(more);
           setPage(pageNum);
         } else {
           const { data } = await api.get(
@@ -463,9 +465,10 @@ export const ExploreProvider = ({ children }) => {
 
       try {
         // FIX: guests use public endpoint, logged-in use protected
+        const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
         const endpoint = isGuest
-          ? `/public/users?q=${encodeURIComponent(query)}`
-          : `/connection/search?q=${encodeURIComponent(query)}&role=${activeRole}`;
+          ? `/public/users?search=${encodeURIComponent(query)}${roleQuery}`
+          : `/connection/search?search=${encodeURIComponent(query)}&role=${activeRole}`;
 
         const { data } = await api.get(endpoint);
 
