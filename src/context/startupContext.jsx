@@ -75,6 +75,22 @@ export const StartupProvider = ({ children }) => {
     }
   }, [accessToken, isGuest, getAuthHeaders]);
 
+  const getStartupById = useCallback(async (id) => {
+    // Check local list first
+    const localMatch = startups.find(s => s._id === id);
+    if (localMatch) return localMatch;
+
+    // Fallback for direct link/refresh
+    try {
+      const endpoint = isGuest ? `/public/startups/${id}` : `/startups/${id}`;
+      const res = await api.get(endpoint, !isGuest ? getAuthHeaders() : {});
+      return res.data.data || res.data;
+    } catch (err) {
+      console.error("Error fetching single startup:", err);
+      throw err;
+    }
+  }, [startups, isGuest, getAuthHeaders]);
+
   // FIX: load for both guests and logged-in users
   useEffect(() => {
     if (!authLoading) {
@@ -91,7 +107,8 @@ export const StartupProvider = ({ children }) => {
     setShowAuthModal,  // FIX: expose for modal close
     fetchStartups,
     createStartup,
-  }), [startups, loading, error, isGuest, showAuthModal, fetchStartups, createStartup]);
+    getStartupById,
+  }), [startups, loading, error, isGuest, showAuthModal, fetchStartups, createStartup, getStartupById]);
 
   return (
     <StartupContext.Provider value={contextValue}>

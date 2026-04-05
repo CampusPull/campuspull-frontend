@@ -15,27 +15,29 @@ export const FeedContext = createContext();
 export const FeedProvider = ({ children }) => {
   // Use the hook to get auth data
   const { accessToken, user, loading: authLoading } = useAuth(); 
+  const isGuest = !user;
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // --- FETCH FEED ---
   const fetchFeed = useCallback(async () => {
-    if (!accessToken) return;
     setLoading(true);
+    setError("");
     try {
-      const { data } = await api.get("/feed", {
-        headers: { Authorization: `Bearer ${accessToken}` },
+      const endpoint = isGuest ? "/public/feed" : "/feed";
+      const { data } = await api.get(endpoint, {
+        headers: !isGuest ? { Authorization: `Bearer ${accessToken}` } : {},
         withCredentials: true,
       });
-      setFeed(data);
+      setFeed(isGuest ? (data.data || data) : data);
     } catch (err) {
       console.error(err);
       setError("Failed to fetch feed");
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, isGuest]);
 
   // --- CREATE POST ---
   const createPost = useCallback(
@@ -271,14 +273,15 @@ export const FeedProvider = ({ children }) => {
 
   // --- Fetch feed when auth is ready ---
   useEffect(() => {
-    if (!authLoading && accessToken) fetchFeed();
-  }, [authLoading, accessToken, fetchFeed]);
+    if (!authLoading) fetchFeed();
+  }, [authLoading, fetchFeed]);
 
   const contextValue = useMemo(
     () => ({
       feed,
       loading,
       error,
+      isGuest,
       fetchFeed,
       createPost,
       updatePost,
@@ -289,7 +292,7 @@ export const FeedProvider = ({ children }) => {
       likeComment,
       sharePost,
     }),
-    [feed, loading, error, fetchFeed, createPost, updatePost, deletePost, likePost, commentPost, replyToComment, likeComment, sharePost]
+    [feed, loading, error, isGuest, fetchFeed, createPost, updatePost, deletePost, likePost, commentPost, replyToComment, likeComment, sharePost]
   );
 
   return <FeedContext.Provider value={contextValue}>{children}</FeedContext.Provider>;

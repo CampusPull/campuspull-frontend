@@ -1,5 +1,12 @@
-// FIX: accept isGuest, onRestrictedAction, onClick
-const StartupCard = ({ startup, isGuest, onRestrictedAction, onClick }) => {
+import { useNavigate } from "react-router-dom";
+
+// FIX: accept isGuest, onRestrictedAction
+const StartupCard = ({ startup, isGuest, onRestrictedAction }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/startups/${startup._id}`);
+  };
 
   const formatUrl = (url) => {
     if (!url) return "#";
@@ -12,7 +19,7 @@ const StartupCard = ({ startup, isGuest, onRestrictedAction, onClick }) => {
 
   return (
     <div 
-      onClick={onClick}
+      onClick={handleCardClick}
       className="cursor-pointer bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 flex flex-col group overflow-hidden relative"
     >
       {/* Decorative gradient blob */}
