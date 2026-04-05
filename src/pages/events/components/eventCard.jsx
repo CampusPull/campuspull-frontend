@@ -11,11 +11,18 @@ import Icon from '../../../components/AppIcon'; // Adjust path
 // Helper to format Event Date (with time)
 const formatEventDate = (dateString) => {
   if (!dateString) return 'Date TBD';
+
   try {
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+    const options = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    };
+
     const dateObj = new Date(dateString);
     if (isNaN(dateObj.getTime())) return 'Invalid Date';
-    return dateObj.toLocaleDateString('en-US', options) || 'Invalid Date';
+
+    return dateObj.toLocaleDateString('en-US', options);
   } catch (e) {
     console.error("Error formatting event date:", dateString, e);
     return 'Invalid Date';
