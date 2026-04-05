@@ -1,46 +1,31 @@
-import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children }) => {
+// FIX: ProtectedRoute now handles the loading state
+// AuthContext no longer blocks the whole app — only protected pages wait
+const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
-  const location = useLocation();
 
+  // Wait for auth check to finish before deciding to redirect
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center">
-          {/* Modern spinner */}
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-300 text-lg font-medium">
-            Loading, please wait...
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600" />
       </div>
     );
   }
 
+  // Not logged in → redirect to login
   if (!user) {
-  return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Role check (e.g. requiredRole="alumni" for mentor profile)
+  if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
 };
 
 export default ProtectedRoute;
-
-
-
-// import React from "react";
-
-// /*
-//   TEMPORARY AUTH BYPASS
-//   Allows access to all protected routes without login.
-//   Revert this before pushing PR.
-// */
-
-// const ProtectedRoute = ({ children }) => {
-//   return children;
-// };
-  
-// export default ProtectedRoute;

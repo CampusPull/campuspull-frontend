@@ -25,12 +25,18 @@ export const FeedProvider = ({ children }) => {
     setLoading(true);
     setError("");
     try {
-      const endpoint = isGuest ? "/public/feed" : "/feed";
-      const { data } = await api.get(endpoint, {
-        headers: !isGuest ? { Authorization: `Bearer ${accessToken}` } : {},
+      // NOTE: No public feed endpoint exists on backend.
+      // Guests see an empty feed with a join banner.
+      if (isGuest) {
+        setFeed([]);
+        setLoading(false);
+        return;
+      }
+      const { data } = await api.get("/feed", {
+        headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       });
-      setFeed(isGuest ? (data.data || data) : data);
+      setFeed(data);
     } catch (err) {
       console.error(err);
       setError("Failed to fetch feed");
