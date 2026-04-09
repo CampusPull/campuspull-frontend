@@ -2,25 +2,17 @@ import { useState } from "react";
 import { FaPlus, FaRocket } from "react-icons/fa";
 import { useStartups } from "../../context/startupContext";
 import { useAuth } from "../../context/AuthContext";
+
 import StartupList from "./component/startupList";
 import AddStartupModal from "./component/addStartupModal";
-import SignupModal from "../../components/ui/SignupModal";
 
 const StartupPage = () => {
-  const {
-    startups,
-    loading,
-    error,
-    isGuest,          // FIX
-    showAuthModal,    // FIX
-    setShowAuthModal, // FIX
-  } = useStartups();
-
+  const { startups, loading, error } = useStartups();
   const { user } = useAuth();
+
   const [open, setOpen] = useState(false);
 
-  // FIX: guests can never be admin
-  const isAdmin = !isGuest && user?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
@@ -65,23 +57,12 @@ const StartupPage = () => {
       {error && <p className="text-red-500">{error}</p>}
 
       {!loading && !error && (
-        <StartupList
-          startups={startups}
-          isGuest={isGuest}                           // FIX: pass to list
-          onRestrictedAction={() => setShowAuthModal(true)} // FIX: pass modal trigger
-        />
+        <StartupList startups={startups} />
       )}
       </div>
 
-      {open && <AddStartupModal onClose={() => setOpen(false)} />}
-
-      {/* FIX: Signup modal for guest restricted actions */}
-      {showAuthModal && (
-        <SignupModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          message="Create an account to contact and follow startups"
-        />
+      {open && (
+        <AddStartupModal onClose={() => setOpen(false)} />
       )}
     </div>
   );

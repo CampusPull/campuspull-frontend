@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -37,16 +36,23 @@ export const AuthProvider = ({ children }) => {
       setAuthHeader(newToken);
       setUser(user);
 
-      navigate("/", { replace: true });
+      navigate("/homepage", { replace: true });
     } catch (err) {
+      // If error is "Please verify email", it will be thrown here
+      // and caught by your Auth.jsx component to show the Toast.
       throw err;
     }
   };
 
-  // --- SIGNUP ---
+  // --- SIGNUP (UPDATED) ---
   const signup = async (data) => {
     try {
+      // 🚀 CHANGED: Backend now sends an email, NOT a token.
+      // We do NOT log the user in automatically anymore.
       await api.post("/auth/signup", data);
+
+      // We do NOT setAccessToken or navigate to homepage.
+      // We simply return, so Auth.jsx can show the "Check your email" toast.
     } catch (err) {
       throw err;
     }
@@ -62,17 +68,21 @@ export const AuthProvider = ({ children }) => {
       setAccessToken("");
       setAuthHeader(null);
       setUser(null);
-      navigate("/homepage", { replace: true });
+      navigate("/auth", { replace: true });
     }
   }, [navigate]);
 
   // --- SILENT REFRESH LOGIC ---
   const refreshAuth = useCallback(async () => {
     try {
+      // Check if we have a valid session cookie
       const res = await api.post("/auth/refresh", {});
       const { accessToken: newToken } = res.data;
 
+      // 1. Update State
       setAccessToken(newToken);
+
+      // 2. Update global defaults for future calls
       setAuthHeader(newToken);
 
       const userRes = await api.get("/auth/me", {
@@ -82,11 +92,8 @@ export const AuthProvider = ({ children }) => {
       setUser(userRes.data.user);
       return true;
     } catch (err) {
-      // Guest mode expected → ignore 401
-      if (err.response?.status !== 401) {
-        console.error("Silent refresh failed:", err);
-      }
-
+      // Silent fail is expected if not logged in
+      console.error("Silent refresh failed:", err);
       setAuthHeader(null);
       setUser(null);
       return false;
@@ -95,19 +102,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Initial load
+  // 1. Initial Load
   useEffect(() => {
     refreshAuth();
   }, [refreshAuth]);
 
-  // Auto refresh every 14 minutes
+  // 2. Scheduled Refresh
   useEffect(() => {
     if (!accessToken) return;
-
     const interval = setInterval(() => {
       refreshAuth();
     }, 14 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, [accessToken, refreshAuth]);
 
@@ -128,17 +133,9 @@ export const AuthProvider = ({ children }) => {
     [user, loading, accessToken, logout]
   );
 
-  // Important: wait until auth check finishes
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
-

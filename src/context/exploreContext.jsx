@@ -14,16 +14,14 @@ export const ExploreContext = createContext();
 
 export const ExploreProvider = ({ children }) => {
   const { accessToken, user, loading: authLoading } = useAuth();
-
-  // FIX: single isGuest flag used throughout
-  const isGuest = !user;
-
   const [suggestions, setSuggestions] = useState([]);
+  const [originalSuggestions, setOriginalSuggestions] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeRole, setActiveRole] = useState("all");
 
+  // --- Pagination State ---
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -33,17 +31,24 @@ export const ExploreProvider = ({ children }) => {
   const [acceptedConnectionIds, setAcceptedConnectionIds] = useState(new Set());
   const [connections, setConnections] = useState([]);
 
-  // Modal state for guest restricted actions
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const getImageUrl = useCallback((path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    let baseUrl = api.defaults.baseURL || "";
+    baseUrl = baseUrl.replace(/\/api\/?$/, "");
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
+  }, []);
 
-  // ---------- Fetch Suggestions ----------
+  // --- Fetch Suggestions ---
   const fetchSuggestions = useCallback(
     async (pageNum = 1, isLoadMore = false) => {
+      if (!accessToken) return;
+
       if (isLoadMore) setLoadingMore(true);
       else setLoading(true);
 
       setError("");
-
       try {
         // FIX: guests call /explore/users (public, no auth), logged-in call /connection/suggestions
         const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
@@ -78,7 +83,7 @@ export const ExploreProvider = ({ children }) => {
         setLoadingMore(false);
       }
     },
-    [accessToken, activeRole, isGuest]
+    [accessToken, activeRole]
   );
 
   const loadMoreSuggestions = useCallback(() => {
@@ -87,11 +92,9 @@ export const ExploreProvider = ({ children }) => {
     }
   }, [fetchSuggestions, page, loadingMore, hasMore]);
 
-  // ---------- Fetch Requests (only logged-in users) ----------
+  // --- Fetch Pending Requests ---
   const fetchRequests = useCallback(async () => {
-    // FIX: guard — never call for guests
     if (!accessToken || !user?._id) return;
-
     try {
       const { data } = await api.get("/connection/requests/pending", {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -111,20 +114,22 @@ export const ExploreProvider = ({ children }) => {
     }
   }, [accessToken, user?._id]);
 
-  // ---------- Fetch Connections (only logged-in users) ----------
+  // --- Fetch Accepted Connections ---
   const fetchConnections = useCallback(async () => {
-    // FIX: guard — never call for guests
     if (!accessToken || !user?._id) return;
-
     try {
       const { data: connectedUsers } = await api.get(
         "/connection/connections",
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
       );
-
-      const valid = connectedUsers.filter(Boolean);
-      setConnections(valid);
-      setAcceptedConnectionIds(new Set(valid.map((u) => u._id)));
+      const validConnections = connectedUsers.filter(
+        (u) => u !== null && u !== undefined
+      );
+      setConnections(validConnections);
+      const ids = new Set(validConnections.map((u) => u._id));
+      setAcceptedConnectionIds(ids);
     } catch (err) {
       console.error("Failed to fetch connections", err);
       setConnections([]);
@@ -132,15 +137,10 @@ export const ExploreProvider = ({ children }) => {
     }
   }, [accessToken, user?._id]);
 
-  // ---------- Send Request ----------
+  // --- Request Actions (send, accept, ignore) ---
   const sendRequest = useCallback(
     async (recipientId) => {
-      // FIX: show modal instead of hard redirecting to /auth
-      if (isGuest) {
-        setShowAuthModal(true);
-        return;
-      }
-
+      if (!accessToken) return;
       try {
         await api.post(
           "/connection/request",
@@ -152,19 +152,56 @@ export const ExploreProvider = ({ children }) => {
         alert(err.response?.data?.message || "Failed to send request");
       }
     },
-    [accessToken, isGuest]
+    [accessToken]
   );
 
-  // ---------- Search ----------
+  const acceptRequest = useCallback(
+    async (requestId) => {
+      if (!accessToken) return;
+      try {
+        await api.post(
+          "/connection/respond",
+          { requestId, action: "accept" },
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        fetchRequests();
+        fetchConnections();
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to accept request");
+      }
+    },
+    [accessToken, fetchRequests, fetchConnections]
+  );
+
+  const ignoreRequest = useCallback(
+    async (requestId) => {
+      if (!accessToken) return;
+      try {
+        await api.post(
+          "/connection/respond",
+          { requestId, action: "reject" },
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        fetchRequests();
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to ignore request");
+      }
+    },
+    [accessToken, fetchRequests]
+  );
+
+  // --- API Search Function ---
   const performSearch = useCallback(
     async (query) => {
+      if (!accessToken) return;
       if (!query.trim()) {
-        fetchSuggestions(1, false);
-        return;
-      }
-
+      // 1. Reset the suggestions to empty first to show a fresh state
+      setSuggestions([]); 
+      // 2. Explicitly re-fetch the suggestions based on the current activeRole
+      fetchSuggestions(1, false); 
+      return;
+    }
       setLoading(true);
-
       try {
         // FIX: guests use /explore/users (public), logged-in use protected search
         const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
@@ -183,7 +220,7 @@ export const ExploreProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [accessToken, activeRole, fetchSuggestions, isGuest]
+    [accessToken, fetchSuggestions, activeRole]
   );
 
   const debouncedSearch = useMemo(
@@ -196,18 +233,21 @@ export const ExploreProvider = ({ children }) => {
     return () => debouncedSearch.cancel();
   }, [search, debouncedSearch]);
 
-  // ---------- Initial Load ----------
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && accessToken) {
+      setSuggestions([]);
       fetchSuggestions(1, false);
-
-      // FIX: only fetch protected data for logged-in users
-      if (!isGuest) {
-        fetchRequests();
-        fetchConnections();
-      }
+      fetchRequests();
+      fetchConnections();
     }
-  }, [authLoading, accessToken, activeRole, isGuest, fetchSuggestions, fetchRequests, fetchConnections]);
+  }, [
+    accessToken,
+    fetchSuggestions,
+    fetchRequests,
+    fetchConnections,
+    authLoading,
+    activeRole,
+  ]);
 
   const contextValue = useMemo(
     () => ({
@@ -215,8 +255,8 @@ export const ExploreProvider = ({ children }) => {
       search,
       setSearch,
       loading,
-      loadingMore,
-      hasMore,
+      loadingMore, 
+      hasMore, 
       error,
       sendRequest,
       incomingRequests,
@@ -224,12 +264,12 @@ export const ExploreProvider = ({ children }) => {
       acceptedConnectionIds,
       connections,
       connectionCount: connections.length,
+      acceptRequest,
+      ignoreRequest,
+      getImageUrl,
       loadMoreSuggestions,
       activeRole,
       setActiveRole,
-      isGuest,
-      showAuthModal,
-      setShowAuthModal,
     }),
     [
       suggestions,
@@ -243,10 +283,12 @@ export const ExploreProvider = ({ children }) => {
       outgoingRequestIds,
       acceptedConnectionIds,
       connections,
+      acceptRequest,
+      ignoreRequest,
+      getImageUrl,
       loadMoreSuggestions,
       activeRole,
-      isGuest,
-      showAuthModal,
+      setActiveRole,
     ]
   );
 
