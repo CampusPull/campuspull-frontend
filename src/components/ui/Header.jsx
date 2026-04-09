@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import Icon from '../AppIcon';
-import Button from './Button';
-import { useAuth } from '../../context/AuthContext';
-import { useNotification } from '../../context/notificationContext';
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import Icon from "../AppIcon";
+import Button from "./Button";
+import { useAuth } from "../../context/AuthContext";
+import { useNotification } from "../../context/notificationContext";
 
 // --- Define Role Permissions ---
 const roleFeatures = {
@@ -70,19 +70,16 @@ const roleFeatures = {
     "Startup",
   ],
 };
-
 const Header = () => {
   const { user, logout } = useAuth();
   // 2. GET UNREAD COUNT
-  const { unreadCount } = useNotification(); 
-  
+  const { unreadCount } = useNotification();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const menuRef = useRef(null);
   const mentorshipPath =
-  user?.role === "alumni"
-    ? "/mentorship/profile"
-    : "/mentorship/mentors";
+    user?.role === "alumni" ? "/mentorship/profile" : "/mentorship/mentors";
 
   const allNavigationItems = [
     { name: "Resources Hub", path: "/resources-hub", icon: "BookOpen" },
@@ -114,38 +111,49 @@ const Header = () => {
     "About CampusPull",
   ];
 
-  const allowedFeatures = roleFeatures[user?.role] || [];
-  const authorizedItems = allNavigationItems.filter(item =>
-    allowedFeatures.includes(item.name)
+  const allowedFeatures = isGuest
+    ? guestFeatures
+    : roleFeatures[user?.role] || [];
+
+  const authorizedItems = allNavigationItems.filter((item) =>
+    allowedFeatures.includes(item.name),
   );
 
-  const hamburgerItemNames = [ 'Profile', 'About CampusPull', 'Alumni Stories', 'Admin Dashboard','Chat' ]; // These will go in the hamburger menu
-  const mainNavItems = authorizedItems.filter(item => !hamburgerItemNames.includes(item.name));
-  const menuNavItems = authorizedItems.filter(item => hamburgerItemNames.includes(item.name));
+  const hamburgerItemNames = [
+    "Profile",
+    "About CampusPull",
+    "Alumni Stories",
+    "Admin Dashboard",
+    "Chat",
+  ]; // These will go in the hamburger menu
+  const mainNavItems = authorizedItems.filter(
+    (item) => !hamburgerItemNames.includes(item.name),
+  );
+  const menuNavItems = authorizedItems.filter((item) =>
+    hamburgerItemNames.includes(item.name),
+  );
 
   const isActivePath = (path) => {
-  if (path.startsWith("/mentorship")) {
-    return location.pathname.startsWith("/mentorship");
-  }
-  return location.pathname === path;
-};
+    if (path.startsWith("/mentorship")) {
+      return location.pathname.startsWith("/mentorship");
+    }
+    return location.pathname === path;
+  };
 
-  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-sm supports-[backdrop-filter]:bg-white/10">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          
           {/* Logo Section */}
           <div className="flex items-center">
             <Link to="/homepage" className="flex items-center group">
@@ -167,14 +175,14 @@ const Header = () => {
                 to={item.path}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-inter font-medium transition-all duration-300 ${
                   isActivePath(item.path)
-                    ? 'bg-academic-blue text-white shadow-brand-sm'
-                    : 'text-wisdom-charcoal hover:bg-surface hover:text-academic-blue'
+                    ? "bg-academic-blue text-white shadow-brand-sm"
+                    : "text-wisdom-charcoal hover:bg-surface hover:text-academic-blue"
                 }`}
               >
                 <Icon
                   name={item.icon}
                   size={18}
-                  color={isActivePath(item.path) ? 'white' : 'currentColor'}
+                  color={isActivePath(item.path) ? "white" : "currentColor"}
                 />
                 <span>{item.name}</span>
               </Link>
@@ -226,7 +234,7 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-wisdom-charcoal hover:text-academic-blue"
               >
-                <Icon name={isMenuOpen ? 'X' : 'Menu'} size={24} />
+                <Icon name={isMenuOpen ? "X" : "Menu"} size={24} />
               </Button>
 
               {/* Dropdown Menu */}
@@ -241,8 +249,8 @@ const Header = () => {
                         onClick={() => setIsMenuOpen(false)}
                         className={`flex items-center space-x-3 px-4 py-3 text-sm font-inter font-medium transition-colors ${
                           isActivePath(item.path)
-                            ? 'bg-blue-50 text-academic-blue'
-                            : 'text-wisdom-charcoal hover:bg-slate-50'
+                            ? "bg-blue-50 text-academic-blue"
+                            : "text-wisdom-charcoal hover:bg-slate-50"
                         }`}
                       >
                         <Icon name={item.icon} size={18} />
@@ -259,8 +267,8 @@ const Header = () => {
                       onClick={() => setIsMenuOpen(false)}
                       className={`flex items-center space-x-3 px-4 py-3 text-sm font-inter font-medium transition-colors ${
                         isActivePath(item.path)
-                          ? 'bg-blue-50 text-academic-blue'
-                          : 'text-wisdom-charcoal hover:bg-slate-50'
+                          ? "bg-blue-50 text-academic-blue"
+                          : "text-wisdom-charcoal hover:bg-slate-50"
                       }`}
                     >
                       <Icon name={item.icon} size={18} />
@@ -270,25 +278,33 @@ const Header = () => {
 
                   <div className="h-px bg-slate-100 my-1 mx-4"></div>
 
-                  {/* Logout */}
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-inter font-medium text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Icon name="LogOut" size={18} />
-                    <span>Logout</span>
-                  </button>
+                  {isGuest ? (
+                    <Link
+                      to="/auth"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-inter font-medium text-academic-blue hover:bg-blue-50 transition-colors"
+                    >
+                      <Icon name="LogIn" size={18} />
+                      <span>Login</span>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-inter font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Icon name="LogOut" size={18} />
+                      <span>Logout</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
-      
     </header>
   );
 };

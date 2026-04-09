@@ -1,6 +1,6 @@
 import StartupCard from "./startupCard";
 
-const StartupList = ({ startups }) => {
+const StartupList = ({ startups, isGuest, onRestrictedAction }) => {
   if (!startups || startups.length === 0) {
     return (
       <p className="text-gray-500">

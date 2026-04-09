@@ -13,11 +13,17 @@ export const EventContext = createContext();
 
 export const EventProvider = ({ children }) => {
   const { accessToken, user, loading: authLoading } = useContext(AuthContext);
+
+  // FIX: single isGuest flag
+  const isGuest = !user;
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Helper for auth headers
+  // FIX: modal state for guest restricted actions
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const getAuthHeaders = useCallback((isFormData = false) => {
     const headers = { Authorization: `Bearer ${accessToken}` };
     if (!isFormData) {
@@ -28,28 +34,28 @@ export const EventProvider = ({ children }) => {
 
   // Fetch Events
   const fetchEvents = useCallback(async () => {
-    if (!user || !accessToken) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get("/event", getAuthHeaders());
-      setEvents(res.data || []);
+      // FIX: guests call /public/events, logged-in call /event
+      if (isGuest) {
+        const res = await api.get("/public/events");
+        setEvents(res.data.data || res.data || []);
+      } else {
+        const res = await api.get("/event", getAuthHeaders());
+        setEvents(res.data || []);
+      }
     } catch (err) {
       console.error("Error fetching events:", err);
       setError(err.response?.data?.error || 'Failed to fetch events.');
     } finally {
       setLoading(false);
     }
-  }, [accessToken, user, getAuthHeaders]);
+  }, [accessToken, isGuest, getAuthHeaders]);
 
-  // Create Event
+  // Create Event — protected
   const createEvent = useCallback(async (formData) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) { setShowAuthModal(true); return; }
     setError(null);
     try {
       const res = await api.post("/event", formData, {
@@ -63,11 +69,11 @@ export const EventProvider = ({ children }) => {
       setError(err.response?.data?.error || 'Failed to create event.');
       throw err;
     }
-  }, [accessToken]);
+  }, [accessToken, isGuest]);
 
-  // Update Event
+  // Update Event — protected
   const updateEvent = useCallback(async (id, formData) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) { setShowAuthModal(true); return; }
     setError(null);
     try {
       const res = await api.put(`/event/${id}`, formData, {
@@ -81,11 +87,11 @@ export const EventProvider = ({ children }) => {
       setError(err.response?.data?.error || 'Failed to update event.');
       throw err;
     }
-  }, [accessToken]);
+  }, [accessToken, isGuest]);
 
-  // Delete Event
+  // Delete Event — protected
   const deleteEvent = useCallback(async (id) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) { setShowAuthModal(true); return; }
     setError(null);
     try {
       await api.delete(`/event/${id}`, getAuthHeaders());
@@ -95,64 +101,61 @@ export const EventProvider = ({ children }) => {
       setError(err.response?.data?.error || 'Failed to delete event.');
       throw err;
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [accessToken, isGuest, getAuthHeaders]);
 
-  // Increment Interest (Fixed & Safe)
+  // Increment Interest — protected
   const incrementInterest = useCallback(async (eventId) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    // FIX: guest clicks Register/Interested → open modal
+    if (isGuest) { setShowAuthModal(true); return; }
 
     try {
       const res = await api.patch(`/event/${eventId}/interest`, {}, getAuthHeaders());
       const { interestCount: updatedInterestCount, interestedUsers: updatedInterestedUsers } = res.data;
 
       if (typeof updatedInterestCount === 'number' && Array.isArray(updatedInterestedUsers)) {
-        setEvents((prevEvents) => {
-          return prevEvents.map((event) => {
+        setEvents((prevEvents) =>
+          prevEvents.map((event) => {
             if (event._id === eventId) {
               return {
                 ...event,
                 interestCount: updatedInterestCount,
                 interestedUsers: updatedInterestedUsers,
-                // Defensive check: ensure user exists before checking ID
                 isInterested: user?._id ? updatedInterestedUsers.includes(user._id) : false,
               };
             }
             return event;
-          });
-        });
-      } else {
-        console.error("[EventContext incrementInterest] Invalid response data:", res.data);
+          })
+        );
       }
       return res.data;
     } catch (err) {
-      console.error("Increment Interest Error in Context:", err.response?.data?.message || err.message);
+      console.error("Increment Interest Error:", err.response?.data?.message || err.message);
       throw err;
     }
-  }, [accessToken, getAuthHeaders, user]);
+  }, [accessToken, isGuest, getAuthHeaders, user]);
 
   // Initial Data Load
+  // FIX: fetch for both guests and logged-in users
   useEffect(() => {
-    if (!authLoading && accessToken) {
+    if (!authLoading) {
       fetchEvents();
-    } else if (!authLoading && !accessToken) {
-      setEvents([]);
-      setLoading(false);
-      setError(null);
-    } else {
-      setLoading(true);
     }
-  }, [authLoading, accessToken, fetchEvents, user]);
+  }, [authLoading, accessToken, fetchEvents]);
 
   const contextValue = useMemo(() => ({
     events,
     loading,
     error,
+    isGuest,           // FIX: expose for events page
+    showAuthModal,     // FIX: expose for modal rendering
+    setShowAuthModal,  // FIX: expose for modal close
     fetchEvents,
     createEvent,
     updateEvent,
     deleteEvent,
     incrementInterest,
-  }), [events, loading, error, fetchEvents, createEvent, updateEvent, deleteEvent, incrementInterest]);
+  }), [events, loading, error, isGuest, showAuthModal,
+      fetchEvents, createEvent, updateEvent, deleteEvent, incrementInterest]);
 
   return (
     <EventContext.Provider value={contextValue}>

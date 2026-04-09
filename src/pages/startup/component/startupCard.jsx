@@ -9,11 +9,13 @@ const StartupCard = ({ startup, isGuest, onRestrictedAction }) => {
   };
 
   const formatUrl = (url) => {
-  if (!url) return "#";
-  return url.startsWith("http://") || url.startsWith("https://")
-    ? url
-    : `https://${url}`;
-};
+    if (!url) return "#";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
+  };
+
+  const hasLinks = startup.links?.website || startup.links?.linkedin || startup.links?.instagram;
 
   return (
     <div 
