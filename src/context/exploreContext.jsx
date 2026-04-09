@@ -50,22 +50,31 @@ export const ExploreProvider = ({ children }) => {
 
       setError("");
       try {
-        const { data } = await api.get(
-          `/connection/suggestions?page=${pageNum}&limit=20&role=${activeRole}`, // Add &role here
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-
-        // data should now be { users: [], hasMore: boolean } based on our backend change
-        const newUsers = data.users || [];
-
-        setSuggestions((prev) =>
-          isLoadMore ? [...prev, ...newUsers] : newUsers
-        );
-        setOriginalSuggestions((prev) =>
-          isLoadMore ? [...prev, ...newUsers] : newUsers
-        );
-        setHasMore(data.hasMore);
-        setPage(pageNum);
+        // FIX: guests call /explore/users (public, no auth), logged-in call /connection/suggestions
+        const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
+        if (isGuest) {
+          const { data } = await api.get(
+            `/explore/users?page=${pageNum}&limit=20${roleQuery}`
+          );
+          const newUsers = data.data || data.users || [];
+          setSuggestions((prev) =>
+            isLoadMore ? [...prev, ...newUsers] : newUsers
+          );
+          const more = data.pagination ? data.pagination.page < data.pagination.pages : (data.hasMore ?? false);
+          setHasMore(more);
+          setPage(pageNum);
+        } else {
+          const { data } = await api.get(
+            `/connection/suggestions?page=${pageNum}&limit=20&role=${activeRole}`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          const newUsers = data.users || [];
+          setSuggestions((prev) =>
+            isLoadMore ? [...prev, ...newUsers] : newUsers
+          );
+          setHasMore(data.hasMore);
+          setPage(pageNum);
+        }
       } catch (err) {
         console.error("Fetch Suggestions Error:", err);
         setError("Failed to fetch suggestions");
@@ -194,15 +203,17 @@ export const ExploreProvider = ({ children }) => {
     }
       setLoading(true);
       try {
-        const { data } = await api.get(
-          `/connection/search?q=${encodeURIComponent(
-            query
-          )}&role=${activeRole}`, // Add &role here
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        setSuggestions(data);
-        setHasMore(false); // Search usually returns all matches or has its own pagination
-      } catch (err) {
+        // FIX: guests use /explore/users (public), logged-in use protected search
+        const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
+        const endpoint = isGuest
+          ? `/explore/users?search=${encodeURIComponent(query)}${roleQuery}`
+          : `/connection/search?search=${encodeURIComponent(query)}&role=${activeRole}`;
+
+        const { data } = await api.get(endpoint);
+
+        setSuggestions(isGuest ? (data.data || []) : data);
+        setHasMore(false);
+      } catch {
         setError("Failed to perform search");
         setSuggestions([]);
       } finally {

@@ -14,11 +14,16 @@ export const StartupContext = createContext();
 export const StartupProvider = ({ children }) => {
   const { accessToken, user, loading: authLoading } = useContext(AuthContext);
 
+  // FIX: single isGuest flag
+  const isGuest = !user;
+
   const [startups, setStartups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Helper for auth headers
+  // FIX: modal state for guest restricted actions
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const getAuthHeaders = useCallback((isFormData = false) => {
     const headers = { Authorization: `Bearer ${accessToken}` };
     if (!isFormData) {
@@ -29,73 +34,81 @@ export const StartupProvider = ({ children }) => {
 
   // Fetch Startups
   const fetchStartups = useCallback(async () => {
-    if (!accessToken) {
-      setStartups([]);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get("/startups", getAuthHeaders());
-      setStartups(res.data?.data || []);
+      // FIX: guests call /public/startups, logged-in call /startups
+      if (isGuest) {
+        const res = await api.get("/public/startups");
+        setStartups(res.data?.data || res.data || []);
+      } else {
+        const res = await api.get("/startups", getAuthHeaders());
+        setStartups(res.data?.data || []);
+      }
     } catch (err) {
       console.error("Error fetching startups:", err);
       setError(err.response?.data?.message || "Failed to fetch startups.");
     } finally {
       setLoading(false);
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [accessToken, isGuest, getAuthHeaders]);
 
-  // Create Startup (ADMIN – backend enforced)
+  // Create Startup — protected
   const createStartup = useCallback(async (formData) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    // FIX: guest guard
+    if (isGuest) { setShowAuthModal(true); return; }
 
     setError(null);
     try {
-      const res = await api.post(
-        "/startups",
-        formData,
-        getAuthHeaders(true)
-      );
-
+      const res = await api.post("/startups", formData, getAuthHeaders(true));
       const newStartup = res.data.data;
-
       setStartups((prev) =>
         [newStartup, ...prev].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         )
       );
-
       return newStartup;
     } catch (err) {
       console.error("Error creating startup:", err);
       setError(err.response?.data?.message || "Failed to create startup.");
       throw err;
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [accessToken, isGuest, getAuthHeaders]);
 
-  // Initial Load (mirrors EventContext exactly)
-  useEffect(() => {
-    if (!authLoading && accessToken) {
-      fetchStartups();
-    } else if (!authLoading && !accessToken) {
-      setStartups([]);
-      setLoading(false);
-      setError(null);
-    } else {
-      setLoading(true);
+  const getStartupById = useCallback(async (id) => {
+    // Check local list first
+    const localMatch = startups.find(s => s._id === id);
+    if (localMatch) return localMatch;
+
+    // Fallback for direct link/refresh
+    try {
+      const endpoint = isGuest ? `/public/startups/${id}` : `/startups/${id}`;
+      const res = await api.get(endpoint, !isGuest ? getAuthHeaders() : {});
+      return res.data.data || res.data;
+    } catch (err) {
+      console.error("Error fetching single startup:", err);
+      throw err;
     }
-  }, [authLoading, accessToken, fetchStartups]);
+  }, [startups, isGuest, getAuthHeaders]);
+
+  // FIX: load for both guests and logged-in users
+  useEffect(() => {
+    if (!authLoading) {
+      fetchStartups();
+    }
+  }, [authLoading, accessToken, isGuest, fetchStartups]);
 
   const contextValue = useMemo(() => ({
     startups,
     loading,
     error,
+    isGuest,           // FIX: expose for UI
+    showAuthModal,     // FIX: expose for modal
+    setShowAuthModal,  // FIX: expose for modal close
     fetchStartups,
     createStartup,
-  }), [startups, loading, error, fetchStartups, createStartup]);
+    getStartupById,
+  }), [startups, loading, error, isGuest, showAuthModal, fetchStartups, createStartup, getStartupById]);
 
   return (
     <StartupContext.Provider value={contextValue}>

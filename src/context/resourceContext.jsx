@@ -59,8 +59,35 @@ export const ResourceProvider = ({ children }) => {
   const fetchResources = useCallback(async () => {
     try {
       setError(null);
-      const res = await api.get("/resources/notes", getAuthHeaders());
-      setResources(res.data);
+      if (isGuest) {
+        const res = await api.get("/public/resources");
+        
+        // Handle both possible backend shapes: Structured Object OR Flat Array
+        if (res.data.notes || res.data.data?.notes) {
+          const payload = res.data.data?.notes ? res.data.data : res.data;
+          setResources(payload.notes || []);
+          setRoadmaps(payload.roadmaps || []);
+          setPyqs(payload.pyqs || []);
+        } else {
+          // Flat array fallback (paginated discriminator models)
+          const allResources = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+          
+          const roadmapsArray = allResources.filter(r => r.modules !== undefined || r.type === 'roadmap' || r.resourceType === 'roadmap');
+          const pyqsArray = allResources.filter(r => r.company !== undefined || r.type === 'pyq' || r.resourceType === 'pyq');
+          const notesArray = allResources.filter(r => 
+            r.modules === undefined && r.company === undefined && 
+            r.type !== 'roadmap' && r.type !== 'pyq' &&
+            r.resourceType !== 'roadmap' && r.resourceType !== 'pyq'
+          );
+          
+          setResources(notesArray);
+          setRoadmaps(roadmapsArray);
+          setPyqs(pyqsArray);
+        }
+      } else {
+        const res = await api.get("/resources/notes", getAuthHeaders());
+        setResources(res.data);
+      }
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     }

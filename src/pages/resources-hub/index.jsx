@@ -60,7 +60,13 @@ const ResourcesHub = () => {
       return false;
 
     for (const [key, values] of Object.entries(filters)) {
-      if (values?.length > 0 && !values.includes(resource?.[key])) return false;
+      if (values?.length > 0) {
+        if (Array.isArray(resource?.[key])) {
+          if (!resource[key].some(val => values.includes(String(val)))) return false;
+        } else {
+          if (!values.includes(String(resource?.[key]))) return false;
+        }
+      }
     }
 
     return true;
@@ -212,37 +218,55 @@ const ResourcesHub = () => {
 
             {/* ===== NOTES ===== */}
             {(activeSection === 'all' || activeSection === 'notes') && (
-              <div className="space-y-4">
+              <div className="space-y-8">
                 {activeSection === 'all' && (
-                  <h3 className="text-xl font-bold text-wisdom-charcoal">
-                    Study Notes
-                  </h3>
+                  <h3 className="text-2xl font-bold text-gray-900 border-b pb-2">Study Notes by Category</h3>
                 )}
-
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid'
-                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
-                    : 'grid-cols-1'
-                }`}>
-                  {sortedResources.map(resource => (
-                    <ResourceCard
-                      key={resource._id}
-                      resource={resource}
-                      viewMode={viewMode}
-                      canEdit={canEditResource(resource, 'notes')}
-                      onEditClick={() =>
-                        setEditingResource({ data: resource, type: 'notes' })
-                      }
-                      onDeleteClick={() =>
-                        deleteResource(resource._id, 'notes')
-                      }
-                    />
-                  ))}
-                </div>
+                
+                {sortedResources.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                    <Icon name="FolderOpen" size={48} className="text-gray-400 mb-4" />
+                    <h4 className="text-lg font-semibold text-gray-700">No resources found</h4>
+                    <p className="text-sm text-gray-500">Try adjusting your search or filters.</p>
+                  </div>
+                ) : (
+                  Object.entries(
+                    sortedResources.reduce((acc, resource) => {
+                      const category = resource.subject || 'Uncategorized';
+                      if (!acc[category]) acc[category] = [];
+                      acc[category].push(resource);
+                      return acc;
+                    }, {})
+                  ).map(([category, resourcesInCategory]) => (
+                    <div key={category} className="space-y-4">
+                      <h4 className="text-lg font-bold text-indigo-700 capitalize flex items-center gap-2">
+                        <Icon name="Folder" size={18} />
+                        {category.replace(/-/g, ' ')}
+                        <span className="text-xs font-normal text-gray-500 bg-indigo-100 px-2 py-0.5 rounded-full">
+                          {resourcesInCategory.length}
+                        </span>
+                      </h4>
+                      <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                        {resourcesInCategory.map(resource => (
+                          <ResourceCard
+                            key={resource._id}
+                            resource={resource}
+                            viewMode={viewMode}
+                            canEdit={!isGuest && canEditResource(resource, 'notes')}
+                            onEditClick={() => setEditingResource({ data: resource, type: 'notes' })}
+                            onDeleteClick={() => deleteResource(resource._id, 'notes')}
+                            isGuest={isGuest}                           
+                            onRestrictedAction={() => setShowAuthModal(true)} 
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 
-            {/* ===== ROADMAPS ===== */}
+            {/* ROADMAPS */}
             {(activeSection === 'all' || activeSection === 'roadmaps') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (
@@ -250,31 +274,28 @@ const ResourcesHub = () => {
                     Career Roadmaps
                   </h3>
                 )}
-
-                <div className={`grid gap-6 ${
-                  viewMode === 'grid'
-                    ? 'grid-cols-1 lg:grid-cols-2'
-                    : 'grid-cols-1'
-                }`}>
-                  {filteredRoadmaps.map(roadmap => (
-                    <CareerRoadmapCard
-                      key={roadmap._id}
-                      roadmap={roadmap}
-                      viewMode={viewMode}
-                      canEdit={canEditResource(roadmap, 'roadmaps')}
-                      onEditClick={() =>
-                        setEditingResource({ data: roadmap, type: 'roadmaps' })
-                      }
-                      onDeleteClick={() =>
-                        deleteResource(roadmap._id, 'roadmaps')
-                      }
-                    />
-                  ))}
-                </div>
+                {filteredRoadmaps.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                    <p className="text-sm text-gray-500">No roadmaps match your criteria.</p>
+                  </div>
+                ) : (
+                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                    {filteredRoadmaps.map(roadmap => (
+                      <CareerRoadmapCard
+                        key={roadmap._id}
+                        roadmap={roadmap}
+                        viewMode={viewMode}
+                        canEdit={canEditResource(roadmap, 'roadmaps')}
+                        onEditClick={() => setEditingResource({ data: roadmap, type: 'roadmaps' })}
+                        onDeleteClick={() => deleteResource(roadmap._id, 'roadmaps')}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ===== PYQS ===== */}
+            {/* PYQS */}
             {(activeSection === 'all' || activeSection === 'pyqs') && (
               <div className="space-y-4">
                 {activeSection === 'all' && (

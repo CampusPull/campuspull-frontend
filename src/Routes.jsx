@@ -50,6 +50,7 @@ import MyRequests from "pages/Mentorship/components/myRequest.jsx";
 import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
 import StartupPage from "pages/startup/startupPage.jsx";
+import StartupProfilePage from "pages/startup/StartupProfilePage.jsx";
 import Internships from "./pages/interships/Internships.jsx";
 import InternshipDetails from "./pages/interships/InternshipDetails.jsx";
 import { InternshipProvider } from "./context/internshipContext.jsx";
@@ -313,6 +314,17 @@ const Routes = () => {
         </ProtectedLayout>
       </StartupProvider>
     </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/startups/:id"
+  element={
+    <StartupProvider>
+      <ProtectedLayout>
+        <StartupProfilePage />
+      </ProtectedLayout>
+    </StartupProvider>
   }
 />
 

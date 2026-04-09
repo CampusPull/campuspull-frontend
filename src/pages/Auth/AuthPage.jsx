@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom"; // 👈 CHANGE 1: Import Link
+import { Link, useNavigate, useLocation } from "react-router-dom"; // 👈 CHANGE 1: Import Link and useLocation
 import { useAuth } from "../../context/AuthContext";
 import toast, { Toaster } from "react-hot-toast"; 
 import {
@@ -10,11 +10,17 @@ import {
 
 function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { user, login, signup } = useAuth();
   const [role, setRole] = useState("student");
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    setIsLogin(queryParams.get("signup") !== "true");
+  }, [location.search]);
 
   const [form, setForm] = useState({
     name: "", email: "", password: "", college: "ABESIT",

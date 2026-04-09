@@ -11,7 +11,10 @@ import { AuthContext } from "./AuthContext";
 export const InternshipContext = createContext();
 
 export const InternshipProvider = ({ children }) => {
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken, user } = useContext(AuthContext);
+
+  // FIX: single isGuest flag
+  const isGuest = !user;
 
   const [internships, setInternships] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,68 +27,65 @@ export const InternshipProvider = ({ children }) => {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  // 🔹 Fetch Internships (Public)
+  // Fetch Internships
   const fetchInternships = useCallback(
-  async (page = 1, filters = {}) => {
-    setLoading(true);
-    setError(null);
+    async (page = 1, filters = {}) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      // 1. CLEAN THE FILTERS
-      // We only want to send fields that actually have a value
-      const cleanFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, value]) => {
-          return value !== "" && value !== null && value !== undefined;
-        })
-      );
+      try {
+        const cleanFilters = Object.fromEntries(
+          Object.entries(filters).filter(([_, value]) => {
+            return value !== "" && value !== null && value !== undefined;
+          })
+        );
 
-      // 2. CONSTRUCT QUERY
-      const query = new URLSearchParams({
-        page,
-        ...cleanFilters,
-      }).toString();
+        const query = new URLSearchParams({ page, ...cleanFilters }).toString();
 
-      // 3. FETCH DATA
-      const res = await api.get(`/internships?${query}`);
+        // FIX: guests call /public/internships, logged-in call /internships
+        const endpoint = isGuest
+          ? `/public/internships?${query}`
+          : `/internships?${query}`;
 
-      setInternships(res.data.data);
-      setCurrentPage(res.data.currentPage);
-      setTotalPages(res.data.totalPages);
-      setTotalItems(res.data.totalItems);
+        const res = await api.get(endpoint);
 
-      return res.data;
-    } catch (err) {
-      console.error("Fetch Internships Error:", err);
-      setError(
-        err.response?.data?.message || "Failed to fetch internships"
-      );
-    } finally {
-      setLoading(false);
-    }
-  },
-  []
-);
+        setInternships(res.data.data);
+        setCurrentPage(res.data.currentPage);
+        setTotalPages(res.data.totalPages);
+        setTotalItems(res.data.totalItems);
 
-  // 🔹 Get Internship By ID
+        return res.data;
+      } catch (err) {
+        console.error("Fetch Internships Error:", err);
+        setError(err.response?.data?.message || "Failed to fetch internships");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isGuest]
+  );
+
+  // Get Internship By ID
   const getInternshipById = useCallback(async (id) => {
     try {
-      const res = await api.get(`/internships/${id}`);
+      // FIX: guests call /public/internships/:id
+      const endpoint = isGuest
+        ? `/public/internships/${id}`
+        : `/internships/${id}`;
+      const res = await api.get(endpoint);
       return res.data.data;
     } catch (err) {
       console.error("Get Internship Error:", err);
       throw err;
     }
-  }, []);
+  }, [isGuest]);
 
-  // 🔹 Create Internship (Admin)
+  // Create Internship (Admin only)
   const createInternship = useCallback(
     async (data) => {
       if (!accessToken) throw new Error("Not authenticated");
-
       try {
         await api.post("/internships", data, getAuthHeaders());
-
-        // Refresh first page to maintain correct pagination order
         await fetchInternships(1);
       } catch (err) {
         console.error("Create Internship Error:", err);
@@ -95,24 +95,15 @@ export const InternshipProvider = ({ children }) => {
     [accessToken, fetchInternships]
   );
 
-  // 🔹 Update Internship (Admin)
+  // Update Internship (Admin only)
   const updateInternship = useCallback(
     async (id, data) => {
       if (!accessToken) throw new Error("Not authenticated");
-
       try {
-        const res = await api.put(
-          `/internships/${id}`,
-          data,
-          getAuthHeaders()
-        );
-
+        const res = await api.put(`/internships/${id}`, data, getAuthHeaders());
         setInternships((prev) =>
-          prev.map((item) =>
-            item._id === id ? res.data.data : item
-          )
+          prev.map((item) => (item._id === id ? res.data.data : item))
         );
-
         return res.data.data;
       } catch (err) {
         console.error("Update Internship Error:", err);
@@ -122,18 +113,12 @@ export const InternshipProvider = ({ children }) => {
     [accessToken]
   );
 
-  // 🔹 Delete Internship (Admin)
+  // Delete Internship (Admin only)
   const deleteInternship = useCallback(
     async (id) => {
       if (!accessToken) throw new Error("Not authenticated");
-
       try {
-        await api.delete(
-          `/internships/${id}`,
-          getAuthHeaders()
-        );
-
-        // Refresh current page after deletion
+        await api.delete(`/internships/${id}`, getAuthHeaders());
         await fetchInternships(currentPage);
       } catch (err) {
         console.error("Delete Internship Error:", err);
@@ -151,6 +136,7 @@ export const InternshipProvider = ({ children }) => {
       totalItems,
       loading,
       error,
+      isGuest,          // FIX: expose for UI
       fetchInternships,
       getInternshipById,
       createInternship,
@@ -158,17 +144,9 @@ export const InternshipProvider = ({ children }) => {
       deleteInternship,
     }),
     [
-      internships,
-      currentPage,
-      totalPages,
-      totalItems,
-      loading,
-      error,
-      fetchInternships,
-      getInternshipById,
-      createInternship,
-      updateInternship,
-      deleteInternship,
+      internships, currentPage, totalPages, totalItems,
+      loading, error, isGuest, fetchInternships, getInternshipById,
+      createInternship, updateInternship, deleteInternship,
     ]
   );
 
