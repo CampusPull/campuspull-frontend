@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background Colors */
+    --color-background: #FAFBFC; /* gray-50 */
+    --color-foreground: #1E293B; /* slate-800 */
+    --color-card: #FFFFFF; /* white */
+    --color-card-foreground: #1E293B; /* slate-800 */
+    --color-popover: #FFFFFF; /* white */
+    --color-popover-foreground: #1E293B; /* slate-800 */
+    --color-muted: #F1F5F9; /* slate-100 */
+    --color-muted-foreground: #64748B; /* slate-500 */
+    
+    /* Border and Input */
+    --color-border: #E2E8F0; /* slate-200 */
+    --color-input: #FFFFFF; /* white */
+    --color-ring: #2563EB; /* blue-600 */
+    
+    /* Brand Colors */
+    --color-primary: #2563EB; /* blue-600 */
+    --color-primary-foreground: #FFFFFF; /* white */
+    --color-secondary: #F59E0B; /* amber-500 */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    --color-accent: #8B5CF6; /* violet-500 */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Status Colors */
+    --color-success: #10B981; /* emerald-500 */
+    --color-success-foreground: #FFFFFF; /* white */
+    --color-warning: #F59E0B; /* amber-500 */
+    --color-warning-foreground: #FFFFFF; /* white */
+    --color-error: #EF4444; /* red-500 */
+    --color-error-foreground: #FFFFFF; /* white */
+    --color-destructive: #EF4444; /* red-500 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Text Colors */
+    --color-text-primary: #1E293B; /* slate-800 */
+    --color-text-secondary: #64748B; /* slate-500 */
+    --color-surface: #F1F5F9; /* slate-100 */
+    
+    /* Brand Specific Colors */
+    --color-academic-blue: #2563EB; /* blue-600 */
+    --color-achievement-amber: #F59E0B; /* amber-500 */
+    --color-progress-emerald: #10B981; /* emerald-500 */
+    --color-credibility-indigo: #6366F1; /* indigo-500 */
+    --color-knowledge-white: #F8FAFC; /* slate-50 */
+    --color-wisdom-charcoal: #1E293B; /* slate-800 */
+    --color-insight-gray: #64748B; /* slate-500 */
+    --color-action-crimson: #DC2626; /* red-600 */
+  }
+
+  /* * {
+    @apply border-border;
+  } */
+  
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-inter font-semibold;
+  }
+  
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer components {
+  /* Floating Knowledge Cards */
+  .knowledge-card {
+    @apply transition-all duration-300 ease-out;
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  
+  .knowledge-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
+  }
+  
+  /* Success Gradient Overlays */
+  .success-overlay {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.8) 0%, rgba(245, 158, 11, 0.8) 100%);
+    backdrop-filter: blur(1px);
+  }
+  
+  /* Glassmorphism Knowledge Panels */
+  .glass-panel {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Alumni Halo Effects */
+  .alumni-halo {
+    background: conic-gradient(from 0deg, #2563EB, #F59E0B, #10B981, #2563EB);
+    animation: rotate 20s linear infinite;
+  }
+  
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Micro-Success Celebrations */
+  .success-celebration {
+    animation: celebrate 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  @keyframes celebrate {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  
+  /* Brand Shadows */
+  .shadow-brand-sm {
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+  }
+  
+  .shadow-brand-md {
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.1);
+  }
+  
+  .shadow-brand-lg {
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.1);
+  }
+  
+  .shadow-brand-xl {
+    box-shadow: 0 24px 48px rgba(37, 99, 235, 0.1);
+  }
+  .badge-red-dot {
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  position: absolute;
+  top: 5px; /* Adjust based on your navbar layout */
+  right: 5px;
+  font-weight: bold;
+}
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
