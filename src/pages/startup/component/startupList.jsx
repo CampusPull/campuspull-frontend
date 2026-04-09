@@ -10,13 +10,13 @@ const StartupList = ({ startups, isGuest, onRestrictedAction }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {startups.map((startup) => (
         <StartupCard
           key={startup._id}
           startup={startup}
-          isGuest={isGuest}                     // FIX: pass guest state
-          onRestrictedAction={onRestrictedAction} // FIX: pass modal trigger
+          isGuest={isGuest}
+          onRestrictedAction={onRestrictedAction}
         />
       ))}
     </div>

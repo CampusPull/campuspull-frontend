@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaPlus, FaRocket } from "react-icons/fa";
 import { useStartups } from "../../context/startupContext";
 import { useAuth } from "../../context/AuthContext";
 import StartupList from "./component/startupList";
@@ -22,39 +23,43 @@ const StartupPage = () => {
   const isAdmin = !isGuest && user?.role === "admin";
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">Student Startups</h1>
-          <p className="text-gray-600">
-            Startups of the students of our college. Explore and support their ventures!
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center gap-3">
+            <FaRocket className="text-indigo-600" /> Student Startups
+          </h1>
+          <p className="text-gray-600 mt-3 font-medium text-lg">
+            Discover and support the next big ventures built by our campus innovators.
           </p>
         </div>
 
         {isAdmin && (
           <button
             onClick={() => setOpen(true)}
-            className="px-4 py-2 bg-black text-white rounded"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-bold shadow-md hover:shadow-lg transition-all hover:scale-105"
           >
-            Add Startup
+            <FaPlus /> Add Startup
           </button>
         )}
       </div>
 
       {/* FIX: Guest banner */}
       {isGuest && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
-          <p className="text-blue-700 font-medium text-sm">
+        <div className="max-w-7xl mx-auto mb-8 p-5 bg-white/70 backdrop-blur-md border border-indigo-200 rounded-3xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 transition-all hover:shadow-md">
+          <p className="text-indigo-800 font-medium text-sm md:text-base">
             👋 You're browsing as a guest. Create an account to contact startups and follow their journey.
           </p>
           <button
             onClick={() => setShowAuthModal(true)}
-            className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
+            className="shrink-0 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow hover:bg-indigo-700 transition-colors"
           >
             Join Now
           </button>
         </div>
       )}
+
+      <div className="max-w-7xl mx-auto">
 
       {loading && <p>Loading startups...</p>}
       {error && <p className="text-red-500">{error}</p>}
@@ -66,6 +71,7 @@ const StartupPage = () => {
           onRestrictedAction={() => setShowAuthModal(true)} // FIX: pass modal trigger
         />
       )}
+      </div>
 
       {open && <AddStartupModal onClose={() => setOpen(false)} />}
 

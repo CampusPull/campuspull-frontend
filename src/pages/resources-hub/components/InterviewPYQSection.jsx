@@ -5,14 +5,15 @@ import Button from "../../../components/ui/Button";
 import { ResourceContext } from "../../../context/resourceContext";
 
 const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteClick }) => {
-  const { user } = useContext(ResourceContext);
+  const { user, setShowAuthModal } = useContext(ResourceContext);
   const [selectedCompany, setSelectedCompany] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [showAllCompanies, setShowAllCompanies] = useState(false);
   const VISIBLE_COMPANY_COUNT = 8;
 
-  // Check if current user is admin
-  const isAdmin = user?.role === "admin";
+  // Check user roles and permissions
+  const isGuest = !user;
+  const isAdmin = !isGuest && user?.role === "admin";
 
   // --- Helpers ---
   const difficultyLevels = [
@@ -165,7 +166,8 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
         }
       >
         {filteredPYQs?.map((pyq) => {
-          const isOwner = user?._id === pyq?.uploadedBy?._id;
+          const ownerId = pyq?.uploadedBy?._id || pyq?.uploadedBy;
+          const isOwner = !isGuest && user?._id === ownerId;
           const showActions = isOwner || isAdmin;
 
           // ==========================================
@@ -258,7 +260,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                           variant="default"
                           size="sm"
                           className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md border-none"
-                          onClick={() => window.open(pyq?.link, "_blank")}
+                          onClick={() => isGuest ? setShowAuthModal(true) : window.open(pyq?.link, "_blank")}
                         >
                           View PYQ
                         </Button>
@@ -382,7 +384,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                     variant="default"
                     size="sm"
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 border-none"
-                    onClick={() => window.open(pyq?.link, "_blank")}
+                    onClick={() => isGuest ? setShowAuthModal(true) : window.open(pyq?.link, "_blank")}
                   >
                     Access
                   </Button>

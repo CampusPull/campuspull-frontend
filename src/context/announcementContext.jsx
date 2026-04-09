@@ -13,7 +13,8 @@ import { AuthContext } from "./AuthContext"; // Adjust path if needed
 export const AnnouncementContext = createContext();
 
 export const AnnouncementProvider = ({ children }) => {
-  const { user, accessToken } = useContext(AuthContext); // Get user for potential role checks later
+  const { user, accessToken, loading: authLoading } = useContext(AuthContext);
+  const isGuest = !user;
 
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,26 +27,23 @@ export const AnnouncementProvider = ({ children }) => {
 
   // Fetch Announcements
   const fetchAnnouncements = useCallback(async () => {
-    if (!accessToken) {
-      setLoading(false); // Stop loading if not logged in
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/announcements', getAuthHeaders());
-      setAnnouncements(res.data || []);
+      const endpoint = isGuest ? "/public/announcements" : "/announcements";
+      const res = await api.get(endpoint, !isGuest ? getAuthHeaders() : {});
+      setAnnouncements(res.data.data || res.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch announcements.');
       console.error("Fetch Announcements Error:", err);
     } finally {
       setLoading(false);
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [isGuest, getAuthHeaders]);
 
   // Create Announcement
   const createAnnouncement = useCallback(async (formData) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) throw new Error("Not authenticated");
     setError(null);
    try {
       // --- FIX: Remove explicit headers for FormData ---
@@ -60,11 +58,11 @@ export const AnnouncementProvider = ({ children }) => {
       console.error("Create Announcement Error:", err);
       throw err; // Re-throw for the modal to handle
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [accessToken, isGuest, getAuthHeaders]);
 
   // --- Update Announcement ---
   const updateAnnouncement = useCallback(async (id, formData) => { // Expect FormData for potential file update
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) throw new Error("Not authenticated");
     setError(null);
     try {
       const res = await api.put(`/announcements/${id}`, formData, {
@@ -83,11 +81,11 @@ export const AnnouncementProvider = ({ children }) => {
       console.error("Update Announcement Error:", err);
       throw err;
     }
-  }, [accessToken]);
+  }, [accessToken, isGuest]);
 
   // --- Delete Announcement ---
   const deleteAnnouncement = useCallback(async (id) => {
-    if (!accessToken) throw new Error("Not authenticated");
+    if (isGuest) throw new Error("Not authenticated");
     setError(null);
     try {
       await api.delete(`/announcements/${id}`, getAuthHeaders());
@@ -99,11 +97,13 @@ export const AnnouncementProvider = ({ children }) => {
       console.error("Delete Announcement Error:", err);
       throw err;
     }
-  }, [accessToken, getAuthHeaders]);
+  }, [isGuest, getAuthHeaders]);
 
   useEffect(() => {
-    fetchAnnouncements();
-  }, [fetchAnnouncements]); // Dependency array includes the memoized fetch function
+    if (!authLoading) {
+      fetchAnnouncements();
+    }
+  }, [authLoading, fetchAnnouncements]); // Dependency array includes the memoized fetch function
 
   // Context Value
   const value = useMemo(
@@ -111,12 +111,13 @@ export const AnnouncementProvider = ({ children }) => {
       announcements,
       loading,
       error,
+      isGuest,
       fetchAnnouncements,
       createAnnouncement,
       updateAnnouncement,
       deleteAnnouncement,
     }),
-    [announcements, loading, error, fetchAnnouncements, createAnnouncement, updateAnnouncement,deleteAnnouncement]
+    [announcements, loading, error, isGuest, fetchAnnouncements, createAnnouncement, updateAnnouncement,deleteAnnouncement]
   );
 
   return (
