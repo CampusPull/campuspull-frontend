@@ -3,7 +3,7 @@
 This repository contains the frontend application for CampusPull.
 
 Built using React + Vite and connected to the CampusPull backend APIs.
-
+sync main with develop
 ---
 
 ## 🚀 Tech Stack
