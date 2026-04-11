@@ -102,13 +102,13 @@ const ResourcesHub = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="pt-16 flex">
-          <div className="w-80 bg-white border-r border-slate-200 shadow-brand-sm p-4">
+          <div className="hidden lg:block w-80 bg-white border-r border-slate-200 shadow-brand-sm p-4 flex-shrink-0">
             <div className="h-8 bg-slate-200 rounded animate-pulse mb-4"></div>
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 bg-slate-200 rounded animate-pulse mb-2"></div>
             ))}
           </div>
-          <div className="flex-1 p-6">
+          <div className="flex-1 min-w-0 p-4 lg:p-6">
             <LoadingSkeleton viewMode={viewMode} />
           </div>
         </div>
@@ -148,22 +148,22 @@ const ResourcesHub = () => {
 
           <div className="flex-1 min-w-0 p-4 lg:p-6 space-y-6">
             {/* Hero */}
-            <div className="bg-gradient-to-r from-academic-blue to-credibility-indigo rounded-2xl p-8 text-white">
-              <h1 className="font-poppins font-bold text-3xl lg:text-4xl mb-4">Resources Hub</h1>
-              <p className="text-lg text-white text-opacity-90 mb-6">
+            <div className="bg-gradient-to-r from-academic-blue to-credibility-indigo rounded-2xl p-5 sm:p-8 text-white">
+              <h1 className="font-poppins font-bold text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-4">Resources Hub</h1>
+              <p className="text-sm sm:text-lg text-white text-opacity-90 mb-0 sm:mb-6">
                 Discover comprehensive study materials, career roadmaps, and interview questions.
               </p>
             </div>
 
             {/* FIX: Guest banner */}
             {isGuest && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
+              <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <p className="text-blue-700 font-medium text-sm">
                   👋 You're browsing as a guest. Create an account to download resources and bookmark them.
                 </p>
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
+                  className="shrink-0 w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
                 >
                   Join Now
                 </button>

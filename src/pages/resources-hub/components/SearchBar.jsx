@@ -20,8 +20,8 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search notes, roadmaps, interview questions..."
-          className="w-full pl-14 pr-24 py-4 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm text-gray-700 placeholder-gray-400 text-lg focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-200 transition-all duration-300"
+          placeholder="Search notes, roadmaps, questions..."
+          className="w-full pl-12 sm:pl-14 pr-20 sm:pr-24 py-3 sm:py-4 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm text-gray-700 placeholder-gray-400 text-sm sm:text-lg focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-200 transition-all duration-300"
         />
 
         {/* Right Actions (Clear & Filter) */}

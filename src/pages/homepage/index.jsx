@@ -18,7 +18,8 @@ const Homepage = () => {
       <MobileSearchBar />
       
       {/* Main Content */}
-      <main className="pt-16 lg:pt-0">
+      {/* On mobile: pt accounts for header (64px) + search bar (~52px) = ~116px */}
+      <main className="pt-28 lg:pt-0">
         {/* Hero Section */}
         <HeroSection />
         
