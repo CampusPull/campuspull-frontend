@@ -155,6 +155,50 @@ export const ExploreProvider = ({ children }) => {
     [accessToken, isGuest]
   );
 
+ const acceptRequest = useCallback(async (requestId) => {
+  try {
+    await api.post(
+      "/connection/respond",
+      {
+        requestId,
+        action: "accept",
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    setIncomingRequests((prev) =>
+      prev.filter((req) => req._id !== requestId)
+    );
+
+  } catch (err) {
+    console.error("Accept failed", err);
+  }
+}, [accessToken]);
+
+const ignoreRequest = useCallback(async (requestId) => {
+  try {
+    await api.post(
+      "/connection/respond",
+      {
+        requestId,
+        action: "reject",
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    setIncomingRequests((prev) =>
+      prev.filter((req) => req._id !== requestId)
+    );
+
+  } catch (err) {
+    console.error("Reject failed", err);
+  }
+}, [accessToken]);
+
   // ---------- Search ----------
   const performSearch = useCallback(
     async (query) => {
@@ -230,6 +274,8 @@ export const ExploreProvider = ({ children }) => {
       isGuest,
       showAuthModal,
       setShowAuthModal,
+      acceptRequest,
+      ignoreRequest,
     }),
     [
       suggestions,
@@ -247,6 +293,8 @@ export const ExploreProvider = ({ children }) => {
       activeRole,
       isGuest,
       showAuthModal,
+      acceptRequest,
+      ignoreRequest,
     ]
   );
 
