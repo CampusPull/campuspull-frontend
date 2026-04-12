@@ -276,6 +276,8 @@ const ignoreRequest = useCallback(async (requestId) => {
       setShowAuthModal,
       acceptRequest,
       ignoreRequest,
+      acceptRequest,
+      ignoreRequest,
     }),
     [
       suggestions,
@@ -293,6 +295,8 @@ const ignoreRequest = useCallback(async (requestId) => {
       activeRole,
       isGuest,
       showAuthModal,
+      acceptRequest,
+      ignoreRequest,
       acceptRequest,
       ignoreRequest,
     ]
