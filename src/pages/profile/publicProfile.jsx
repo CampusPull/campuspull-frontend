@@ -163,7 +163,7 @@ const PublicProfile = () => {
               {/* Profile Image */}
               {profile.profileImage ? (
                 <img
-                  src={getImageUrl(profile.profileImage)}
+                  src={profile.profileImage}
                   alt={profile.name}
                   className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover mx-auto bg-white"
                   onError={(e) => (e.target.style.display = "none")}
