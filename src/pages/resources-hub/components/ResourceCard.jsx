@@ -74,29 +74,29 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
   // LIST VIEW
   if (viewMode === 'list') {
     return (
-      <div className="knowledge-card bg-white border border-slate-200 rounded-xl p-6 hover:shadow-brand-lg transition-all duration-300">
-        <div className="flex items-start space-x-4">
-          <div className="w-20 h-20 bg-surface rounded-lg overflow-hidden">
+      <div className="knowledge-card bg-white border border-slate-200 rounded-xl p-4 sm:p-6 hover:shadow-brand-lg transition-all duration-300">
+        <div className="flex items-start gap-3 sm:space-x-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface rounded-lg overflow-hidden flex-shrink-0">
             <Image src={resource?.thumbnail} alt={resource?.title} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between mb-2">
-              <div>
-                <h3 className="font-semibold text-lg line-clamp-1">{resource?.title}</h3>
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-semibold text-base sm:text-lg line-clamp-1">{resource?.title}</h3>
                 <p className="text-sm text-insight-gray line-clamp-2">{resource?.description}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleBookmark}>
+              <Button variant="ghost" size="icon" onClick={handleBookmark} className="flex-shrink-0">
                 <Icon name={isBookmarked && !isGuest ? 'Bookmark' : 'BookmarkPlus'} size={18} />
               </Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-insight-gray mb-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-insight-gray mb-3">
               <span className={`px-2 py-1 rounded-full border ${getDifficultyColor(resource?.difficulty)}`}>
                 {resource?.difficulty}
               </span>
               <span>{resource?.downloads} downloads</span>
               <span>{resource?.views} views</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-2">
                 <Image src={contributorAvatar} alt={contributorName} className="w-6 h-6 rounded-full" />
                 <span className="text-sm">by {contributorName}</span>
@@ -153,7 +153,7 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
           {resource?.description}
         </p>
         
-        <div className="flex justify-between items-center mb-4 text-xs font-medium text-gray-400">
+        <div className="flex flex-wrap justify-between items-center mb-4 text-xs font-medium text-gray-400 gap-2">
           <div className="flex items-center gap-1.5">
             <Icon name="DownloadCloud" size={14} />
             <span>{resource?.downloads || 0} downloads</span>
