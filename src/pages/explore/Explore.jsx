@@ -46,7 +46,7 @@ export default function Explore() {
   const displayedUsers = suggestions;
 
   return (
-    <div className="min-h-screen px-3 py-4 sm:px-6 md:px-10 md:py-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
 
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -54,20 +54,20 @@ export default function Explore() {
           <h1 className="text-3xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
             Explore Network
           </h1>
-          <p className="text-gray-600 mt-1 font-medium text-sm sm:text-base">
+          <p className="text-gray-600 mt-2 font-medium">
             Connect with students & mentors around you.
           </p>
         </div>
 
-        <div className="flex w-full sm:w-auto gap-2 sm:gap-4">
+        <div className="flex gap-4">
           {/* FIX: Requests and Connections buttons trigger modal for guests */}
           <button
             onClick={() => isGuest ? setShowAuthModal(true) : navigate("/requests")}
-            className="relative flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white/80 backdrop-blur-md hover:bg-white border border-white/40 text-indigo-700 rounded-2xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-105 text-sm sm:text-base"
+            className="relative px-6 py-3 bg-white/80 backdrop-blur-md hover:bg-white border border-white/40 text-indigo-700 rounded-2xl font-semibold shadow-sm flex items-center gap-2 transition-all hover:scale-105"
           >
-            <FaUserPlus className="text-base sm:text-lg" /> Requests
+            <FaUserPlus className="text-lg" /> Requests
             {!isGuest && incomingRequests?.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold h-6 w-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                 {incomingRequests.length}
               </span>
             )}
@@ -75,9 +75,9 @@ export default function Explore() {
 
           <button
             onClick={() => isGuest ? setShowAuthModal(true) : navigate("/connections")}
-            className="relative flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold shadow-md flex items-center justify-center gap-2 transition-all hover:shadow-lg hover:scale-105 text-sm sm:text-base"
+            className="relative px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold shadow-md flex items-center gap-2 transition-all hover:shadow-lg hover:scale-105"
           >
-            <FaUsers className="text-base sm:text-lg" /> Connections
+            <FaUsers className="text-lg" /> Connections
             {!isGuest && connectionCount > 0 && (
               <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-white/20">
                 {connectionCount}
@@ -88,8 +88,8 @@ export default function Explore() {
       </div>
 
       {/* --- SEARCH BAR --- */}
-      <div className="max-w-7xl mx-auto flex justify-center mb-6">
-        <div className="relative w-full group">
+      <div className="max-w-7xl mx-auto flex justify-center mb-10">
+        <div className="relative w-full max-w-2xl group">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <FaSearch className="text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
           </div>
@@ -98,13 +98,13 @@ export default function Explore() {
             placeholder="Search by name, role, or skills..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-5 py-3 sm:py-4 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm focus:ring-4 focus:ring-indigo-200 focus:outline-none focus:bg-white transition-all text-gray-700 placeholder-gray-500 text-base sm:text-lg"
+            className="w-full pl-11 pr-5 py-4 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm focus:ring-4 focus:ring-indigo-200 focus:outline-none focus:bg-white transition-all text-gray-700 placeholder-gray-500 text-lg"
           />
         </div>
       </div>
 
       {/* --- FILTER BAR --- */}
-      <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-2 mb-6">
+      <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-3 mb-10">
         {roles.map((role) => (
           <button
             key={role}
@@ -129,13 +129,13 @@ export default function Explore() {
 
         {/* FIX: Guest banner to nudge signup */}
         {isGuest && (
-          <div className="mb-6 p-3 sm:p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between gap-4">
             <p className="text-indigo-700 font-medium text-sm">
               👋 You're browsing as a guest. Create an account to connect with people.
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="shrink-0 w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition"
+              className="shrink-0 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition"
             >
               Join Now
             </button>
@@ -156,7 +156,7 @@ export default function Explore() {
 
         {!loading && !error && (
           <>
-            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {displayedUsers.length > 0 ? (
                 displayedUsers.map((user) => (
                   <UserCard
