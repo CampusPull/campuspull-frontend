@@ -8,25 +8,49 @@ export const MentorRequestProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const sendRequest = async ({ mentorId, goal, message }) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setSuccess(false);
+const sendRequest = async ({ mentorId, goal, message }) => {
+  try {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-      await api.post("/mentorship/request", {
-        mentorId,
-        goal,
-        message,
-      });
-
-      setSuccess(true);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send request");
-    } finally {
-      setLoading(false);
+    // 🔴 Validation FIRST (before API)
+    if (!mentorId) {
+      return setError("Mentor not selected");
     }
-  };
+
+    if (!goal || goal.trim().length === 0) {
+      return setError("Please enter your goal");
+    }
+
+    if (goal.length > 100) {
+      return setError("Goal cannot exceed 100 characters");
+    }
+
+    if (message && message.length > 500) {
+      return setError("Message cannot exceed 500 characters");
+    }
+
+    // ✅ API call
+    await api.post("/mentorship/request", {
+      mentorId,
+      goal: goal.trim(),
+      message: message?.trim(),
+    });
+
+    setSuccess(true);
+  } catch (err) {
+    console.log("ERROR RESPONSE:", err.response);
+
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to send request"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <MentorRequestContext.Provider
