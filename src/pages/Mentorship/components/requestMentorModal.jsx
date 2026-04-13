@@ -7,6 +7,9 @@ const RequestMentorModal = ({ mentor, onClose }) => {
   const [goal, setGoal] = useState("");
   const [message, setMessage] = useState("");
 
+  const GOAL_LIMIT = 100;
+  const MESSAGE_LIMIT = 500;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!goal.trim()) return;
@@ -32,14 +35,10 @@ const RequestMentorModal = ({ mentor, onClose }) => {
       >
         {/* Header */}
         <div className="mb-4">
-          <h2 className="text-xl font-semibold">
-            Request Mentorship
-          </h2>
+          <h2 className="text-xl font-semibold">Request Mentorship</h2>
           <p className="text-sm text-gray-500 mt-1">
             You’re reaching out to{" "}
-            <span className="font-medium">
-              {mentor.userId.name}
-            </span>
+            <span className="font-medium">{mentor.userId.name}</span>
           </p>
         </div>
 
@@ -48,6 +47,7 @@ const RequestMentorModal = ({ mentor, onClose }) => {
           <span className="text-sm font-medium">
             What do you want help with? *
           </span>
+
           <input
             className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
             placeholder="e.g. DevOps roadmap, resume review, career guidance"
@@ -55,6 +55,21 @@ const RequestMentorModal = ({ mentor, onClose }) => {
             onChange={(e) => setGoal(e.target.value)}
             required
           />
+
+          {/* Counter */}
+          <div className="text-xs text-right mt-1">
+            <span
+              className={
+                goal.length > GOAL_LIMIT
+                  ? "text-red-500"
+                  : goal.length > GOAL_LIMIT * 0.8
+                    ? "text-yellow-500"
+                    : "text-gray-400"
+              }
+            >
+              {goal.length}/{GOAL_LIMIT}
+            </span>
+          </div>
         </label>
 
         {/* Message */}
@@ -62,6 +77,7 @@ const RequestMentorModal = ({ mentor, onClose }) => {
           <span className="text-sm font-medium">
             Additional message (optional)
           </span>
+
           <textarea
             className="mt-1 w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
             placeholder="Brief context about your background or expectations"
@@ -69,6 +85,21 @@ const RequestMentorModal = ({ mentor, onClose }) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
+
+          {/* Counter */}
+          <div className="text-xs text-right mt-1">
+            <span
+              className={
+                message.length > MESSAGE_LIMIT
+                  ? "text-red-500"
+                  : message.length > MESSAGE_LIMIT * 0.8
+                    ? "text-yellow-500"
+                    : "text-gray-400"
+              }
+            >
+              {message.length}/{MESSAGE_LIMIT}
+            </span>
+          </div>
         </label>
 
         <ErrorBanner message={error} />
@@ -85,7 +116,11 @@ const RequestMentorModal = ({ mentor, onClose }) => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              goal.length > GOAL_LIMIT ||
+              message.length > MESSAGE_LIMIT
+            }
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Sending..." : "Send Request"}
