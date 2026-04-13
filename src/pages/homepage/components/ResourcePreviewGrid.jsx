@@ -116,17 +116,17 @@ const ResourcePreviewGrid = () => {
     <section className="py-16 bg-gradient-to-b from-white to-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-poppins font-bold text-wisdom-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-poppins font-bold text-wisdom-charcoal mb-3 sm:mb-4">
             Trending Resources
           </h2>
-          <p className="text-xl text-insight-gray font-inter max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-insight-gray font-inter max-w-2xl mx-auto">
             Discover the most popular study materials, interview questions, and career roadmaps shared by our community
           </p>
         </div>
 
         {/* Resource Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {trendingResources?.map((resource) => (
             <div
               key={resource.id}

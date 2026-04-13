@@ -94,13 +94,13 @@ const MobileSearchBar = () => {
   return (
     <>
       {/* Mobile Search Bar - Only visible on mobile */}
-      <div className="lg:hidden fixed top-20 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-brand-sm">
-        <div className="px-4 py-3">
+      <div className="lg:hidden fixed top-16 left-0 right-0 z-40 bg-white border-b border-slate-200 shadow-brand-sm">
+        <div className="px-3 py-2.5">
           <div className="relative">
-            <form onSubmit={handleSearchSubmit} className="flex items-center space-x-3">
+            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icon name="Search" size={20} color="var(--color-insight-gray)" />
+                  <Icon name="Search" size={18} color="var(--color-insight-gray)" />
                 </div>
                 <input
                   ref={searchInputRef}
@@ -108,8 +108,8 @@ const MobileSearchBar = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e?.target?.value)}
                   onFocus={() => setIsSearchActive(true)}
-                  placeholder="Search resources, mentors, topics..."
-                  className="w-full pl-10 pr-4 py-3 bg-surface border border-slate-200 rounded-lg text-wisdom-charcoal placeholder-insight-gray font-inter focus:outline-none focus:ring-2 focus:ring-academic-blue focus:border-transparent transition-all duration-300"
+                  placeholder="Search resources, mentors..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-surface border border-slate-200 rounded-lg text-wisdom-charcoal placeholder-insight-gray font-inter focus:outline-none focus:ring-2 focus:ring-academic-blue focus:border-transparent transition-all duration-300 text-sm"
                 />
                 {searchQuery && (
                   <button
@@ -117,7 +117,7 @@ const MobileSearchBar = () => {
                     onClick={() => setSearchQuery('')}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
-                    <Icon name="X" size={18} color="var(--color-insight-gray)" />
+                    <Icon name="X" size={16} color="var(--color-insight-gray)" />
                   </button>
                 )}
               </div>
@@ -125,9 +125,9 @@ const MobileSearchBar = () => {
               {searchQuery && (
                 <button
                   type="submit"
-                  className="px-4 py-3 bg-academic-blue hover:bg-blue-700 text-white rounded-lg transition-all duration-300 shadow-brand-sm"
+                  className="px-3 py-2.5 bg-academic-blue hover:bg-blue-700 text-white rounded-lg transition-all duration-300 shadow-brand-sm flex-shrink-0"
                 >
-                  <Icon name="Search" size={18} />
+                  <Icon name="Search" size={16} />
                 </button>
               )}
             </form>
