@@ -20,17 +20,18 @@ import {
   FaUniversity,
   FaLock,
   FaBuilding,
-  FaCode, // ✅ Added FaCode for LeetCode
+  FaCode, // Added FaCode for LeetCode
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileContext } from "../../context/profileContext";
+import toast, { Toaster } from "react-hot-toast";
 
 // ✅ Card Component
 const Card = ({ children, className = "" }) => (
   <motion.div
-    whileHover={{ y: -3 }}
+    whileHover={{ y: -2 }}
     transition={{ type: "spring", stiffness: 200, damping: 15 }}
-    className={`bg-white/70 backdrop-blur-xl rounded-2xl shadow-md p-6 border border-white/30 ${className}`}
+    className={`bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-6 ${className}`}
   >
     {children}
   </motion.div>
@@ -137,7 +138,7 @@ export default function Profile() {
     linkedin: "",
     github: "",
     portfolio: "",
-    leetcode: "", // ✅ Added LeetCode
+    leetcode: "", //Added LeetCode
     college: "",
     degree: "",
     course: "",
@@ -174,7 +175,7 @@ export default function Profile() {
   });
   const [newCert, setNewCert] = useState({ name: "", provider: "", link: "" });
 
-  // ✅ SYNC PROFILE DATA TO STATE
+  //  SYNC PROFILE DATA TO STATE
   useEffect(() => {
     if (profile) {
       setBio(profile.bio || "");
@@ -186,7 +187,7 @@ export default function Profile() {
         linkedin: profile.linkedin || "",
         github: profile.github || "",
         portfolio: profile.portfolio || "",
-        leetcode: profile.leetcode || "", // ✅ Sync LeetCode
+        leetcode: profile.leetcode || "", //Sync LeetCode
         college: profile.college || "",
         degree: profile.degree || "",
         course: profile.course || "",
@@ -205,11 +206,18 @@ export default function Profile() {
   const isTeacher = profile?.role === "teacher";
 
   if (loading)
-    return <p className="p-6 text-center text-gray-600">Loading profile...</p>;
-  if (error) return <p className="p-6 text-red-500">{error}</p>;
-  if (!profile) return <p className="p-6">No profile data</p>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 px-4 md:px-10 py-12 flex justify-center items-center">
+         <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+            <p className="text-indigo-800 font-semibold animate-pulse tracking-wide">Loading your academic profile...</p>
+         </div>
+      </div>
+    );
+  if (error) return <p className="p-6 text-red-500 font-bold bg-red-50 m-4 rounded-xl">{error}</p>;
+  if (!profile) return <p className="p-6 text-gray-500">No profile data available.</p>;
 
-  // --- HANDLERS ---
+  //HANDLERS
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -265,9 +273,10 @@ export default function Profile() {
     if (!editingSection || !editingItemId) return;
     try {
       await editArrayItem(editingSection.key, editingItemId, editingItemData);
+      toast.success("Updated successfully");
       setIsModalOpen(false);
     } catch (err) {
-      alert("Failed to update item");
+      toast.error("Failed to update item");
     }
   };
 
@@ -279,9 +288,10 @@ export default function Profile() {
   const saveInfo = async () => {
     try {
       await updateProfile(infoForm);
+      toast.success("Profile updated!");
       setIsEditingInfo(false);
     } catch (err) {
-      alert("Failed to update info");
+      toast.error("Failed to update info");
     }
   };
 
@@ -317,26 +327,26 @@ ${
     setPassLoading(true);
     try {
       await sendPasswordOTP();
-      alert("OTP sent to your email!");
+      toast.success("OTP sent to your email!");
       setPassStep(2);
     } catch (err) {
-      alert(err.response?.data?.message || "Error sending OTP");
+      toast.error(err.response?.data?.message || "Error sending OTP");
     } finally {
       setPassLoading(false);
     }
   };
 
   const handleUpdatePassword = async () => {
-    if (!passOtp || !newPassword) return alert("Please fill all fields");
+    if (!passOtp || !newPassword) return toast.error("Please fill all fields");
     setPassLoading(true);
     try {
       await verifyPasswordOTP(passOtp, newPassword);
-      alert("Password updated successfully!");
+      toast.success("Password updated successfully!");
       setPassStep(1);
       setPassOtp("");
       setNewPassword("");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update password");
+      toast.error(err.response?.data?.message || "Failed to update password");
     } finally {
       setPassLoading(false);
     }
@@ -405,10 +415,14 @@ ${
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 px-4 md:px-10 py-12">
+      <Toaster position="top-center" />
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* ================= SIDEBAR ================= */}
-        <Card className="h-fit">
-          <div className="flex flex-col items-center text-center relative">
+        <Card className="h-fit !p-0 overflow-hidden">
+          {/* Cover Photo Gradient Bar */}
+          <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-500 w-full relative" />
+          
+          <div className="flex flex-col items-center text-center relative px-6 pb-6 -mt-16">
             <div className="relative group">
               <motion.img
                 whileHover={{ scale: 1.05 }}
@@ -526,74 +540,76 @@ ${
               </button>
             </div>
           </div>
-          <br />
-          <br />
           {/* ================= SECURITY CARD ================= */}
-          <Card>
-            <h3 className="text-lg font-semibold text-indigo-700 flex items-center gap-2 mb-4">
-              <FaLock /> Security & Password
-            </h3>
+          <div className="mt-6">
+            <Card className="border-t-4 border-t-red-400 mt-6 pt-6 px-6 pb-6">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
+                <FaLock className="text-red-500" /> Security
+              </h3>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <p className="text-sm text-gray-600 mb-4">
-                To change your password, we will send a verification OTP to your
-                registered email address.
-              </p>
-
-              {passStep === 1 ? (
-                <button
-                  onClick={handleSendOTP}
-                  disabled={passLoading}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm disabled:bg-gray-400"
-                >
-                  {passLoading ? "Sending OTP..." : "Change Password"}
-                </button>
-              ) : (
-                <div className="space-y-3 max-w-sm">
-                  <div className="animate-fade-in-up">
-                    <label className="text-xs font-bold text-gray-500 uppercase">
-                      Enter OTP
-                    </label>
-                    <input
-                      type="text"
-                      value={passOtp}
-                      onChange={(e) => setPassOtp(e.target.value)}
-                      placeholder="6-digit OTP"
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="New secure password"
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  <div className="flex gap-2 mt-2">
+              <div className="bg-white/50 p-5 rounded-xl border border-gray-100">
+                {passStep === 1 ? (
+                  <>
+                    <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                      Update your account password. A secure OTP will be sent to your registered email for verification.
+                    </p>
                     <button
-                      onClick={() => setPassStep(1)}
-                      className="px-3 py-2 text-gray-600 hover:bg-gray-200 rounded-lg text-sm"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleUpdatePassword}
+                      onClick={handleSendOTP}
                       disabled={passLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm disabled:bg-gray-400"
+                      className="w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-lg border border-red-200 hover:bg-red-100 transition disabled:opacity-50 text-sm"
                     >
-                      {passLoading ? "Verifying..." : "Update Password"}
+                      {passLoading ? "Sending OTP..." : "Change Password"}
                     </button>
+                  </>
+                ) : (
+                  <div className="space-y-4 animate-fade-in-up">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                        Verification Code
+                      </label>
+                      <input
+                        type="text"
+                        maxLength="6"
+                        value={passOtp}
+                        onChange={(e) => setPassOtp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="• • • • • •"
+                        className="w-full p-3 text-center tracking-[0.5em] font-mono text-lg font-bold border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-300 outline-none bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="w-full p-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-300 outline-none bg-white text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => { setPassStep(1); setPassOtp(""); setNewPassword(""); }}
+                        className="flex-1 py-2.5 text-gray-500 font-semibold hover:bg-gray-100 rounded-xl text-sm transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdatePassword}
+                        disabled={passLoading}
+                        className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50 text-sm"
+                      >
+                        {passLoading ? "Verifying..." : "Update"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </Card>
+                )}
+              </div>
+            </Card>
+          </div>
         </Card>
+
 
         {/* ================= MAIN CONTENT ================= */}
         <div className="md:col-span-2 space-y-6">

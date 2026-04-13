@@ -102,13 +102,13 @@ const ResourcesHub = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="pt-16 flex">
-          <div className="w-80 bg-white border-r border-slate-200 shadow-brand-sm p-4">
+          <div className="hidden lg:block w-80 bg-white border-r border-slate-200 shadow-brand-sm p-4 flex-shrink-0">
             <div className="h-8 bg-slate-200 rounded animate-pulse mb-4"></div>
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 bg-slate-200 rounded animate-pulse mb-2"></div>
             ))}
           </div>
-          <div className="flex-1 p-6">
+          <div className="flex-1 min-w-0 p-4 lg:p-6">
             <LoadingSkeleton viewMode={viewMode} />
           </div>
         </div>

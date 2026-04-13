@@ -96,18 +96,18 @@ const CommunityFeed = () => {
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-poppins font-bold text-wisdom-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-poppins font-bold text-wisdom-charcoal mb-3 sm:mb-4">
             Live Community Activity
           </h2>
-          <p className="text-xl text-insight-gray font-inter max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-insight-gray font-inter max-w-2xl mx-auto">
             Stay connected with real-time discussions, fresh resources, and upcoming events from our vibrant community
           </p>
         </div>
 
         {/* Activity Tabs */}
-        <div className="flex flex-wrap justify-center mb-8">
-          <div className="flex bg-surface rounded-lg p-1">
+        <div className="flex justify-center mb-8 overflow-x-auto">
+          <div className="flex bg-surface rounded-lg p-1 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
