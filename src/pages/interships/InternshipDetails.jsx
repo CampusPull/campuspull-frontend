@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getInternshipById } from "../../services/internshipService";
-import { useInternships } from "../../context/InternshipContext";
+import { useInternships } from "../../context/internshipContext";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
