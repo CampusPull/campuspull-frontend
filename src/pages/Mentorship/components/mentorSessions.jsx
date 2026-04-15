@@ -30,17 +30,22 @@ const SessionDetails = () => {
     return <p className="text-sm text-slate-500">Loading sessions…</p>;
   }
 
-  const activeSessions = sessions.filter(
-    (s) => s.status === "ACTIVE"
+  // ✅ Correct status-based grouping
+  const pendingSessions = sessions.filter(
+    (s) => s.status === "PENDING"
   );
 
-  const pastSessions = sessions.filter(
+  const scheduledSessions = sessions.filter(
+    (s) => s.status === "SCHEDULED"
+  );
+
+  const completedSessions = sessions.filter(
     (s) => s.status === "COMPLETED"
   );
 
-  const visiblePastSessions = showAllPast
-    ? pastSessions
-    : pastSessions.slice(0, 5);
+  const visibleCompletedSessions = showAllPast
+    ? completedSessions
+    : completedSessions.slice(0, 5);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -50,19 +55,19 @@ const SessionDetails = () => {
 
       <ErrorBanner message={error} />
 
-      {/* Active */}
+      {/* 🟡 Awaiting Scheduling */}
       <section>
         <h2 className="mb-3 text-sm font-semibold text-slate-700">
-          Active Sessions
+          Awaiting Scheduling
         </h2>
 
-        {activeSessions.length === 0 ? (
+        {pendingSessions.length === 0 ? (
           <p className="text-sm text-slate-500">
-            No active sessions.
+            No pending sessions.
           </p>
         ) : (
           <div className="space-y-3">
-            {activeSessions.map((session) => (
+            {pendingSessions.map((session) => (
               <SessionCard
                 key={session._id}
                 session={session}
@@ -74,20 +79,44 @@ const SessionDetails = () => {
         )}
       </section>
 
-      {/* Past */}
+      {/* 🟢 Scheduled Sessions */}
       <section>
         <h2 className="mb-3 text-sm font-semibold text-slate-700">
-          Past Sessions
+          Scheduled Sessions
         </h2>
 
-        {pastSessions.length === 0 ? (
+        {scheduledSessions.length === 0 ? (
           <p className="text-sm text-slate-500">
-            No past sessions.
+            No scheduled sessions.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {scheduledSessions.map((session) => (
+              <SessionCard
+                key={session._id}
+                session={session}
+                user={user}
+                onUpdated={fetchSessions}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ✅ Completed Sessions */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-slate-700">
+          Completed Sessions
+        </h2>
+
+        {completedSessions.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No completed sessions.
           </p>
         ) : (
           <>
             <div className="space-y-3">
-              {visiblePastSessions.map((session) => (
+              {visibleCompletedSessions.map((session) => (
                 <SessionCard
                   key={session._id}
                   session={session}
@@ -96,14 +125,14 @@ const SessionDetails = () => {
               ))}
             </div>
 
-            {pastSessions.length > 5 && (
+            {completedSessions.length > 5 && (
               <button
                 onClick={() => setShowAllPast((v) => !v)}
                 className="mt-3 text-xs font-medium text-slate-600 underline"
               >
                 {showAllPast
                   ? "Show less"
-                  : "View all past sessions"}
+                  : "View all completed sessions"}
               </button>
             )}
           </>

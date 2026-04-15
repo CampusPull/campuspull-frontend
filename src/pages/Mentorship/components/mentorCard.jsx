@@ -1,9 +1,32 @@
-// FIX: accept isGuest and onRestrictedAction
-const MentorCard = ({ mentor, onRequest, isGuest, onRestrictedAction }) => {
+
+const MentorCard = ({
+  mentor,
+  onRequest,
+  isGuest,
+  onRestrictedAction,
+  myRequests,
+}) => {
   const user = mentor.userId;
 
+  const request = myRequests?.find((r) => r.mentorId === mentor.userId._id);
+
+  // ✅ MOVE LOGIC HERE (outside JSX)
+  let buttonText = "Request Mentorship";
+  let disabled = false;
+
+  if (request) {
+    if (request.status === "PENDING") {
+      buttonText = "Pending";
+      disabled = true;
+    } else if (request.status === "ACCEPTED") {
+      buttonText = "Accepted";
+      disabled = true;
+    } else if (request.status === "REJECTED") {
+      buttonText = "Request Again";
+    }
+  }
+
   const handleRequest = () => {
-    // FIX: guest clicks Request Mentorship → open modal
     if (isGuest) {
       onRestrictedAction?.();
       return;
@@ -13,14 +36,13 @@ const MentorCard = ({ mentor, onRequest, isGuest, onRestrictedAction }) => {
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+       {/* Top gradient accent */}
+       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
 
-      {/* Top gradient accent */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
-
-      {/* Avatar section */}
-      <div className="flex flex-col items-center pt-6 px-5">
-        <div className="relative">
-          <img
+       {/* Avatar section */}
+       <div className="flex flex-col items-center pt-6 px-5">
+         <div className="relative">
+           <img
             src={user.profileImage || "/avatar.png"}
             alt={user.name}
             className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow-md"
@@ -66,15 +88,21 @@ const MentorCard = ({ mentor, onRequest, isGuest, onRestrictedAction }) => {
       {/* Footer */}
       <div className="mt-6 px-5 pb-5 flex flex-col gap-3">
         <div className="text-center text-xs text-slate-500">
-          {mentor.studentsMentored ?? 0} students mentored
+          {mentor.sessionsCompleted ?? 0} students mentored
         </div>
 
+        {/* ✅ BUTTON ONLY HERE */}
         <button
           onClick={handleRequest}
-          className="w-full rounded-xl bg-slate-900 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-slate-800"
+          disabled={disabled}
+          className={`w-full rounded-xl py-2 text-sm font-semibold transition
+            ${
+              disabled
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-slate-900 text-white hover:bg-slate-800"
+            }`}
         >
-          {/* FIX: same button text for guests — click triggers modal */}
-          Request Mentorship
+          {buttonText}
         </button>
       </div>
     </div>
