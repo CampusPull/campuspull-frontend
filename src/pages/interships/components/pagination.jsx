@@ -1,26 +1,40 @@
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;
 
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   return (
-    <div className="flex justify-center mt-8 gap-2">
+    <div className="flex justify-center items-center gap-1.5">
       <button
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
-        className="px-3 py-1 border rounded disabled:opacity-50"
+        className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
       >
-        Prev
+        <FiChevronLeft size={16} />
       </button>
 
-      <span className="px-4 py-1">
-        {currentPage} / {totalPages}
-      </span>
+      {pages.map((page) => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all duration-200 ${
+            page === currentPage
+              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-200 scale-105"
+              : "border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
 
       <button
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        className="px-3 py-1 border rounded disabled:opacity-50"
+        className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
       >
-        Next
+        <FiChevronRight size={16} />
       </button>
     </div>
   );

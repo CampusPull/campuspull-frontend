@@ -30,14 +30,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
    Supports guest/public API
 ================================ */
 export const getInternships = async (isGuest, page = 1) => {
-  const endpoint = isGuest
-    ? "/public/internships"   // guest: no token needed
-    : "/internships";         // logged-in: api instance sends token automatically
-
-  const response = await api.get(`${endpoint}?page=${page}`);
-  // FIX 2: no need to prepend API_BASE_URL — api instance already has baseURL set
-  // response.data = Sakshi's full body: { data: [], currentPage, totalPages, totalItems }
-
+  // Backend: GET /internships is a public route — no auth needed for listing
+  const response = await api.get(`/internships?page=${page}`);
   return response.data;
 };
 
@@ -46,11 +40,7 @@ export const getInternships = async (isGuest, page = 1) => {
    Supports guest/public API
 ================================ */
 export const getInternshipById = async (id, isGuest) => {
-  const endpoint = isGuest
-    ? `/public/internships/${id}`
-    : `/internships/${id}`;
-
-  const response = await api.get(endpoint);
-
+  // Backend: GET /internships/:id is a public route — no auth needed
+  const response = await api.get(`/internships/${id}`);
   return response.data;
 };
