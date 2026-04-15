@@ -13,8 +13,8 @@ export const InternshipContext = createContext();
 export const InternshipProvider = ({ children }) => {
   const { accessToken, user } = useContext(AuthContext);
 
-  // FIX: single isGuest flag
   const isGuest = !user;
+  const isAdmin = user?.role === "admin"; // ✅ IMPORTANT
 
   const [internships, setInternships] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,7 +27,7 @@ export const InternshipProvider = ({ children }) => {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  // Fetch Internships
+  // ✅ FETCH
   const fetchInternships = useCallback(
     async (page = 1, filters = {}) => {
       setLoading(true);
@@ -35,18 +35,14 @@ export const InternshipProvider = ({ children }) => {
 
       try {
         const cleanFilters = Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => {
-            return value !== "" && value !== null && value !== undefined;
-          })
+          Object.entries(filters).filter(
+            ([_, value]) => value !== "" && value !== null && value !== undefined
+          )
         );
 
         const query = new URLSearchParams({ page, ...cleanFilters }).toString();
 
-        // Backend: GET /internships is a public route (no auth required)
-        // Same endpoint for both guests and logged-in users
-        const endpoint = `/internships?${query}`;
-
-        const res = await api.get(endpoint);
+        const res = await api.get(`/internships?${query}`);
 
         setInternships(res.data.data);
         setCurrentPage(res.data.currentPage);
@@ -61,67 +57,81 @@ export const InternshipProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [isGuest]
+    []
   );
 
-  // Get Internship By ID
+  // ✅ GET BY ID
   const getInternshipById = useCallback(async (id) => {
-    try {
-      // Backend: GET /internships/:id is a public route (no auth required)
-      const res = await api.get(`/internships/${id}`);
-      return res.data.data;
-    } catch (err) {
-      console.error("Get Internship Error:", err);
-      throw err;
-    }
+    const res = await api.get(`/internships/${id}`);
+    return res.data.data;
   }, []);
 
-  // Create Internship (Admin only)
+  // ✅ CREATE (Admin UI only, backend enforces)
   const createInternship = useCallback(
     async (data) => {
       if (!accessToken) throw new Error("Not authenticated");
-      try {
-        await api.post("/internships", data, getAuthHeaders());
-        await fetchInternships(1);
-      } catch (err) {
-        console.error("Create Internship Error:", err);
-        throw err;
-      }
-    },
-    [accessToken, fetchInternships]
-  );
 
-  // Update Internship (Admin only)
-  const updateInternship = useCallback(
-    async (id, data) => {
-      if (!accessToken) throw new Error("Not authenticated");
-      try {
-        const res = await api.put(`/internships/${id}`, data, getAuthHeaders());
-        setInternships((prev) =>
-          prev.map((item) => (item._id === id ? res.data.data : item))
-        );
-        return res.data.data;
-      } catch (err) {
-        console.error("Update Internship Error:", err);
-        throw err;
-      }
+      const res = await api.post("/internships", data, getAuthHeaders());
+
+      // ✅ optimistic update instead of refetch
+      setInternships((prev) => [res.data.data, ...prev]);
+
+      return res.data.data;
     },
     [accessToken]
   );
 
-  // Delete Internship (Admin only)
+  // ✅ UPDATE DETAILS
+  const updateInternship = useCallback(
+    async (id, data) => {
+      if (!accessToken) throw new Error("Not authenticated");
+
+      const res = await api.put(`/internships/${id}`, data, getAuthHeaders());
+
+      setInternships((prev) =>
+        prev.map((item) => (item._id === id ? res.data.data : item))
+      );
+
+      return res.data.data;
+    },
+    [accessToken]
+  );
+
+  // ✅ TOGGLE STATUS (NEW - aligned with backend)
+  const toggleInternshipStatus = useCallback(
+    async (id, currentStatus) => {
+      if (!accessToken) throw new Error("Not authenticated");
+
+      const newStatus = currentStatus === "open" ? "closed" : "open";
+
+      const res = await api.patch(
+        `/internships/${id}/status`,
+        { status: newStatus },
+        getAuthHeaders()
+      );
+
+      setInternships((prev) =>
+        prev.map((item) =>
+          item._id === id ? { ...item, status: newStatus } : item
+        )
+      );
+
+      return res.data.data;
+    },
+    [accessToken]
+  );
+
+  // ✅ DELETE
   const deleteInternship = useCallback(
     async (id) => {
       if (!accessToken) throw new Error("Not authenticated");
-      try {
-        await api.delete(`/internships/${id}`, getAuthHeaders());
-        await fetchInternships(currentPage);
-      } catch (err) {
-        console.error("Delete Internship Error:", err);
-        throw err;
-      }
+
+      await api.delete(`/internships/${id}`, getAuthHeaders());
+
+      // ✅ local removal instead of refetch
+      setInternships((prev) => prev.filter((item) => item._id !== id));
     },
-    [accessToken, fetchInternships, currentPage]
+    [accessToken]
   );
 
   const contextValue = useMemo(
@@ -132,17 +142,30 @@ export const InternshipProvider = ({ children }) => {
       totalItems,
       loading,
       error,
-      isGuest,          // FIX: expose for UI
+      isGuest,
+      isAdmin, // ✅ expose this
       fetchInternships,
       getInternshipById,
       createInternship,
       updateInternship,
+      toggleInternshipStatus, // ✅ NEW
       deleteInternship,
     }),
     [
-      internships, currentPage, totalPages, totalItems,
-      loading, error, isGuest, fetchInternships, getInternshipById,
-      createInternship, updateInternship, deleteInternship,
+      internships,
+      currentPage,
+      totalPages,
+      totalItems,
+      loading,
+      error,
+      isGuest,
+      isAdmin,
+      fetchInternships,
+      getInternshipById,
+      createInternship,
+      updateInternship,
+      toggleInternshipStatus,
+      deleteInternship,
     ]
   );
 

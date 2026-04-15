@@ -2,7 +2,14 @@ import { Link } from "react-router-dom";
 import { FiMapPin, FiClock, FiCreditCard, FiArrowRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 
-const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
+const InternshipCard = ({
+  internship,
+  isGuest,
+  isAdmin,
+  onRestrictedAction,
+  onToggleStatus,
+  onEdit,
+}) => {
   const {
     _id,
     title,
@@ -13,6 +20,7 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
     durationUnit,
     location,
     type,
+    status, // ✅ IMPORTANT
   } = internship;
 
   const formattedDuration =
@@ -20,7 +28,6 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
       ? `${durationValue} ${durationUnit}${durationValue > 1 ? "s" : ""}`
       : internship.duration || "—";
 
-  // Subtle random-ish color per card (deterministic by title first char)
   const accentColors = [
     "from-indigo-500 to-blue-500",
     "from-violet-500 to-purple-500",
@@ -30,18 +37,30 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
   ];
   const accent = accentColors[(title?.charCodeAt(0) || 0) % accentColors.length];
 
+  const isClosed = status === "closed";
+
   return (
     <motion.div
       whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(79,70,229,0.10)" }}
       transition={{ duration: 0.2 }}
-      className="group bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col h-full"
+      className={`group bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col h-full ${
+        isClosed ? "opacity-70" : ""
+      }`}
       style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
     >
-      {/* Color accent stripe */}
-      <div className={`h-1.5 bg-gradient-to-r ${accent} flex-shrink-0`} />
+      {/* Accent */}
+      <div className={`h-1.5 bg-gradient-to-r ${accent}`} />
 
-      <div className="p-6 flex flex-col h-full">
-        {/* Header: Logo + Title */}
+      <div className="p-6 flex flex-col h-full relative">
+        
+        {/* 🔴 CLOSED BADGE */}
+        {isClosed && (
+          <span className="absolute top-4 right-4 text-[10px] font-bold px-2 py-1 bg-red-500 text-white rounded-lg">
+            CLOSED
+          </span>
+        )}
+
+        {/* Header */}
         <div className="flex items-start gap-4 mb-5">
           <div className="relative flex-shrink-0">
             <div className="w-14 h-14 rounded-2xl border-2 border-gray-100 bg-gray-50 shadow-sm overflow-hidden flex items-center justify-center">
@@ -50,7 +69,7 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
                   src={companyLogo}
                   alt={companyName}
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.target.style.display = "none"; }}
+                  onError={(e) => (e.target.style.display = "none")}
                 />
               ) : (
                 <span className="text-lg font-extrabold text-indigo-400">
@@ -58,7 +77,6 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
                 </span>
               )}
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -71,13 +89,13 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
           </div>
 
           {type && (
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg flex-shrink-0">
+            <span className="text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg">
               {type}
             </span>
           )}
         </div>
 
-        {/* Info Badges */}
+        {/* Info */}
         <div className="flex flex-wrap gap-2 mb-5">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
             <FiCreditCard size={12} />
@@ -93,21 +111,57 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
           </div>
         </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Action Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
-          <span className="text-xs text-gray-400 font-medium">
-            🟢 Actively hiring
-          </span>
-          <Link
-            to={`/internships/${_id}`}
-            className={`flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r ${accent} text-white text-xs font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 active:scale-95`}
+        {/* Footer */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
+          
+          {/* ✅ STATUS TEXT */}
+          <span
+            className={`text-xs font-medium ${
+              isClosed ? "text-red-500" : "text-emerald-500"
+            }`}
           >
-            View Details
-            <FiArrowRight size={12} />
-          </Link>
+            {isClosed ? "Closed" : "Actively hiring"}
+          </span>
+
+          <div className="flex items-center justify-between">
+            {/* View */}
+            <Link
+  to={`/internships/${_id}`}
+  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+    isClosed
+      ? "bg-gray-200 text-gray-700"
+      : `bg-gradient-to-r ${accent} text-white hover:shadow-lg`
+  }`}
+>
+  View Details
+  <FiArrowRight size={12} />
+</Link>
+
+            {/* 🔐 ADMIN CONTROLS */}
+            {isAdmin && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onEdit(internship)}
+                  className="text-xs px-3 py-1 bg-blue-500 text-white rounded-lg"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => onToggleStatus(_id, status)}
+                  className={`text-xs px-3 py-1 rounded-lg ${
+                    isClosed
+                      ? "bg-green-500 text-white"
+                      : "bg-red-500 text-white"
+                  }`}
+                >
+                  {isClosed ? "Open" : "Close"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
