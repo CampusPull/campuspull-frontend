@@ -42,10 +42,9 @@ export const InternshipProvider = ({ children }) => {
 
         const query = new URLSearchParams({ page, ...cleanFilters }).toString();
 
-        // FIX: guests call /public/internships, logged-in call /internships
-        const endpoint = isGuest
-          ? `/public/internships?${query}`
-          : `/internships?${query}`;
+        // Backend: GET /internships is a public route (no auth required)
+        // Same endpoint for both guests and logged-in users
+        const endpoint = `/internships?${query}`;
 
         const res = await api.get(endpoint);
 
@@ -68,17 +67,14 @@ export const InternshipProvider = ({ children }) => {
   // Get Internship By ID
   const getInternshipById = useCallback(async (id) => {
     try {
-      // FIX: guests call /public/internships/:id
-      const endpoint = isGuest
-        ? `/public/internships/${id}`
-        : `/internships/${id}`;
-      const res = await api.get(endpoint);
+      // Backend: GET /internships/:id is a public route (no auth required)
+      const res = await api.get(`/internships/${id}`);
       return res.data.data;
     } catch (err) {
       console.error("Get Internship Error:", err);
       throw err;
     }
-  }, [isGuest]);
+  }, []);
 
   // Create Internship (Admin only)
   const createInternship = useCallback(
