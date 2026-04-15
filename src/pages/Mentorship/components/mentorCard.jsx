@@ -88,7 +88,7 @@ const MentorCard = ({
       {/* Footer */}
       <div className="mt-6 px-5 pb-5 flex flex-col gap-3">
         <div className="text-center text-xs text-slate-500">
-          {mentor.sessionsCompleted ?? 0} students mentored
+          {mentor.sessionsCompleted ?? 0} Sessions Completed
         </div>
 
         {/* ✅ BUTTON ONLY HERE */}

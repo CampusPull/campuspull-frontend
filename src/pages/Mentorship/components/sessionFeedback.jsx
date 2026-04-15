@@ -15,31 +15,25 @@ const submit = async (e) => {
   setError(null);
 
   try {
-    const response = await api.post(`/mentorship/session/${sessionId}/feedback`, { 
+    await api.post(`/mentorship/session/${sessionId}/feedback`, { 
       rating, 
       comment 
     });
 
-    // If we reached here, the API call DEFINITELY worked.
-    console.log("API Success:", response.data);
-
-    // Use a try/catch here so a UI refresh bug doesn't show a "Server Error"
-    try {
-      onSuccess();
-      onClose();
-    } catch (refreshError) {
-      console.error("UI Refresh Error:", refreshError);
-      onClose(); // Still close the modal because the data IS saved!
-    }
+    onSuccess(); // 🔑 trigger refetch
+    onClose();
 
   } catch (err) {
-    // This block ONLY runs if the API returns 4xx or 5xx
     const status = err.response?.status;
+
     if (status === 409) {
-      onSuccess();
+      onSuccess(); // already submitted → still refresh UI
       onClose();
     } else {
-      setError(err.response?.data?.message || "Network error. Please check your connection.");
+      setError(
+        err.response?.data?.message ||
+        "Network error. Please check your connection."
+      );
     }
   } finally {
     setLoading(false);

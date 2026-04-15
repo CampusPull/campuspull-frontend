@@ -2,28 +2,27 @@ import { useEffect, useState } from "react";
 import api from "../../../utils/api";
 import ErrorBanner from "./errorBanner";
 
-const MentorRequests = () => {
+const MentorRequests = ({ onUpdated }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null); // requestId
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const fetchRequests = async () => {
+    try {
+      const res = await api.get("/mentorship/request/incoming");
+      setRequests(res.data.requests || []);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to load mentorship requests"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        // ✅ FIXED: endpoint consistency
-        const res = await api.get("/mentorship/request/incoming");
-        setRequests(res.data.requests || []);
-      } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            "Failed to load mentorship requests"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
   }, []);
 
@@ -31,19 +30,16 @@ const MentorRequests = () => {
     try {
       setActionLoading(requestId);
 
-      // ✅ FIXED: endpoint consistency
       await api.patch(`/mentorship/request/${requestId}`, {
         decision,
       });
 
-      // optimistic update
-      setRequests((prev) =>
-        prev.map((req) =>
-          req._id === requestId
-            ? { ...req, status: decision }
-            : req
-        )
-      );
+      // ✅ refresh THIS page
+      await fetchRequests();
+
+      // ✅ refresh sessions ALSO (important)
+      onUpdated && onUpdated();
+
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -64,7 +60,6 @@ const MentorRequests = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">
           Mentorship Requests
@@ -87,7 +82,6 @@ const MentorRequests = () => {
               key={req._id}
               className="border rounded-lg p-4 bg-white shadow-sm"
             >
-              {/* Name + Status */}
               <div className="flex items-center justify-between">
                 <p className="font-medium text-lg">
                   {req.menteeId?.name || "Student"}
@@ -106,20 +100,17 @@ const MentorRequests = () => {
                 </span>
               </div>
 
-              {/* Goal */}
               <p className="text-sm text-gray-600 mt-2">
                 <span className="font-medium">Goal:</span>{" "}
                 {req.goal}
               </p>
 
-              {/* Message */}
               {req.message && (
                 <p className="text-sm text-gray-700 mt-2">
                   {req.message}
                 </p>
               )}
 
-              {/* Actions */}
               {req.status === "PENDING" && (
                 <div className="flex gap-3 mt-4">
                   <button

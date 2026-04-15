@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import SessionCard from "../components/sessionCard";
 import ErrorBanner from "../components/errorBanner";
 
-const SessionDetails = () => {
+const SessionDetails = ({refreshTrigger}) => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +23,8 @@ const SessionDetails = () => {
   };
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+  fetchSessions();
+}, [refreshTrigger]); // 🔥 THIS IS THE FIX
 
   if (loading) {
     return <p className="text-sm text-slate-500">Loading sessions…</p>;
@@ -121,6 +121,7 @@ const SessionDetails = () => {
                   key={session._id}
                   session={session}
                   user={user}
+                  onUpdated={fetchSessions}
                 />
               ))}
             </div>

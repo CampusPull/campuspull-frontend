@@ -14,7 +14,7 @@ const SessionCard = ({ session, user, onUpdated }) => {
   const otherPerson = isStudent ? session.mentorId : session.menteeId;
 
   const canGiveFeedback =
-    isStudent && isCompleted && !session.feedbackGiven;
+    isStudent && isCompleted && !session.feedback;
 
   /* ---------------- Modal States ---------------- */
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -265,7 +265,7 @@ const SessionCard = ({ session, user, onUpdated }) => {
         <SessionFeedbackModal
           sessionId={session._id}
           onClose={() => setFeedbackOpen(false)}
-          onSuccess={onUpdated}
+          onSuccess={(data) => onUpdated(data)}
         />
       )}
     </>
