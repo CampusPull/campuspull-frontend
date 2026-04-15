@@ -278,11 +278,11 @@ const AlumniSpotlight = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-poppins font-bold text-wisdom-charcoal mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-poppins font-bold text-wisdom-charcoal mb-3 sm:mb-4">
             Alumni and Placed Students Success Stories
           </h2>
-          <p className="text-xl text-insight-gray font-inter max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-insight-gray font-inter max-w-2xl mx-auto">
             Learn from those who've walked the path before you. Connect with mentors who understand your journey.
           </p>
         </div>
@@ -290,20 +290,20 @@ const AlumniSpotlight = () => {
         {/* Main Carousel */}
         <div className="relative">
           <div className="knowledge-card bg-white rounded-2xl shadow-brand-xl border border-slate-100 overflow-hidden">
-            <div className="grid lg:grid-cols-2 gap-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
               
               {/* Left Side - Alumni Profile */}
-              <div className="p-8 lg:p-12">
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-academic-blue">
+              <div className="p-5 sm:p-8 lg:p-12">
+                <div className="flex items-start space-x-3 sm:space-x-4 mb-6">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-3 border-academic-blue">
                       <Image
                         src={currentAlumni?.profileImage}
                         alt={currentAlumni?.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full overflow-hidden border-2 border-white">
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white">
                       <Image
                         src={currentAlumni?.companyLogo}
                         alt={currentAlumni?.company}
@@ -312,19 +312,19 @@ const AlumniSpotlight = () => {
                     </div>
                   </div>
                   
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-poppins font-bold text-wisdom-charcoal mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-poppins font-bold text-wisdom-charcoal mb-1">
                       {currentAlumni?.name}
                     </h3>
-                    <p className="text-lg text-academic-blue font-inter font-semibold mb-1">
+                    <p className="text-base sm:text-lg text-academic-blue font-inter font-semibold mb-1">
                       {currentAlumni?.currentRole}
                     </p>
-                    <p className="text-insight-gray font-inter">
+                    <p className="text-insight-gray font-inter text-sm sm:text-base">
                       {currentAlumni?.company} • {currentAlumni?.university} '{currentAlumni?.graduationYear}
                     </p>
                   </div>
 
-                  <div className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
+                  <div className={`hidden sm:block px-3 py-1 rounded-full text-xs font-inter font-medium flex-shrink-0 ${
                     currentAlumni?.mentorshipStatus === 'Available' ? 'bg-emerald-50 text-progress-emerald' : 'bg-amber-50 text-achievement-amber'
                   }`}>
                     {currentAlumni?.mentorshipStatus}
@@ -349,7 +349,7 @@ const AlumniSpotlight = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
                   <div className="text-center">
                     <div className="text-2xl font-poppins font-bold text-wisdom-charcoal">{currentAlumni?.menteeCount}</div>
                     <div className="text-xs text-insight-gray font-inter">Mentees</div>
@@ -384,7 +384,7 @@ const AlumniSpotlight = () => {
               </div>
 
               {/* Right Side - Journey Visualization */}
-              <div className="bg-gradient-to-br from-academic-blue/5 to-credibility-indigo/5 p-8 lg:p-12">
+              <div className="bg-gradient-to-br from-academic-blue/5 to-credibility-indigo/5 p-5 sm:p-8 lg:p-12">
                 <h4 className="text-xl font-poppins font-bold text-wisdom-charcoal mb-8">Career Journey</h4>
                 
                 {/* Timeline */}
@@ -443,11 +443,11 @@ const AlumniSpotlight = () => {
           </div>
 
           {/* Navigation Arrows */}
-          <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
-            <Icon name="ChevronLeft" size={20} />
+          <button onClick={prevSlide} className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
+            <Icon name="ChevronLeft" size={18} />
           </button>
-          <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
-            <Icon name="ChevronRight" size={20} />
+          <button onClick={nextSlide} className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
+            <Icon name="ChevronRight" size={18} />
           </button>
         </div>
 

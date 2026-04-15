@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react"; 
 import { useChat } from "../../context/chatContext";
 import { FaCircle } from "react-icons/fa"; // Removed unused FaUserCircle
-import api from "../../utils/api"; // ✅ Import API
+import api from "../../utils/api"; // Import API
 
 const ChatSidebar = () => {
   const { chatList, onlineUsers, loadMessages, activeChat, setActiveChat, unreadCounts, clearUnreadCount } = useChat();
@@ -14,7 +14,7 @@ const ChatSidebar = () => {
     );
   }, [chatList, search]);
 
-  // ✅ Helper for dynamic image URL
+  // Helper for dynamic image URL
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
@@ -71,7 +71,7 @@ const ChatSidebar = () => {
                         src={imgSrc} 
                         alt={chatUser.name} 
                         className="w-full h-full object-cover"
-                        // ✅ SAFETY: Hides image if it fails to load (404)
+                        //SAFETY: Hides image if it fails to load (404)
                         onError={(e) => { e.target.style.display = 'none'; }} 
                     />
                   ) : (

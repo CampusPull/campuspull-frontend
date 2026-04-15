@@ -85,7 +85,7 @@ const Footer = () => {
           </div>
 
           {/* Links Grid */}
-          <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             {footerSections.map((section) => (
               <div key={section.title}>
                 <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">{section.title}</h4>
@@ -104,7 +104,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-center">
           <p className="text-slate-500 text-sm">
             © {currentYear} Campus-pull. Build with grit by Satyam.
           </p>

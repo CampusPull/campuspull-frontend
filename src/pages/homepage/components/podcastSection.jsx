@@ -86,15 +86,15 @@ const PodcastSection = () => {
     <section className="py-16 bg-surface relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-12 gap-4">
           <div>
             <div className="flex items-center space-x-2 mb-2">
               <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse">
                 New Episodes
               </span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-poppins font-bold text-wisdom-charcoal">
-              CampusPull Talks 🎙️
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-poppins font-bold text-wisdom-charcoal">
+              CampusPull Talks 🎤
             </h2>
           </div>
           <button
@@ -157,7 +157,7 @@ const PodcastSection = () => {
           </div>
 
           {/* Sidebar Playlist */}
-          <div className="lg:col-span-4 flex flex-col space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+          <div className="lg:col-span-4 flex flex-col space-y-3 sm:space-y-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto custom-scrollbar">
             {episodes.map((ep, index) => (
               <button
                 key={ep.id}

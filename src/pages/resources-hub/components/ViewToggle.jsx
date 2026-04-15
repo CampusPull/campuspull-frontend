@@ -16,24 +16,22 @@ const ViewToggle = ({ viewMode, onViewModeChange, totalResults, sortBy, onSortCh
   };
 
   return (
-    <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-4 shadow-brand-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 sm:p-4 shadow-brand-sm">
       {/* Results Count */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <Icon name="FileText" size={18} color="var(--color-academic-blue)" />
-          <span className="text-sm font-inter text-wisdom-charcoal">
-            <span className="font-semibold">{totalResults?.toLocaleString()}</span> resources found
-          </span>
-        </div>
+      <div className="flex items-center space-x-2">
+        <Icon name="FileText" size={18} color="var(--color-academic-blue)" />
+        <span className="text-sm font-inter text-wisdom-charcoal">
+          <span className="font-semibold">{totalResults?.toLocaleString()}</span> resources found
+        </span>
       </div>
       {/* Controls */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Sort Dropdown */}
         <div className="relative">
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e?.target?.value)}
-            className="appearance-none bg-surface border border-slate-200 rounded-lg px-4 py-2 pr-10 text-sm font-inter text-wisdom-charcoal focus:outline-none focus:ring-2 focus:ring-academic-blue focus:border-academic-blue cursor-pointer"
+            className="appearance-none bg-surface border border-slate-200 rounded-lg px-2 sm:px-4 py-2 pr-7 sm:pr-10 text-xs sm:text-sm font-inter text-wisdom-charcoal focus:outline-none focus:ring-2 focus:ring-academic-blue focus:border-academic-blue cursor-pointer"
           >
             {sortOptions?.map((option) => (
               <option key={option?.value} value={option?.value}>
@@ -41,8 +39,8 @@ const ViewToggle = ({ viewMode, onViewModeChange, totalResults, sortBy, onSortCh
               </option>
             ))}
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <Icon name="ChevronDown" size={16} color="var(--color-insight-gray)" />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+            <Icon name="ChevronDown" size={14} color="var(--color-insight-gray)" />
           </div>
         </div>
 
@@ -52,7 +50,7 @@ const ViewToggle = ({ viewMode, onViewModeChange, totalResults, sortBy, onSortCh
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => onViewModeChange('grid')}
-            className={`px-3 py-2 ${
+            className={`px-2 sm:px-3 py-2 ${
               viewMode === 'grid' ?'bg-academic-blue text-white shadow-brand-sm' :'text-insight-gray hover:text-wisdom-charcoal'
             }`}
           >
@@ -62,7 +60,7 @@ const ViewToggle = ({ viewMode, onViewModeChange, totalResults, sortBy, onSortCh
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => onViewModeChange('list')}
-            className={`px-3 py-2 ${
+            className={`px-2 sm:px-3 py-2 ${
               viewMode === 'list' ?'bg-academic-blue text-white shadow-brand-sm' :'text-insight-gray hover:text-wisdom-charcoal'
             }`}
           >

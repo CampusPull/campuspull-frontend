@@ -74,15 +74,15 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
   // LIST VIEW
   if (viewMode === 'list') {
     return (
-      <div className="knowledge-card bg-white border border-slate-200 rounded-xl p-6 hover:shadow-brand-lg transition-all duration-300">
-        <div className="flex items-start space-x-4">
-          <div className="w-20 h-20 bg-surface rounded-lg overflow-hidden">
+      <div className="knowledge-card bg-white border border-slate-200 rounded-xl p-4 sm:p-6 hover:shadow-brand-lg transition-all duration-300">
+        <div className="flex items-start gap-3 sm:space-x-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface rounded-lg overflow-hidden flex-shrink-0">
             <Image src={resource?.thumbnail} alt={resource?.title} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between mb-2">
-              <div>
-                <h3 className="font-semibold text-lg line-clamp-1">{resource?.title}</h3>
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-semibold text-base sm:text-lg line-clamp-1">{resource?.title}</h3>
                 <p className="text-sm text-insight-gray line-clamp-2">{resource?.description}</p>
               </div>
               <Button variant="ghost" size="icon" onClick={handleBookmark}>
