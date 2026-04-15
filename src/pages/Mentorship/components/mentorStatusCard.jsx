@@ -4,6 +4,7 @@ import { useState } from "react";
 const MentorStatusCard = ({ mentor }) => {
   const [loading, setLoading] = useState(false);
 
+  // 🟡 Not a mentor yet
   if (!mentor) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -17,6 +18,35 @@ const MentorStatusCard = ({ mentor }) => {
     );
   }
 
+  // 🟡 Pending approval
+  if (mentor.mentorStatus === "PENDING") {
+    return (
+      <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-yellow-800">
+          Application Under Review
+        </h2>
+        <p className="mt-2 text-sm text-yellow-700">
+          Your mentor application is being reviewed. You’ll be able to start mentoring once approved.
+        </p>
+      </div>
+    );
+  }
+
+  // 🔴 Rejected
+  if (mentor.mentorStatus === "REJECTED") {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-red-800">
+          Application Rejected
+        </h2>
+        <p className="mt-2 text-sm text-red-700">
+          Your mentor application was not approved. You can update your profile and apply again.
+        </p>
+      </div>
+    );
+  }
+
+  // 🟢 Only APPROVED mentors reach here
   const toggleActive = async () => {
     try {
       setLoading(true);
@@ -29,7 +59,6 @@ const MentorStatusCard = ({ mentor }) => {
         });
       }
 
-      // simple + safe for MVP
       window.location.reload();
     } catch (err) {
       console.error("Failed to update mentor status");
@@ -41,7 +70,6 @@ const MentorStatusCard = ({ mentor }) => {
   return (
     <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white shadow-lg">
       <div className="flex items-center justify-between">
-        {/* Status info */}
         <div>
           <h2 className="text-lg font-semibold">
             Mentor Status
@@ -54,7 +82,6 @@ const MentorStatusCard = ({ mentor }) => {
           </p>
         </div>
 
-        {/* Status badge */}
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
             mentor.isActive
@@ -66,7 +93,6 @@ const MentorStatusCard = ({ mentor }) => {
         </span>
       </div>
 
-      {/* Action */}
       <div className="mt-6">
         <button
           onClick={toggleActive}

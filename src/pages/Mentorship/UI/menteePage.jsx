@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../../utils/api";
 import {
   MentorDiscoveryProvider,
   useMentorDiscovery,
@@ -15,26 +16,43 @@ const PageContent = () => {
     mentors,
     loading,
     error,
-    isGuest,          // FIX
-    showAuthModal,    // FIX
+    isGuest, // FIX
+    showAuthModal, // FIX
     setShowAuthModal, // FIX
   } = useMentorDiscovery();
 
   const [selectedMentor, setSelectedMentor] = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
 
   const handleRequestClick = (mentor) => {
     // isGuest check already handled in MentorCard
     setSelectedMentor(mentor);
   };
 
+  useEffect(() => {
+    if (isGuest) return;
+
+    const fetchMyRequests = async () => {
+      try {
+        const res = await api.get("/mentorship/request/my");
+        setMyRequests(res.data.requests || []);
+      } catch (err) {
+        console.error("Failed to fetch requests");
+      }
+    };
+
+    fetchMyRequests();
+  }, [isGuest]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-6xl mx-auto px-4 py-10">
-
         {/* Header */}
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Find a Mentor</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">
+              Find a Mentor
+            </h1>
             <p className="mt-2 text-sm text-slate-600 max-w-md">
               Learn directly from alumni who've walked the path you're on.
               Request one-on-one mentorship and grow faster.
@@ -44,13 +62,21 @@ const PageContent = () => {
           {/* FIX: My Requests and My Sessions trigger modal for guests */}
           <div className="flex gap-3">
             <button
-              onClick={() => isGuest ? setShowAuthModal(true) : navigate("/mentorship/my-requests")}
+              onClick={() =>
+                isGuest
+                  ? setShowAuthModal(true)
+                  : navigate("/mentorship/my-requests")
+              }
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
             >
               My Requests
             </button>
             <button
-              onClick={() => isGuest ? setShowAuthModal(true) : navigate("/mentorship/sessions")}
+              onClick={() =>
+                isGuest
+                  ? setShowAuthModal(true)
+                  : navigate("/mentorship/sessions")
+              }
               className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               My Sessions
@@ -62,7 +88,8 @@ const PageContent = () => {
         {isGuest && (
           <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
             <p className="text-blue-700 font-medium text-sm">
-              👋 You're browsing as a guest. Create an account to request mentorship from alumni.
+              👋 You're browsing as a guest. Create an account to request
+              mentorship from alumni.
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
@@ -74,7 +101,9 @@ const PageContent = () => {
         )}
 
         {loading && (
-          <p className="mt-20 text-center text-sm text-slate-500">Loading mentors…</p>
+          <p className="mt-20 text-center text-sm text-slate-500">
+            Loading mentors…
+          </p>
         )}
 
         {error && (
@@ -83,8 +112,12 @@ const PageContent = () => {
 
         {!loading && !error && mentors.length === 0 && (
           <div className="mt-20 text-center">
-            <p className="text-sm text-slate-600">No mentors available right now.</p>
-            <p className="mt-1 text-xs text-slate-500">Check back later or explore sessions.</p>
+            <p className="text-sm text-slate-600">
+              No mentors available right now.
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Check back later or explore sessions.
+            </p>
           </div>
         )}
 
@@ -92,8 +125,9 @@ const PageContent = () => {
           <MentorList
             mentors={mentors}
             onRequest={handleRequestClick}
-            isGuest={isGuest}                           // FIX
-            onRestrictedAction={() => setShowAuthModal(true)} // FIX
+            isGuest={isGuest}
+            onRestrictedAction={() => setShowAuthModal(true)}
+            myRequests={myRequests}
           />
         )}
 
