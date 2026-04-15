@@ -1,13 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getInternshipById } from "../../services/internshipService";
+import { useInternships } from "../../context/internshipContext";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiMapPin, FiClock, FiCreditCard, FiArrowLeft, FiBriefcase,
-  FiExternalLink, FiShare2, FiBookmark, FiCheckCircle, FiAlertCircle,
-  FiCalendar, FiUser, FiX
+  FiMapPin,
+  FiClock,
+  FiCreditCard,
+  FiArrowLeft,
+  FiBriefcase,
+  FiExternalLink,
+  FiShare2,
+  FiBookmark,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiCalendar,
+  FiUser,
+  FiX,
 } from "react-icons/fi";
+
+
 
 // ─── Skeleton Loader ──────────────────────────────────────────────────────────
 const SkeletonBlock = ({ className }) => (
@@ -83,7 +96,8 @@ const GuestModal = ({ onClose }) => (
           Join CampusPull to Apply
         </h3>
         <p className="text-gray-500 text-sm text-center mb-6 leading-relaxed">
-          Create a free account to apply for internships, track applications, and connect with your campus community.
+          Create a free account to apply for internships, track applications,
+          and connect with your campus community.
         </p>
 
         <div className="space-y-3">
@@ -107,10 +121,14 @@ const GuestModal = ({ onClose }) => (
 
 // ─── Info Badge ───────────────────────────────────────────────────────────────
 const InfoBadge = ({ icon: Icon, label, value, color }) => (
-  <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border ${color}`}>
+  <div
+    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border ${color}`}
+  >
     <Icon size={15} />
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">
+        {label}
+      </p>
       <p className="text-sm font-bold">{value}</p>
     </div>
   </div>
@@ -123,11 +141,32 @@ const InternshipDetails = () => {
   const { user } = useAuth();
   const isGuest = !user;
 
+
+  const { toggleInternshipStatus, updateInternship } = useInternships();
+
+const handleToggleStatus = async () => {
+  if (!internship) return;
+
+  try {
+    const updated = await toggleInternshipStatus(
+      internship._id,
+      internship.status
+    );
+
+    setInternship(updated);
+  } catch (err) {
+    console.error("Toggle failed", err);
+  }
+};
+
   const [internship, setInternship] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const isAdmin = user?.role === "admin";
+  const isClosed = internship?.status === "closed";
 
   useEffect(() => {
     const fetchInternship = async () => {
@@ -144,7 +183,15 @@ const InternshipDetails = () => {
   }, [id, isGuest]);
 
   const handleApply = () => {
-    if (isGuest) { setShowGuestModal(true); return; }
+    // 🔴 BLOCK if closed
+    if (internship.status === "closed") return;
+
+    // 🔐 guest check
+    if (isGuest) {
+      setShowGuestModal(true);
+      return;
+    }
+
     window.open(internship.applyLink, "_blank");
   };
 
@@ -160,7 +207,12 @@ const InternshipDetails = () => {
 
   // Parse skills if available
   const skills = internship?.skills
-    ? Array.isArray(internship.skills) ? internship.skills : internship.skills.split(",").map(s => s.trim()).filter(Boolean)
+    ? Array.isArray(internship.skills)
+      ? internship.skills
+      : internship.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
     : [];
 
   if (loading) return <DetailSkeleton />;
@@ -172,9 +224,16 @@ const InternshipDetails = () => {
           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <FiAlertCircle size={36} className="text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Internship Not Found</h2>
-          <p className="text-gray-500 mb-6">This opportunity may have expired or been removed.</p>
-          <Link to="/internships" className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Internship Not Found
+          </h2>
+          <p className="text-gray-500 mb-6">
+            This opportunity may have expired or been removed.
+          </p>
+          <Link
+            to="/internships"
+            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+          >
             Browse All Internships
           </Link>
         </div>
@@ -184,11 +243,12 @@ const InternshipDetails = () => {
 
   return (
     <>
-      {showGuestModal && <GuestModal onClose={() => setShowGuestModal(false)} />}
+      {showGuestModal && (
+        <GuestModal onClose={() => setShowGuestModal(false)} />
+      )}
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 pt-20 pb-32">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-
           {/* ── Breadcrumb ── */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -199,13 +259,23 @@ const InternshipDetails = () => {
               onClick={() => navigate(-1)}
               className="flex items-center gap-1.5 font-semibold text-indigo-600 hover:text-indigo-800 transition-colors group"
             >
-              <FiArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <FiArrowLeft
+                size={14}
+                className="group-hover:-translate-x-0.5 transition-transform"
+              />
               Back
             </button>
             <span className="text-gray-300">/</span>
-            <Link to="/internships" className="hover:text-gray-800 transition-colors">Internships</Link>
+            <Link
+              to="/internships"
+              className="hover:text-gray-800 transition-colors"
+            >
+              Internships
+            </Link>
             <span className="text-gray-300">/</span>
-            <span className="text-gray-700 font-medium truncate max-w-[200px]">{internship.title}</span>
+            <span className="text-gray-700 font-medium truncate max-w-[200px]">
+              {internship.title}
+            </span>
           </motion.div>
 
           {/* ── Hero Card ── */}
@@ -229,16 +299,32 @@ const InternshipDetails = () => {
                           src={internship.companyLogo}
                           alt={internship.companyName}
                           className="w-full h-full object-cover"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
                         />
                       ) : null}
-                      <div className={`w-full h-full bg-gradient-to-br from-indigo-100 to-blue-100 items-center justify-center ${internship.companyLogo ? 'hidden' : 'flex'}`}
-                        style={{ display: internship.companyLogo ? 'none' : 'flex' }}>
+                      <div
+                        className={`w-full h-full bg-gradient-to-br from-indigo-100 to-blue-100 items-center justify-center ${internship.companyLogo ? "hidden" : "flex"}`}
+                        style={{
+                          display: internship.companyLogo ? "none" : "flex",
+                        }}
+                      >
                         <FiBriefcase size={28} className="text-indigo-400" />
                       </div>
                     </div>
                     <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow" />
                   </div>
+                  <span
+                    className={`inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full ${
+                      isClosed
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
+                  >
+                    {isClosed ? "Closed" : "Actively Hiring"}
+                  </span>
 
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
@@ -253,8 +339,32 @@ const InternshipDetails = () => {
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 ml-auto">
+                  {/* 🔐 ADMIN CONTROLS */}
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() =>
+                          navigate(`/admin/internships/edit/${internship._id}`)
+                        }
+                        className="px-3 py-2 text-xs font-bold bg-blue-500 text-white rounded-xl"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={handleToggleStatus}
+                        className={`px-3 py-2 text-xs font-bold rounded-xl ${
+                          isClosed
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {isClosed ? "Open" : "Close"}
+                      </button>
+                    </>
+                  )}
                   <button
-                    onClick={() => setSaved(s => !s)}
+                    onClick={() => setSaved((s) => !s)}
                     title="Save internship"
                     className={`p-2.5 rounded-xl border transition-all duration-200 ${
                       saved
@@ -262,7 +372,10 @@ const InternshipDetails = () => {
                         : "bg-gray-50 border-gray-200 text-gray-400 hover:text-indigo-500 hover:border-indigo-200"
                     }`}
                   >
-                    <FiBookmark size={16} fill={saved ? "currentColor" : "none"} />
+                    <FiBookmark
+                      size={16}
+                      fill={saved ? "currentColor" : "none"}
+                    />
                   </button>
                   <button
                     onClick={handleShare}
@@ -284,7 +397,11 @@ const InternshipDetails = () => {
                 <InfoBadge
                   icon={FiCreditCard}
                   label="Stipend"
-                  value={internship.stipend > 0 ? `₹${internship.stipend?.toLocaleString()}/mo` : "Unpaid"}
+                  value={
+                    internship.stipend > 0
+                      ? `₹${internship.stipend?.toLocaleString()}/mo`
+                      : "Unpaid"
+                  }
                   color="bg-blue-50 text-blue-700 border-blue-100"
                 />
                 <InfoBadge
@@ -361,13 +478,21 @@ const InternshipDetails = () => {
                 What You&apos;ll Get
               </h2>
               <ul className="space-y-2">
-                {(Array.isArray(internship.perks) ? internship.perks : internship.perks.split(","))
-                  .map((perk, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-white/90">
-                      <FiCheckCircle size={14} className="mt-0.5 flex-shrink-0 text-emerald-300" />
-                      {perk.trim()}
-                    </li>
-                  ))}
+                {(Array.isArray(internship.perks)
+                  ? internship.perks
+                  : internship.perks.split(",")
+                ).map((perk, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2.5 text-sm text-white/90"
+                  >
+                    <FiCheckCircle
+                      size={14}
+                      className="mt-0.5 flex-shrink-0 text-emerald-300"
+                    />
+                    {perk.trim()}
+                  </li>
+                ))}
               </ul>
             </motion.div>
           )}
@@ -389,19 +514,49 @@ const InternshipDetails = () => {
               {[
                 { label: "Company", value: internship.companyName },
                 { label: "Location", value: internship.location },
-                { label: "Duration", value: formattedDuration || internship.duration },
-                { label: "Stipend", value: internship.stipend > 0 ? `₹${internship.stipend?.toLocaleString()} / month` : "Unpaid" },
-                internship.openings && { label: "Openings", value: `${internship.openings} positions` },
-                internship.lastDate && { label: "Last Date to Apply", value: new Date(internship.lastDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) },
-              ].filter(Boolean).map(({ label, value }) => (
-                <div key={label} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                  <FiCheckCircle size={14} className="text-indigo-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{label}</p>
-                    <p className="font-semibold text-gray-800 mt-0.5">{value}</p>
+                {
+                  label: "Duration",
+                  value: formattedDuration || internship.duration,
+                },
+                {
+                  label: "Stipend",
+                  value:
+                    internship.stipend > 0
+                      ? `₹${internship.stipend?.toLocaleString()} / month`
+                      : "Unpaid",
+                },
+                internship.openings && {
+                  label: "Openings",
+                  value: `${internship.openings} positions`,
+                },
+                internship.lastDate && {
+                  label: "Last Date to Apply",
+                  value: new Date(internship.lastDate).toLocaleDateString(
+                    "en-IN",
+                    { day: "numeric", month: "long", year: "numeric" },
+                  ),
+                },
+              ]
+                .filter(Boolean)
+                .map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
+                  >
+                    <FiCheckCircle
+                      size={14}
+                      className="text-indigo-400 mt-0.5 flex-shrink-0"
+                    />
+                    <div>
+                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                        {label}
+                      </p>
+                      <p className="font-semibold text-gray-800 mt-0.5">
+                        {value}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </motion.div>
         </div>
@@ -416,19 +571,32 @@ const InternshipDetails = () => {
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div>
-            <p className="font-bold text-gray-900 text-sm">{internship.title}</p>
-            <p className="text-gray-500 text-xs">{internship.companyName} · {internship.location}</p>
+            <p className="font-bold text-gray-900 text-sm">
+              {internship.title}
+            </p>
+            <p className="text-gray-500 text-xs">
+              {internship.companyName} · {internship.location}
+            </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             {isGuest && (
-              <p className="text-xs text-gray-400 hidden sm:block">Sign in to apply</p>
+              <p className="text-xs text-gray-400 hidden sm:block">
+                Sign in to apply
+              </p>
             )}
             <button
               onClick={handleApply}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold text-sm rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
+              disabled={internship.status === "closed"}
+              className={`flex items-center gap-2 px-6 py-3 text-white font-bold text-sm rounded-xl transition-all duration-200 ${
+                internship.status === "closed"
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:shadow-lg"
+              }`}
             >
-              Apply Now
-              <FiExternalLink size={14} />
+              {internship.status === "closed"
+                ? "Applications Closed"
+                : "Apply Now"}
+              {internship.status !== "closed" && <FiExternalLink size={14} />}
             </button>
           </div>
         </div>
