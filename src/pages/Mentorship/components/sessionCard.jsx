@@ -6,24 +6,25 @@ const SessionCard = ({ session, user, onUpdated }) => {
   const isStudent = user.role === "student";
   const isMentor = user.role === "alumni";
 
+  // ✅ Correct source of truth
+  const isPending = session.status === "PENDING";
+  const isScheduled = session.status === "SCHEDULED";
+  const isCompleted = session.status === "COMPLETED";
+
   const otherPerson = isStudent ? session.mentorId : session.menteeId;
 
-  const isScheduled =
-    session.scheduledAt && session.connectionType && session.connectionLink;
-
-  const isCompleted = session.status === "COMPLETED";
-  const canGiveFeedback = isStudent && isCompleted && !session.feedbackGiven;
+  const canGiveFeedback =
+    isStudent && isCompleted && !session.feedback;
 
   /* ---------------- Modal States ---------------- */
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  /* ---------------- Form & Action States ---------------- */
+  /* ---------------- Form State ---------------- */
   const [scheduledAt, setScheduledAt] = useState("");
   const [connectionType, setConnectionType] = useState("MEET");
   const [connectionLink, setConnectionLink] = useState("");
-  
-  // Hardworking tip: Separate loading states prevent the whole card from locking up
+
   const [isScheduling, setIsScheduling] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [error, setError] = useState(null);
@@ -68,13 +69,18 @@ const SessionCard = ({ session, user, onUpdated }) => {
     setIsCompleting(true);
     try {
       await api.patch(`/mentorship/session/${session._id}/complete`);
-      onUpdated(); // Refresh the list
+      onUpdated();
     } catch (err) {
-      // If it failed because it was already completed (race condition), just refresh
-      if (err.response?.status === 400 && err.response?.data?.message.includes("already")) {
+      if (
+        err.response?.status === 400 &&
+        err.response?.data?.message.includes("already")
+      ) {
         onUpdated();
       } else {
-        alert(err.response?.data?.message || "Failed to mark session completed");
+        alert(
+          err.response?.data?.message ||
+            "Failed to mark session completed"
+        );
       }
     } finally {
       setIsCompleting(false);
@@ -84,7 +90,7 @@ const SessionCard = ({ session, user, onUpdated }) => {
   /* ---------------- Render ---------------- */
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <img
@@ -103,61 +109,82 @@ const SessionCard = ({ session, user, onUpdated }) => {
               {isStudent ? "Mentor" : "Student"}
             </p>
 
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-600">
+            <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
               <span>
-                Mode: <span className="font-medium">{session.connectionType || "—"}</span>
+                Mode:{" "}
+                <span className="font-medium">
+                  {session.connectionType || "—"}
+                </span>
               </span>
+
               <span>
                 Status:{" "}
-                <span className={`font-medium ${isCompleted ? "text-green-600" : "text-blue-600"}`}>
+                <span
+                  className={`font-medium ${
+                    isCompleted
+                      ? "text-green-600"
+                      : isScheduled
+                      ? "text-blue-600"
+                      : "text-yellow-600"
+                  }`}
+                >
                   {session.status}
                 </span>
               </span>
             </div>
 
             <p className="mt-2 text-xs text-slate-500">
-              {session.scheduledAt
-                ? `📅 ${new Date(session.scheduledAt).toLocaleString()}`
-                : "Waiting for mentor to schedule"}
+              {isPending
+                ? "Waiting for mentor to schedule"
+                : session.scheduledAt
+                ? `📅 ${new Date(
+                    session.scheduledAt
+                  ).toLocaleString()}`
+                : "Not scheduled yet"}
             </p>
 
             {isCompleted && session.completedAt && (
               <p className="mt-1 text-xs text-green-700">
-                ✅ Completed on {new Date(session.completedAt).toLocaleString()}
+                ✅ Completed on{" "}
+                {new Date(session.completedAt).toLocaleString()}
               </p>
             )}
 
-            {/* Mentor views feedback here */}
+            {/* Mentor sees feedback */}
             {isMentor && session.feedback && (
-              <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs border border-slate-100">
-                <p className="font-semibold text-slate-800">
+              <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs border">
+                <p className="font-semibold">
                   Student Feedback ⭐ {session.feedback.rating}/5
                 </p>
                 {session.feedback.comment && (
-                  <p className="mt-1 text-slate-600 italic">“{session.feedback.comment}”</p>
+                  <p className="mt-1 italic text-slate-600">
+                    “{session.feedback.comment}”
+                  </p>
                 )}
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="self-center flex flex-col items-end gap-2">
-            {isScheduled && !isCompleted && (
+          <div className="flex flex-col items-end gap-2">
+            {/* Join */}
+            {isScheduled && session.connectionLink && (
               <a
                 href={session.connectionLink}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition"
+                className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
               >
                 Join
               </a>
             )}
 
+            {/* Mentor controls */}
             {isMentor && !isCompleted && (
               <>
                 <button
                   onClick={() => setScheduleOpen(true)}
-                  className="text-xs underline text-slate-700 hover:text-black"
+                  className="text-xs underline text-slate-700"
                 >
                   {isScheduled ? "Edit Details" : "Set Details"}
                 </button>
@@ -166,14 +193,17 @@ const SessionCard = ({ session, user, onUpdated }) => {
                   <button
                     onClick={markCompleted}
                     disabled={isCompleting}
-                    className="text-xs font-semibold text-green-700 underline disabled:opacity-50"
+                    className="text-xs font-semibold text-green-700 underline"
                   >
-                    {isCompleting ? "Marking..." : "Mark as Completed"}
+                    {isCompleting
+                      ? "Marking..."
+                      : "Mark as Completed"}
                   </button>
                 )}
               </>
             )}
 
+            {/* Feedback */}
             {canGiveFeedback && (
               <button
                 onClick={() => setFeedbackOpen(true)}
@@ -182,89 +212,60 @@ const SessionCard = ({ session, user, onUpdated }) => {
                 Give Feedback
               </button>
             )}
-
-            {isStudent && !isScheduled && (
-              <span className="text-xs text-slate-400 italic">Pending Schedule</span>
-            )}
           </div>
         </div>
       </div>
 
       {/* Schedule Modal */}
       {scheduleOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <form
             onSubmit={submitDetails}
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            className="w-full max-w-md rounded-2xl bg-white p-6"
           >
-            <h2 className="text-lg font-semibold mb-4">Session Details</h2>
-            <div className="space-y-4">
-              <label className="block text-sm">
-                Date & Time
-                <input
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) => setScheduledAt(e.target.value)}
-                  required
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
-                />
-              </label>
+            <h2 className="text-lg font-semibold mb-4">
+              Session Details
+            </h2>
 
-              <label className="block text-sm">
-                Connection Type
-                <select
-                  value={connectionType}
-                  onChange={(e) => setConnectionType(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
-                >
-                  <option value="MEET">Google Meet</option>
-                  <option value="ZOOM">Zoom</option>
-                  <option value="CALL">Phone Call</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </label>
+            <input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              required
+              className="w-full mb-3 border p-2 rounded"
+            />
 
-              <label className="block text-sm">
-                Meeting Link
-                <input
-                  type="url"
-                  value={connectionLink}
-                  onChange={(e) => setConnectionLink(e.target.value)}
-                  required
-                  placeholder="https://..."
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-900 outline-none"
-                />
-              </label>
-            </div>
+            <input
+              type="url"
+              value={connectionLink}
+              onChange={(e) => setConnectionLink(e.target.value)}
+              required
+              placeholder="Meeting link"
+              className="w-full mb-3 border p-2 rounded"
+            />
 
-            {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+            {error && (
+              <p className="text-red-600 text-xs">{error}</p>
+            )}
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setScheduleOpen(false)}
-                className="text-sm text-slate-600 hover:text-slate-900"
-              >
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" onClick={() => setScheduleOpen(false)}>
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={isScheduling}
-                className="rounded-xl bg-slate-900 px-6 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition"
-              >
-                {isScheduling ? "Saving..." : "Save Details"}
+              <button type="submit">
+                {isScheduling ? "Saving..." : "Save"}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Feedback Modal */}
+      {/* Feedback */}
       {feedbackOpen && (
         <SessionFeedbackModal
           sessionId={session._id}
           onClose={() => setFeedbackOpen(false)}
-          onSuccess={onUpdated}
+          onSuccess={(data) => onUpdated(data)}
         />
       )}
     </>
