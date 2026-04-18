@@ -12,6 +12,11 @@ const MentorProfilePage = () => {
   const [mentorProfile, setMentorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshSessions, setRefreshSessions] = useState(false);
+
+const triggerSessionRefresh = () => {
+  setRefreshSessions(prev => !prev);
+};
 
   const fetchMentorProfile = async () => {
     try {
@@ -97,7 +102,8 @@ const MentorProfilePage = () => {
       </span>
     </div>
 
-    <MentorRequests />
+    <MentorRequests onUpdated={triggerSessionRefresh} />
+
   </section>
 
   {/* Sessions */}
@@ -111,7 +117,7 @@ const MentorProfilePage = () => {
       </span>
     </div>
 
-    <MentorSessions />
+    <MentorSessions refreshTrigger={refreshSessions} />
   </section>
 </div>
 

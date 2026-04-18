@@ -1,15 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/notificationContext";
+import { ProfileContext } from "../../context/profileContext";
 
 // --- Define Role Permissions ---
 const roleFeatures = {
   admin: [
     "Home",
-      "Feed", 
+    "Feed", 
     "Resources Hub",
     "About CampusPull",
     "Community",
@@ -74,6 +75,13 @@ const Header = () => {
   const { user, logout } = useAuth();
   // 2. GET UNREAD COUNT
   const { unreadCount } = useNotification();
+  // 3. GET PROFILE IMAGE (from profileContext)
+  const { profile } = useContext(ProfileContext);
+  const profileImage = profile?.profileImage || null;
+  // Initials fallback from user name
+  const initials = user?.name
+    ? user.name.trim().split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
@@ -125,6 +133,9 @@ const Header = () => {
     "Alumni Stories",
     "Admin Dashboard",
     "Chat",
+    "Community",
+    "Announcement",
+    "Events",
   ]; // These will go in the hamburger menu
   const mainNavItems = authorizedItems.filter(
     (item) => !hamburgerItemNames.includes(item.name),
@@ -222,6 +233,31 @@ const Header = () => {
                   <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
+                )}
+              </Link>
+            )}
+
+            {/* PROFILE AVATAR (Only for authenticated users) */}
+            {!isGuest && (
+              <Link
+                to="/profile"
+                title="My Profile"
+                className={`relative flex-shrink-0 w-9 h-9 rounded-full ring-2 transition-all duration-200 overflow-hidden ${
+                  location.pathname === "/profile"
+                    ? "ring-academic-blue shadow-brand-sm"
+                    : "ring-white/60 hover:ring-academic-blue hover:shadow-brand-sm"
+                }`}
+              >
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={user?.name || "Profile"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                    {initials}
+                  </div>
                 )}
               </Link>
             )}
