@@ -30,17 +30,26 @@ const SessionCard = ({ session, user, onUpdated }) => {
   const [error, setError] = useState(null);
 
   /* ---------------- Effects ---------------- */
-  useEffect(() => {
-    if (scheduleOpen) {
-      setScheduledAt(
-        session.scheduledAt
-          ? new Date(session.scheduledAt).toISOString().slice(0, 16)
-          : ""
-      );
-      setConnectionType(session.connectionType || "MEET");
-      setConnectionLink(session.connectionLink || "");
+useEffect(() => {
+  if (!scheduleOpen) return;
+
+  const rawDate = session?.scheduledAt;
+
+  let formattedDate = "";
+
+  if (rawDate) {
+    const parsed = new Date(rawDate);
+
+    if (!isNaN(parsed.getTime())) {
+      formattedDate = parsed.toISOString().slice(0, 16);
     }
-  }, [scheduleOpen, session]);
+  }
+
+  setScheduledAt(formattedDate);
+  setConnectionType(session?.connectionType || "MEET");
+  setConnectionLink(session?.connectionLink || "");
+
+}, [scheduleOpen, session]);
 
   /* ---------------- Handlers ---------------- */
   const submitDetails = async (e) => {
