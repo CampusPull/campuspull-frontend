@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   FaGithub,
   FaLinkedin,
@@ -20,64 +20,108 @@ import {
   FaUniversity,
   FaLock,
   FaBuilding,
-  FaCode, // Added FaCode for LeetCode
+  FaCode,
+  FaCheck,
+  FaCrop,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileContext } from "../../context/profileContext";
 import toast, { Toaster } from "react-hot-toast";
 
-// ✅ Card Component
-const Card = ({ children, className = "" }) => (
+// ─── Animation variants ───────────────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.93 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+const Card = ({ children, className = "", delay = 0 }) => (
   <motion.div
-    whileHover={{ y: -2 }}
-    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-    className={`bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-6 ${className}`}
+    variants={fadeUp}
+    initial="hidden"
+    animate="visible"
+    custom={delay}
+    whileHover={{ y: -3, boxShadow: "0 20px 40px rgba(99,102,241,0.12)" }}
+    transition={{ type: "spring", stiffness: 220, damping: 18 }}
+    className={`bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg p-6 ${className}`}
   >
     {children}
   </motion.div>
 );
 
-// ✅ Modal for Editing Items
-const EditModal = ({
-  isOpen,
-  onClose,
-  onSave,
-  data,
-  setData,
-  fields,
-  title,
-}) => {
+// ─── Section chip label ───────────────────────────────────────────────────────
+const SectionLabel = ({ children }) => (
+  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+    {children}
+  </span>
+);
+
+// ─── Info Tile ────────────────────────────────────────────────────────────────
+const InfoTile = ({ label, value, icon }) => (
+  <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl px-4 py-3 flex flex-col gap-0.5 hover:bg-indigo-50 transition-colors">
+    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+      {icon && <span>{icon}</span>}
+      {label}
+    </span>
+    <span className="text-sm text-gray-800 font-semibold">{value || "—"}</span>
+  </div>
+);
+
+// ─── Skill chip colors ────────────────────────────────────────────────────────
+const chipPalette = [
+  "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200",
+  "bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200",
+  "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200",
+  "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200",
+  "bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200",
+  "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200",
+];
+
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+const EditModal = ({ isOpen, onClose, onSave, data, setData, fields, title }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+        variants={scaleIn}
+        initial="hidden"
+        animate="visible"
+        exit={{ opacity: 0, scale: 0.93 }}
+        className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-2xl shadow-2xl w-full max-w-md p-6"
       >
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">Edit {title}</h3>
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-lg font-bold text-gray-800">Edit {title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
           >
-            <FaTimes size={20} />
+            <FaTimes size={18} />
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {fields.map((field) => (
             <div key={field.name}>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide ml-1">
-                {field.placeholder}
-              </label>
+              <SectionLabel>{field.placeholder}</SectionLabel>
               <input
                 type="text"
                 value={data[field.name] || ""}
                 onChange={(e) =>
                   setData({ ...data, [field.name]: e.target.value })
                 }
-                className="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none text-sm transition"
               />
             </div>
           ))}
@@ -85,15 +129,15 @@ const EditModal = ({
         <div className="mt-6 flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl transition"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+            className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold rounded-xl hover:shadow-md hover:shadow-indigo-200 transition flex items-center gap-2"
           >
-            <FaSave /> Save Changes
+            <FaSave size={13} /> Save Changes
           </button>
         </div>
       </motion.div>
@@ -101,6 +145,236 @@ const EditModal = ({
   );
 };
 
+// ─── Crop Modal (with corrected object-fit:contain math) ──────────────────────
+const CropModal = ({ src, onCancel, onCrop }) => {
+  const imageRef = useRef(null);
+  const containerRef = useRef(null);
+  const [cropBox, setCropBox] = useState({ x: 60, y: 50, size: 180 });
+  const [dragging, setDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ mx: 0, my: 0, bx: 0, by: 0 });
+  // Actual rendered image bounds within the container (object-fit:contain)
+  const [imgBounds, setImgBounds] = useState({ x: 0, y: 0, w: 0, h: 0 });
+
+  // Compute actual rendered image position (object-fit: contain leaves letterbox bars)
+  const computeImgBounds = () => {
+    const img = imageRef.current;
+    const container = containerRef.current;
+    if (!img || !container || !img.naturalWidth) return;
+
+    const cW = container.clientWidth;
+    const cH = container.clientHeight;
+    const iAspect = img.naturalWidth / img.naturalHeight;
+    const cAspect = cW / cH;
+
+    let renderedW, renderedH, offsetX, offsetY;
+    if (iAspect > cAspect) {
+      renderedW = cW;
+      renderedH = cW / iAspect;
+      offsetX = 0;
+      offsetY = (cH - renderedH) / 2;
+    } else {
+      renderedH = cH;
+      renderedW = cH * iAspect;
+      offsetX = (cW - renderedW) / 2;
+      offsetY = 0;
+    }
+    setImgBounds({ x: offsetX, y: offsetY, w: renderedW, h: renderedH });
+    // Centre the initial crop box inside the actual image area
+    const initSize = Math.min(renderedW, renderedH) * 0.7;
+    setCropBox({
+      x: offsetX + (renderedW - initSize) / 2,
+      y: offsetY + (renderedH - initSize) / 2,
+      size: initSize,
+    });
+  };
+
+  const startDrag = (e) => {
+    e.preventDefault();
+    setDragging(true);
+    setDragStart({ mx: e.clientX, my: e.clientY, bx: cropBox.x, by: cropBox.y });
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!dragging) return;
+      // Clamp within actual image bounds (not container)
+      const newX = Math.max(
+        imgBounds.x,
+        Math.min(dragStart.bx + e.clientX - dragStart.mx, imgBounds.x + imgBounds.w - cropBox.size)
+      );
+      const newY = Math.max(
+        imgBounds.y,
+        Math.min(dragStart.by + e.clientY - dragStart.my, imgBounds.y + imgBounds.h - cropBox.size)
+      );
+      setCropBox((c) => ({ ...c, x: newX, y: newY }));
+    };
+    const onUp = () => setDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [dragging, dragStart, cropBox.size, imgBounds]);
+
+  // Clamp size slider within image bounds
+  const handleSizeChange = (newSize) => {
+    const maxSize = Math.min(imgBounds.w, imgBounds.h);
+    const clampedSize = Math.min(newSize, maxSize);
+    // Also re-clamp position so the box stays within image
+    const newX = Math.min(cropBox.x, imgBounds.x + imgBounds.w - clampedSize);
+    const newY = Math.min(cropBox.y, imgBounds.y + imgBounds.h - clampedSize);
+    setCropBox({ x: newX, y: newY, size: clampedSize });
+  };
+
+  const handleConfirm = () => {
+    const img = imageRef.current;
+    const container = containerRef.current;
+    if (!img || !container || !imgBounds.w) return;
+
+    // Scale: natural px per rendered px
+    const scaleX = img.naturalWidth / imgBounds.w;
+    const scaleY = img.naturalHeight / imgBounds.h;
+
+    // Crop coords relative to rendered image (subtract letterbox offset)
+    const srcX = Math.max(0, (cropBox.x - imgBounds.x) * scaleX);
+    const srcY = Math.max(0, (cropBox.y - imgBounds.y) * scaleY);
+    const srcSize = cropBox.size * scaleX; // same scale on both axes (we used aspect-fit)
+
+    const canvas = document.createElement("canvas");
+    const OUT = 400;
+    canvas.width = OUT;
+    canvas.height = OUT;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, OUT, OUT);
+
+    canvas.toBlob(
+      (blob) => {
+        const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+        onCrop(file);
+      },
+      "image/jpeg",
+      0.93
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <motion.div
+        variants={scaleIn}
+        initial="hidden"
+        animate="visible"
+        exit={{ opacity: 0, scale: 0.93 }}
+        className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-2xl shadow-2xl w-full max-w-lg p-6"
+      >
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-gray-800 font-bold text-lg flex items-center gap-2">
+            <span className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+              <FaCrop size={14} />
+            </span>
+            Crop Profile Photo
+          </h3>
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
+          >
+            <FaTimes size={18} />
+          </button>
+        </div>
+        <p className="text-gray-400 text-xs mb-3">
+          Drag the circle to set your crop area. Resize with the slider below.
+        </p>
+
+        {/* Image container */}
+        <div
+          ref={containerRef}
+          className="relative w-full overflow-hidden rounded-xl select-none bg-gray-900"
+          style={{ height: 300 }}
+        >
+          <img
+            ref={imageRef}
+            src={src}
+            alt="Crop preview"
+            className="w-full h-full object-contain"
+            draggable={false}
+            onLoad={computeImgBounds}
+          />
+
+          {/* Dimmed overlay around crop box */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `
+                linear-gradient(to bottom,
+                  rgba(0,0,0,0.55) ${cropBox.y}px,
+                  transparent ${cropBox.y}px,
+                  transparent ${cropBox.y + cropBox.size}px,
+                  rgba(0,0,0,0.55) ${cropBox.y + cropBox.size}px
+                ),
+                linear-gradient(to right,
+                  rgba(0,0,0,0.55) ${cropBox.x}px,
+                  transparent ${cropBox.x}px,
+                  transparent ${cropBox.x + cropBox.size}px,
+                  rgba(0,0,0,0.55) ${cropBox.x + cropBox.size}px
+                )
+              `,
+            }}
+          />
+
+          {/* Draggable crop ring */}
+          <div
+            onMouseDown={startDrag}
+            className="absolute border-2 border-white rounded-full cursor-move shadow-2xl"
+            style={{
+              left: cropBox.x,
+              top: cropBox.y,
+              width: cropBox.size,
+              height: cropBox.size,
+            }}
+          >
+            {/* Inner ring */}
+            <div className="absolute inset-0 rounded-full ring-1 ring-indigo-400 ring-offset-0 opacity-70" />
+            {/* Corner guides */}
+            <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-white rounded-tl-full" />
+            <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-white rounded-tr-full" />
+            <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-white rounded-bl-full" />
+            <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-white rounded-br-full" />
+          </div>
+        </div>
+
+        {/* Slider */}
+        <div className="mt-3 flex items-center gap-3">
+          <span className="text-gray-400 text-xs w-10 shrink-0">Size</span>
+          <input
+            type="range"
+            min={60}
+            max={Math.min(imgBounds.w || 280, imgBounds.h || 280)}
+            value={cropBox.size}
+            onChange={(e) => handleSizeChange(Number(e.target.value))}
+            className="flex-1 accent-indigo-600"
+          />
+        </div>
+
+        <div className="mt-5 flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold rounded-xl hover:shadow-md hover:shadow-indigo-200 transition flex items-center gap-2"
+          >
+            <FaCheck size={13} /> Crop &amp; Upload
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ─── Main Profile Component ───────────────────────────────────────────────────
 export default function Profile() {
   const {
     profile,
@@ -129,6 +403,10 @@ export default function Profile() {
   const [newSkill, setNewSkill] = useState("");
   const [resume, setResume] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Crop modal state (UI-only addition)
+  const [cropSrc, setCropSrc] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
   // State for Personal & Academic Info Form
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -208,24 +486,46 @@ export default function Profile() {
   if (loading)
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 px-4 md:px-10 py-12 flex justify-center items-center">
-         <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
-            <p className="text-indigo-800 font-semibold animate-pulse tracking-wide">Loading your academic profile...</p>
-         </div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-indigo-700 font-semibold animate-pulse tracking-wide text-sm">
+            Loading your academic profile…
+          </p>
+        </div>
       </div>
     );
-  if (error) return <p className="p-6 text-red-500 font-bold bg-red-50 m-4 rounded-xl">{error}</p>;
-  if (!profile) return <p className="p-6 text-gray-500">No profile data available.</p>;
 
-  //HANDLERS
+  if (error)
+    return (
+      <p className="p-6 text-red-500 font-bold bg-red-50 m-4 rounded-xl">
+        {error}
+      </p>
+    );
+  if (!profile)
+    return <p className="p-6 text-gray-500">No profile data available.</p>;
+
+  // ─── HANDLERS (all preserved exactly as original) ─────────────────────────
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) return alert("Image too large (Max 5MB).");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCropSrc(ev.target.result);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset so same file can be re-selected
+  };
 
+  // Called by CropModal — passes the correctly-cropped blob to existing uploadPhoto
+  const handleCropConfirm = async (croppedFile) => {
+    setShowCropModal(false);
+    setCropSrc(null);
     setUploadingImage(true);
     try {
-      await uploadPhoto(file);
+      await uploadPhoto(croppedFile);
     } catch (err) {
       alert("Failed to upload image.");
     } finally {
@@ -352,12 +652,13 @@ ${
     }
   };
 
-  // Configuration for sections
+  // Configuration for sections (preserved exactly)
   const sections = [
     {
       key: "projects",
       title: "Projects",
       icon: <FaFolderOpen />,
+      color: "indigo",
       data: profile.projects,
       inputs: newProject,
       setInputs: setNewProject,
@@ -372,6 +673,7 @@ ${
       key: "experience",
       title: "Experience",
       icon: <FaBriefcase />,
+      color: "blue",
       data: profile.experience,
       inputs: newExperience,
       setInputs: setNewExperience,
@@ -387,6 +689,7 @@ ${
       key: "education",
       title: "Education History",
       icon: <FaGraduationCap />,
+      color: "purple",
       data: profile.education,
       inputs: newEducation,
       setInputs: setNewEducation,
@@ -401,6 +704,7 @@ ${
       key: "certifications",
       title: "Certifications",
       icon: <FaCertificate />,
+      color: "emerald",
       data: profile.certifications,
       inputs: newCert,
       setInputs: setNewCert,
@@ -413,754 +717,868 @@ ${
     },
   ];
 
+  // Input style shared across edit form
+  const inputCls =
+    "w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none text-sm transition";
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 px-4 md:px-10 py-12">
+    <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+      {/* Soft background blobs for depth */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 right-0 w-80 h-80 bg-purple-300/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-pink-300/20 rounded-full blur-3xl" />
+      </div>
+
       <Toaster position="top-center" />
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* ================= SIDEBAR ================= */}
-        <Card className="h-fit !p-0 overflow-hidden">
-          {/* Cover Photo Gradient Bar */}
-          <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-500 w-full relative" />
-          
-          <div className="flex flex-col items-center text-center relative px-6 pb-6 -mt-16">
-            <div className="relative group">
-              <motion.img
-                whileHover={{ scale: 1.05 }}
-                src={profile.profileImage || "/default-avatar.png"}
-                alt="Profile"
-                className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-              />
-              <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-md transition-colors z-10">
-                {uploadingImage ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <FaCamera size={14} />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={uploadingImage}
-                />
-              </label>
 
-              {profile.profileImage && (
-                <button
-                  onClick={handleRemovePhoto}
-                  className="absolute top-0 right-0 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition opacity-0 group-hover:opacity-100"
-                  title="Remove Photo"
+      {/* ── Crop Modal ── */}
+      <AnimatePresence>
+        {showCropModal && cropSrc && (
+          <CropModal
+            src={cropSrc}
+            onCancel={() => {
+              setShowCropModal(false);
+              setCropSrc(null);
+            }}
+            onCrop={handleCropConfirm}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Page Layout ── */}
+      <div className="relative w-full px-4 md:px-8 lg:px-12 py-24">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-7">
+
+          {/* ════════════════════ SIDEBAR ════════════════════ */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0}
+            className="h-fit"
+          >
+            {/* Profile Card */}
+            <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden">
+              {/* Cover */}
+              <div
+                className="h-32 w-full relative"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+                }}
+              >
+                <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+              </div>
+
+              {/* Avatar + Name */}
+              <div className="flex flex-col items-center text-center px-6 pb-6 -mt-16 relative">
+                <div className="relative group">
+                  <motion.img
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                    src={profile.profileImage || "/default-avatar.png"}
+                    alt="Profile"
+                    className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl object-cover bg-gray-100"
+                  />
+
+                  {/* Camera btn */}
+                  <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all z-10 ring-2 ring-white">
+                    {uploadingImage ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <FaCamera size={13} />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={uploadingImage}
+                    />
+                  </label>
+
+                  {/* Delete btn */}
+                  {profile.profileImage && (
+                    <button
+                      onClick={handleRemovePhoto}
+                      className="absolute top-0 right-0 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition opacity-0 group-hover:opacity-100 ring-2 ring-white"
+                      title="Remove Photo"
+                    >
+                      <FaTrash size={11} />
+                    </button>
+                  )}
+                </div>
+
+                <h2 className="text-2xl font-bold mt-4 text-gray-800">
+                  {profile.name || "User"}
+                </h2>
+                <p className="text-sm text-indigo-600 font-medium mt-0.5">
+                  {profile.role === "alumni"
+                    ? "Alumni"
+                    : `${profile.degree || ""} Student`}
+                </p>
+
+                {/* Streak */}
+                <motion.div
+                  animate={{
+                    boxShadow: [
+                      "0 0 0px #f97316",
+                      "0 0 14px #f97316aa",
+                      "0 0 0px #f97316",
+                    ],
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                  className="mt-4 w-full bg-gradient-to-r from-orange-100 to-amber-100 border border-orange-200 text-orange-600 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-sm"
                 >
-                  <FaTrash size={12} />
-                </button>
-              )}
-            </div>
+                  🔥 {profile.streakCount || 0} Day Streak
+                </motion.div>
 
-            <h2 className="text-2xl font-bold mt-4 text-gray-800">
-              {profile.name || "User"}
-            </h2>
-            <p className="text-gray-500">
-              {profile.role === "alumni"
-                ? "Alumni"
-                : `${profile.degree} Student`}
-            </p>
+                {/* Social quick links */}
+                <div className="mt-4 flex flex-wrap justify-center gap-2 w-full">
+                  {profile.linkedin && (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      href={profile.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                    >
+                      <FaLinkedin size={12} /> LinkedIn
+                    </motion.a>
+                  )}
+                  {profile.email && (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      href={`mailto:${profile.email}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                    >
+                      <FaEnvelope size={12} /> Email
+                    </motion.a>
+                  )}
+                  {profile.github && (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      href={profile.github}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
+                    >
+                      <FaGithub size={12} /> GitHub
+                    </motion.a>
+                  )}
+                  {profile.leetcode && (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      href={profile.leetcode}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
+                    >
+                      <FaCode size={12} /> LeetCode
+                    </motion.a>
+                  )}
+                </div>
+              </div>
 
-            {/* ✅ 1. PRIMARY CONTACTS (LinkedIn) */}
-            <div className="flex justify-center gap-3 mt-4 mb-2">
-              {profile.linkedin && (
-                <a
-                  href={profile.linkedin}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-100 hover:bg-blue-100 transition"
-                >
-                  <FaLinkedin /> LinkedIn
-                </a>
-              )}
-              {profile.email && (
-                <a
-                  href={`mailto:${profile.email}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-100 hover:bg-blue-100 transition"
-                >
-                  <FaEnvelope /> Email
-                </a>
-              )}
-            </div>
+              {/* Divider */}
+              <div className="mx-6 h-px bg-gray-100" />
 
-            <div className="mt-6 w-full">
-              <div className="bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-700 px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm border border-orange-200">
-                <span role="img" aria-label="fire">
-                  🔥
-                </span>
-                <span>{profile.streakCount || 0} Day Streak</span>
+              {/* Skills */}
+              <div className="px-6 py-5">
+                <h3 className="text-sm font-bold text-indigo-700 flex items-center gap-2 mb-3">
+                  <FaTools size={13} /> Skills
+                </h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {profile.skills?.length > 0 ? (
+                    profile.skills.map((skill, idx) => (
+                      <motion.span
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className={`group flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105 ${chipPalette[idx % chipPalette.length]}`}
+                      >
+                        {skill}
+                        <button
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="text-current opacity-40 hover:opacity-100 transition ml-0.5"
+                        >
+                          <FaTimes size={10} />
+                        </button>
+                      </motion.span>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">
+                      No skills added yet.
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newSkill}
+                    onChange={(e) => setNewSkill(e.target.value)}
+                    placeholder="Add a skill…"
+                    className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none"
+                    onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
+                  />
+                  <motion.button
+                    whileTap={{ scale: 0.93 }}
+                    onClick={handleAddSkill}
+                    className="flex-shrink-0 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm transition shadow-sm"
+                  >
+                    <FaPlus size={12} />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="mx-6 h-px bg-gray-100" />
+
+              {/* Security */}
+              <div className="px-6 py-5">
+                <h3 className="text-sm font-bold text-red-500 flex items-center gap-2 mb-3">
+                  <FaLock size={13} /> Security
+                </h3>
+                <div className="bg-white/70 border border-gray-100 rounded-xl p-4">
+                  {passStep === 1 ? (
+                    <>
+                      <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                        Update your account password. A secure OTP will be sent
+                        to your registered email for verification.
+                      </p>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleSendOTP}
+                        disabled={passLoading}
+                        className="w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition disabled:opacity-50 text-sm"
+                      >
+                        {passLoading ? "Sending OTP…" : "Change Password"}
+                      </motion.button>
+                    </>
+                  ) : (
+                    <div className="space-y-3 animate-fade-in-up">
+                      <div>
+                        <SectionLabel>Verification Code</SectionLabel>
+                        <input
+                          type="text"
+                          maxLength="6"
+                          value={passOtp}
+                          onChange={(e) =>
+                            setPassOtp(e.target.value.replace(/\D/g, ""))
+                          }
+                          placeholder="• • • • • •"
+                          className="w-full p-3 text-center tracking-[0.5em] font-mono text-lg font-bold border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <SectionLabel>New Password</SectionLabel>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => {
+                            setPassStep(1);
+                            setPassOtp("");
+                            setNewPassword("");
+                          }}
+                          className="flex-1 py-2.5 text-gray-500 font-semibold hover:bg-gray-100 rounded-xl text-sm transition"
+                        >
+                          Cancel
+                        </button>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={handleUpdatePassword}
+                          disabled={passLoading}
+                          className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50 text-sm"
+                        >
+                          {passLoading ? "Verifying…" : "Update"}
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold flex items-center gap-2 text-indigo-700 mb-3">
-              <FaTools /> Skills
-            </h3>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {profile.skills?.length > 0 ? (
-                profile.skills.map((skill, idx) => (
-                  <span
-                    key={idx}
-                    className="group flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-200 transition"
-                  >
-                    {skill}
-                    <button
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="text-indigo-400 hover:text-red-500 transition"
-                    >
-                      <FaTimes size={12} />
-                    </button>
+          {/* ════════════════════ MAIN CONTENT ════════════════════ */}
+          <div className="md:col-span-2 space-y-6">
+
+            {/* ── Personal & Academic Info ── */}
+            <Card delay={1}>
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
+                  <span className="p-1.5 bg-indigo-100 rounded-lg">
+                    <FaUniversity size={14} />
                   </span>
-                ))
-              ) : (
-                <p className="text-sm text-gray-400 italic">No skills added.</p>
-              )}
-            </div>
-            <div className="flex gap-2 w-full">
-              <input
-                type="text"
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Add skill..."
-                className="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
-                onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
-              />
-              <button
-                onClick={handleAddSkill}
-                className="flex-shrink-0 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition"
-              >
-                <FaPlus />
-              </button>
-            </div>
-          </div>
-          {/* ================= SECURITY CARD ================= */}
-          <div className="mt-6">
-            <Card className="border-t-4 border-t-red-400 mt-6 pt-6 px-6 pb-6">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
-                <FaLock className="text-red-500" /> Security
-              </h3>
+                  Personal &amp; Academic Info
+                </h3>
+                {!isEditingInfo && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsEditingInfo(true)}
+                    className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
+                  >
+                    <FaPen size={10} /> Edit
+                  </motion.button>
+                )}
+              </div>
 
-              <div className="bg-white/50 p-5 rounded-xl border border-gray-100">
-                {passStep === 1 ? (
-                  <>
-                    <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-                      Update your account password. A secure OTP will be sent to your registered email for verification.
-                    </p>
-                    <button
-                      onClick={handleSendOTP}
-                      disabled={passLoading}
-                      className="w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-lg border border-red-200 hover:bg-red-100 transition disabled:opacity-50 text-sm"
-                    >
-                      {passLoading ? "Sending OTP..." : "Change Password"}
-                    </button>
-                  </>
-                ) : (
-                  <div className="space-y-4 animate-fade-in-up">
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
-                        Verification Code
-                      </label>
+              <AnimatePresence mode="wait">
+                {isEditingInfo ? (
+                  <motion.div
+                    key="edit"
+                    variants={fadeUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit={{ opacity: 0, y: -8 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    {/* Full Name */}
+                    <div className="col-span-1 md:col-span-2">
+                      <SectionLabel>Full Name</SectionLabel>
                       <input
                         type="text"
-                        maxLength="6"
-                        value={passOtp}
-                        onChange={(e) => setPassOtp(e.target.value.replace(/\D/g, ''))}
-                        placeholder="• • • • • •"
-                        className="w-full p-3 text-center tracking-[0.5em] font-mono text-lg font-bold border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-300 outline-none bg-white"
+                        value={infoForm.name}
+                        onChange={(e) =>
+                          setInfoForm({ ...infoForm, name: e.target.value })
+                        }
+                        className={inputCls}
+                      />
+                    </div>
+
+                    {/* Contact & Socials */}
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-100 pb-4">
+                      <div>
+                        <SectionLabel>Phone (Confidential)</SectionLabel>
+                        <input
+                          type="text"
+                          value={infoForm.phone}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, phone: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <SectionLabel>Portfolio / Website</SectionLabel>
+                        <input
+                          type="text"
+                          placeholder="https://…"
+                          value={infoForm.portfolio}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, portfolio: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <SectionLabel>LinkedIn URL</SectionLabel>
+                        <input
+                          type="text"
+                          placeholder="https://linkedin.com/in/…"
+                          value={infoForm.linkedin}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, linkedin: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <SectionLabel>GitHub URL</SectionLabel>
+                        <input
+                          type="text"
+                          placeholder="https://github.com/…"
+                          value={infoForm.github}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, github: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                      {/* LeetCode */}
+                      <div className="col-span-1 md:col-span-2">
+                        <SectionLabel>LeetCode URL</SectionLabel>
+                        <input
+                          type="text"
+                          placeholder="https://leetcode.com/…"
+                          value={infoForm.leetcode}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, leetcode: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Academic */}
+                    <div>
+                      <SectionLabel>College</SectionLabel>
+                      <input
+                        type="text"
+                        value={infoForm.college}
+                        onChange={(e) =>
+                          setInfoForm({ ...infoForm, college: e.target.value })
+                        }
+                        className={inputCls}
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
-                        New Password
-                      </label>
+                      <SectionLabel>Department</SectionLabel>
                       <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                        className="w-full p-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-300 outline-none bg-white text-sm"
+                        type="text"
+                        value={infoForm.department}
+                        onChange={(e) =>
+                          setInfoForm({ ...infoForm, department: e.target.value })
+                        }
+                        className={inputCls}
                       />
                     </div>
-                    <div className="flex gap-2 pt-2">
+
+                    {/* Teacher */}
+                    {isTeacher && (
+                      <div>
+                        <SectionLabel>Designation</SectionLabel>
+                        <input
+                          type="text"
+                          value={infoForm.designation}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, designation: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                    )}
+
+                    {/* Alumni */}
+                    {isAlumni && (
+                      <div className="col-span-1 md:col-span-2">
+                        <SectionLabel>Current Company</SectionLabel>
+                        <input
+                          type="text"
+                          value={infoForm.currentCompany}
+                          placeholder="Where are you working?"
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, currentCompany: e.target.value })
+                          }
+                          className={inputCls}
+                        />
+                      </div>
+                    )}
+
+                    {/* Student + Alumni */}
+                    {(isStudent || isAlumni) && (
+                      <>
+                        <div>
+                          <SectionLabel>Degree</SectionLabel>
+                          <input
+                            type="text"
+                            value={infoForm.degree}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, degree: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>Graduation Year</SectionLabel>
+                          <input
+                            type="number"
+                            value={infoForm.graduationYear}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, graduationYear: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Student only */}
+                    {isStudent && (
+                      <>
+                        <div>
+                          <SectionLabel>Current Year (1-4)</SectionLabel>
+                          <input
+                            type="number"
+                            value={infoForm.year}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, year: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>Section</SectionLabel>
+                          <input
+                            type="text"
+                            value={infoForm.section}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, section: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-3 border-t border-gray-100">
                       <button
-                        onClick={() => { setPassStep(1); setPassOtp(""); setNewPassword(""); }}
-                        className="flex-1 py-2.5 text-gray-500 font-semibold hover:bg-gray-100 rounded-xl text-sm transition"
+                        onClick={() => setIsEditingInfo(false)}
+                        className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
                       >
                         Cancel
                       </button>
-                      <button
-                        onClick={handleUpdatePassword}
-                        disabled={passLoading}
-                        className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50 text-sm"
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={saveInfo}
+                        className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold flex items-center gap-2"
                       >
-                        {passLoading ? "Verifying..." : "Update"}
-                      </button>
+                        <FaSave size={12} /> Save Info
+                      </motion.button>
                     </div>
-                  </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="view"
+                    variants={fadeUp}
+                    initial="hidden"
+                    animate="visible"
+                    className="flex flex-col gap-5"
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <InfoTile
+                        label="College"
+                        value={profile.college}
+                        icon={<FaUniversity size={10} />}
+                      />
+                      <InfoTile label="Department" value={profile.department} />
+
+                      {isTeacher && (
+                        <InfoTile label="Designation" value={profile.designation} />
+                      )}
+                      {(isStudent || isAlumni) && (
+                        <>
+                          <InfoTile
+                            label="Degree"
+                            value={profile.degree}
+                            icon={<FaGraduationCap size={10} />}
+                          />
+                          <InfoTile
+                            label="Graduation Year"
+                            value={profile.graduationYear}
+                          />
+                        </>
+                      )}
+                      {isStudent && (
+                        <>
+                          <InfoTile
+                            label="Current Year"
+                            value={profile.year ? `Year ${profile.year}` : null}
+                          />
+                          <InfoTile
+                            label="Section"
+                            value={profile.section || profile.Section}
+                          />
+                        </>
+                      )}
+                      {isAlumni && profile.currentCompany && (
+                        <InfoTile
+                          label="Current Company"
+                          value={profile.currentCompany}
+                          icon={<FaBuilding size={10} />}
+                        />
+                      )}
+                    </div>
+
+                    {/* Social links */}
+                    {(profile.github || profile.portfolio || profile.leetcode) && (
+                      <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                        {profile.github && (
+                          <motion.a
+                            whileHover={{ scale: 1.05 }}
+                            href={profile.github}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 bg-gray-100 text-gray-800 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
+                          >
+                            <FaGithub size={12} /> GitHub
+                          </motion.a>
+                        )}
+                        {profile.portfolio && (
+                          <motion.a
+                            whileHover={{ scale: 1.05 }}
+                            href={profile.portfolio}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-indigo-100 transition"
+                          >
+                            <FaGlobe size={12} /> Portfolio
+                          </motion.a>
+                        )}
+                        {profile.leetcode && (
+                          <motion.a
+                            whileHover={{ scale: 1.05 }}
+                            href={profile.leetcode}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
+                          >
+                            <FaCode size={12} /> LeetCode
+                          </motion.a>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+
+            {/* ── About / Bio ── */}
+            <Card delay={2}>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
+                  <span className="p-1.5 bg-purple-100 rounded-lg text-purple-600">
+                    <FaUser size={13} />
+                  </span>
+                  About
+                </h3>
+                {!editBio && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setEditBio(true)}
+                    className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
+                  >
+                    <FaPen size={10} /> Edit
+                  </motion.button>
                 )}
               </div>
-            </Card>
-          </div>
-        </Card>
-
-
-        {/* ================= MAIN CONTENT ================= */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Personal & Academic Info Card */}
-          <Card>
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-indigo-700 flex items-center gap-2">
-                <FaUniversity /> Personal & Academic Info
-              </h3>
-              {!isEditingInfo && (
-                <button
-                  onClick={() => setIsEditingInfo(true)}
-                  className="text-sm text-indigo-600 font-medium hover:underline flex items-center gap-1"
-                >
-                  <FaPen size={12} /> Edit
-                </button>
-              )}
-            </div>
-
-            {isEditingInfo ? (
-              // ================== EDIT MODE ==================
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 1. Identity */}
-                <div className="col-span-1 md:col-span-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={infoForm.name}
-                    onChange={(e) =>
-                      setInfoForm({ ...infoForm, name: e.target.value })
-                    }
-                    className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                  />
-                </div>
-
-                {/* 2. Contact & Social Links (ALWAYS VISIBLE IN EDIT MODE) */}
-                <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-100 pb-4 mb-2">
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase">
-                      Phone (Confidential)
-                    </label>
-                    <input
-                      type="text"
-                      value={infoForm.phone}
-                      onChange={(e) =>
-                        setInfoForm({ ...infoForm, phone: e.target.value })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                      <FaGlobe /> Portfolio / Website
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://..."
-                      value={infoForm.portfolio}
-                      onChange={(e) =>
-                        setInfoForm({ ...infoForm, portfolio: e.target.value })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                      <FaLinkedin /> LinkedIn URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://linkedin.com/in/..."
-                      value={infoForm.linkedin}
-                      onChange={(e) =>
-                        setInfoForm({ ...infoForm, linkedin: e.target.value })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                      <FaGithub /> GitHub URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://github.com/..."
-                      value={infoForm.github}
-                      onChange={(e) =>
-                        setInfoForm({ ...infoForm, github: e.target.value })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                  {/* ✅ LeetCode Input Added */}
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                      <FaCode /> LeetCode URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://leetcode.com/..."
-                      value={infoForm.leetcode}
-                      onChange={(e) =>
-                        setInfoForm({ ...infoForm, leetcode: e.target.value })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                </div>
-
-                {/* 3. Academic Info (Common) */}
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">
-                    College
-                  </label>
-                  <input
-                    type="text"
-                    value={infoForm.college}
-                    onChange={(e) =>
-                      setInfoForm({ ...infoForm, college: e.target.value })
-                    }
-                    className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">
-                    Department
-                  </label>
-                  <input
-                    type="text"
-                    value={infoForm.department}
-                    onChange={(e) =>
-                      setInfoForm({ ...infoForm, department: e.target.value })
-                    }
-                    className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                  />
-                </div>
-
-                {/* 4. Role Specific Fields */}
-                {isTeacher && (
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase">
-                      Designation
-                    </label>
-                    <input
-                      type="text"
-                      value={infoForm.designation}
-                      onChange={(e) =>
-                        setInfoForm({
-                          ...infoForm,
-                          designation: e.target.value,
-                        })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                )}
-
-                {isAlumni && (
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                      <FaBuilding /> Current Company
-                    </label>
-                    <input
-                      type="text"
-                      value={infoForm.currentCompany}
-                      placeholder="Where are you working?"
-                      onChange={(e) =>
-                        setInfoForm({
-                          ...infoForm,
-                          currentCompany: e.target.value,
-                        })
-                      }
-                      className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                    />
-                  </div>
-                )}
-
-                {(isStudent || isAlumni) && (
-                  <>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        Degree
-                      </label>
-                      <input
-                        type="text"
-                        value={infoForm.degree}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, degree: e.target.value })
-                        }
-                        className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
+              <AnimatePresence mode="wait">
+                {editBio ? (
+                  <motion.div
+                    key="edit-bio"
+                    variants={fadeUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col gap-3"
+                  >
+                    <div className="relative">
+                      <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none min-h-[110px] text-sm resize-none"
+                        placeholder="Tell us about yourself…"
+                        maxLength={500}
                       />
+                      <span className="absolute bottom-3 right-3 text-[10px] text-gray-400">
+                        {bio.length}/500
+                      </span>
                     </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        Graduation Year
-                      </label>
+                    <div className="flex gap-2 self-end">
+                      <button
+                        onClick={() => setEditBio(false)}
+                        className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
+                      >
+                        Cancel
+                      </button>
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={saveBio}
+                        className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold"
+                      >
+                        Save Bio
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.p
+                    key="view-bio"
+                    variants={fadeUp}
+                    initial="hidden"
+                    animate="visible"
+                    className="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm"
+                  >
+                    {bio || (
+                      <span className="italic text-gray-400">
+                        No about information yet.
+                      </span>
+                    )}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </Card>
+
+            {/* ── Dynamic Sections ── */}
+            {sections.map((section, sIdx) => (
+              <Card key={section.key} delay={sIdx + 3}>
+                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2 mb-4">
+                  <span className="p-1.5 bg-indigo-100 rounded-lg">
+                    {section.icon}
+                  </span>
+                  {section.title}
+                </h3>
+
+                {/* Existing items */}
+                <div className="space-y-3 mb-4">
+                  {section.data?.length > 0 ? (
+                    section.data.map((item, i) => (
+                      <motion.div
+                        key={item._id || i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="group relative p-4 border border-gray-100 rounded-xl bg-white/70 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all"
+                        style={{ borderLeft: "3px solid #6366f1" }}
+                      >
+                        {/* Action buttons */}
+                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEditClick(section, item)}
+                            className="text-gray-400 hover:text-indigo-600 transition p-1 rounded"
+                            title="Edit"
+                          >
+                            <FaPen size={13} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteItem(section.key, item._id)
+                            }
+                            className="text-gray-400 hover:text-red-500 transition p-1 rounded"
+                            title="Delete"
+                          >
+                            <FaTrash size={13} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 pr-12">
+                          {Object.entries(item).map(([k, v]) => {
+                            if (k === "_id") return null;
+                            const isLink =
+                              k === "link" ||
+                              (typeof v === "string" &&
+                                (v.startsWith("http://") ||
+                                  v.startsWith("https://")));
+                            return (
+                              <div key={k} className="text-sm">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                  {k}:{" "}
+                                </span>
+                                {isLink ? (
+                                  <a
+                                    href={v}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-indigo-600 hover:underline break-all transition"
+                                  >
+                                    {v}
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-800">{v}</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400 italic py-1">
+                      No {section.title.toLowerCase()} added yet.
+                    </p>
+                  )}
+                </div>
+
+                {/* Add new item form */}
+                <div className="bg-gray-50/70 p-4 rounded-xl border border-dashed border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    {section.fields.map((field) => (
                       <input
-                        type="number"
-                        value={infoForm.graduationYear}
+                        key={field.name}
+                        type="text"
+                        value={section.inputs[field.name]}
                         onChange={(e) =>
-                          setInfoForm({
-                            ...infoForm,
-                            graduationYear: e.target.value,
+                          section.setInputs({
+                            ...section.inputs,
+                            [field.name]: e.target.value,
                           })
                         }
-                        className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
+                        placeholder={field.placeholder}
+                        className={`px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none transition ${
+                          field.name === "description" ? "sm:col-span-2" : ""
+                        }`}
                       />
-                    </div>
-                  </>
-                )}
-
-                {isStudent && (
-                  <>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        Current Year (1-4)
-                      </label>
-                      <input
-                        type="number"
-                        value={infoForm.year}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, year: e.target.value })
-                        }
-                        className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase">
-                        Section
-                      </label>
-                      <input
-                        type="text"
-                        value={infoForm.section}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, section: e.target.value })
-                        }
-                        className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-300"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div className="col-span-1 md:col-span-2 flex justify-end gap-2 mt-4 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={() => setIsEditingInfo(false)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveInfo}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2"
-                  >
-                    <FaSave /> Save Info
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // ================== VIEW MODE ==================
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm text-gray-700">
-                  {/* Standard Info Display (College, Dept, etc.) */}
-                  <div>
-                    <span className="font-semibold text-gray-500 block text-xs uppercase">
-                      College
-                    </span>
-                    <span>{profile.college || "N/A"}</span>
+                    ))}
                   </div>
-                  <div>
-                    <span className="font-semibold text-gray-500 block text-xs uppercase">
-                      Department
-                    </span>
-                    <span>{profile.department || "N/A"}</span>
-                  </div>
-
-                  {isTeacher && (
-                    <div>
-                      <span className="font-semibold text-gray-500 block text-xs uppercase">
-                        Designation
-                      </span>
-                      <span>{profile.designation || "N/A"}</span>
-                    </div>
-                  )}
-
-                  {(isStudent || isAlumni) && (
-                    <>
-                      <div>
-                        <span className="font-semibold text-gray-500 block text-xs uppercase">
-                          Degree
-                        </span>
-                        <span>{profile.degree}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-500 block text-xs uppercase">
-                          Graduation Year
-                        </span>
-                        <span>{profile.graduationYear || "N/A"}</span>
-                      </div>
-                    </>
-                  )}
-
-                  {isStudent && (
-                    <>
-                      <div>
-                        <span className="font-semibold text-gray-500 block text-xs uppercase">
-                          Current Year
-                        </span>
-                        <span>{profile.year ? `${profile.year}` : "N/A"}</span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-500 block text-xs uppercase">
-                          Section
-                        </span>
-                        <span>
-                          {profile.section || profile.Section || "N/A"}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {isAlumni && profile.currentCompany&& (
-                  <div className="col-span-1 md:col-span-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                    <span className="font-semibold text-blue-500 text-xs uppercase flex items-center gap-1">
-                      <FaBuilding /> Current Company
-                    </span>
-                    <span className="font-bold text-blue-900">
-                      {profile.currentCompany || "N/A"}
-                    </span>
-                  </div>
-                )}
-
-                {/* ✅ UPDATED DYNAMIC SOCIAL LINKS (Removed LinkedIn, Added LeetCode) */}
-                {(profile.github || profile.portfolio || profile.leetcode) && (
-                  <div className="mt-2 pt-4 border-t border-gray-100 flex flex-wrap gap-4">
-                    {profile.github && (
-                      <a
-                        href={profile.github}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-gray-800 hover:text-black transition flex items-center gap-1.5 text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200"
-                      >
-                        <FaGithub size={14} /> GitHub
-                      </a>
-                    )}
-                    {profile.portfolio && (
-                      <a
-                        href={profile.portfolio}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1.5 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100"
-                      >
-                        <FaGlobe size={14} /> Portfolio
-                      </a>
-                    )}
-                    {profile.leetcode && (
-                      <a
-                        href={profile.leetcode}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-yellow-600 hover:text-yellow-800 transition flex items-center gap-1.5 text-xs font-bold bg-yellow-50 px-3 py-1.5 rounded-full border border-yellow-100"
-                      >
-                        <FaCode size={14} /> LeetCode
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
-
-          {/* About Card */}
-          <Card>
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold text-indigo-700">About</h3>
-              {!editBio && (
-                <button
-                  onClick={() => setEditBio(true)}
-                  className="text-sm text-indigo-600 font-medium hover:underline"
-                >
-                  ✏️ Edit
-                </button>
-              )}
-            </div>
-            {editBio ? (
-              <div className="flex flex-col gap-3">
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none min-h-[100px]"
-                  placeholder="Tell us about yourself..."
-                />
-                <div className="flex gap-2 self-end">
-                  <button
-                    onClick={() => setEditBio(false)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm"
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() =>
+                      handleAddSection(
+                        section.key,
+                        section.inputs,
+                        section.setInputs,
+                        section.emptyState
+                      )
+                    }
+                    className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-md hover:shadow-indigo-200 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveBio}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
-                  >
-                    Save Bio
-                  </button>
+                    <FaPlus size={11} /> Add {section.title}
+                  </motion.button>
                 </div>
-              </div>
-            ) : (
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {bio || "No about information yet."}
-              </p>
-            )}
-          </Card>
+              </Card>
+            ))}
 
-          {/* DYNAMIC SECTIONS */}
-          {sections.map((section) => (
-            <Card key={section.key}>
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-indigo-700 mb-4">
-                {section.icon} {section.title}
-              </h3>
-
-              {/* List Existing Items */}
-              <div className="space-y-3 mb-4">
-                {section.data?.length > 0 ? (
-                  section.data.map((item, i) => (
-                    <div
-                      key={item._id || i}
-                      className="group relative p-4 border border-gray-200 rounded-lg bg-white/50 shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {/* ACTION BUTTONS (Edit/Delete) - Top Right */}
-                      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEditClick(section, item)}
-                          className="text-gray-400 hover:text-indigo-600"
-                          title="Edit"
-                        >
-                          <FaPen size={14} />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDeleteItem(section.key, item._id)
-                          }
-                          className="text-gray-400 hover:text-red-500"
-                          title="Delete"
-                        >
-                          <FaTrash size={14} />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pr-10">
-                        {Object.entries(item).map(([k, v]) => {
-                          if (k === "_id") return null;
-                          const isLink =
-                            k === "link" ||
-                            (typeof v === "string" &&
-                              (v.startsWith("http://") ||
-                                v.startsWith("https://")));
-
-                          return (
-                            <div key={k} className="text-sm">
-                              <span className="font-semibold text-gray-600 capitalize">
-                                {k}:{" "}
-                              </span>
-                              {isLink ? (
-                                <a
-                                  href={v}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline break-all"
-                                >
-                                  {v}
-                                </a>
-                              ) : (
-                                <span className="text-gray-800">{v}</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-400 italic">
-                    No {section.title.toLowerCase()} added yet.
-                  </p>
-                )}
-              </div>
-
-              {/* Add New Item Form (Bottom of card) */}
-              <div className="bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-300">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                  {section.fields.map((field) => (
-                    <input
-                      key={field.name}
-                      type="text"
-                      value={section.inputs[field.name]}
-                      onChange={(e) =>
-                        section.setInputs({
-                          ...section.inputs,
-                          [field.name]: e.target.value,
-                        })
-                      }
-                      placeholder={field.placeholder}
-                      className={`px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none ${
-                        field.name === "description" ? "sm:col-span-2" : ""
-                      }`}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={() =>
-                    handleAddSection(
-                      section.key,
-                      section.inputs,
-                      section.setInputs,
-                      section.emptyState
-                    )
-                  }
-                  className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition flex items-center justify-center gap-2"
-                >
-                  <FaPlus size={12} /> Add {section.title}
-                </button>
-              </div>
-            </Card>
-          ))}
-
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl shadow-lg p-6"
-          >
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <FaMagic /> AI Resume Builder
-            </h3>
-            <button
-              onClick={generateResume}
-              className="mt-4 px-5 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-indigo-50 transition text-sm"
+            {/* ── AI Resume Builder ── */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={8}
+              whileHover={{ y: -3 }}
+              className="relative overflow-hidden rounded-2xl shadow-xl p-6"
+              style={{
+                background:
+                  "linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #ec4899 100%)",
+              }}
             >
-              Generate Resume
-            </button>
-            {resume && (
-              <div className="mt-4 bg-white/95 text-gray-800 rounded-xl p-4 max-h-64 overflow-y-auto shadow-inner font-mono text-xs sm:text-sm border-2 border-indigo-200">
-                <pre className="whitespace-pre-wrap">{resume}</pre>
-              </div>
-            )}
-          </motion.div>
+              <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+              <h3 className="relative z-10 text-base font-bold text-white flex items-center gap-2">
+                <FaMagic /> AI Resume Builder
+              </h3>
+              <p className="relative z-10 text-white/65 text-xs mt-1 mb-4">
+                Auto-generate a resume snapshot from your profile data.
+              </p>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={generateResume}
+                className="relative z-10 px-5 py-2.5 bg-white text-indigo-700 font-bold rounded-xl shadow hover:bg-indigo-50 transition text-sm"
+              >
+                Generate Resume
+              </motion.button>
+              {resume && (
+                <div className="relative z-10 mt-4 bg-white/95 text-gray-800 rounded-xl p-4 max-h-64 overflow-y-auto shadow-inner font-mono text-xs sm:text-sm border-2 border-white/30">
+                  <pre className="whitespace-pre-wrap">{resume}</pre>
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* EDIT MODAL OVERLAY */}
+      {/* ── Edit Modal Overlay ── */}
       <AnimatePresence>
         {isModalOpen && editingSection && (
           <EditModal
