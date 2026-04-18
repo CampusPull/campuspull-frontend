@@ -214,7 +214,7 @@ const ignoreRequest = useCallback(async (requestId) => {
         const roleQuery = activeRole !== 'all' ? `&role=${activeRole}` : '';
         const endpoint = isGuest
           ? `/explore/users?search=${encodeURIComponent(query)}${roleQuery}`
-          : `/connection/search?search=${encodeURIComponent(query)}&role=${activeRole}`;
+          : `/connection/search?q=${encodeURIComponent(query)}&role=${activeRole}`;
 
         const { data } = await api.get(endpoint);
 
