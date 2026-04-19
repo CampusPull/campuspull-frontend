@@ -54,6 +54,7 @@ import { ResourceProvider } from "./context/resourceContext.jsx";
 import { AnnouncementProvider } from "./context/announcementContext.jsx"; 
 import AdminDashboard from './pages/Admin/adminDashboard';
 import UsersTable from './pages/Admin/usersTable';
+import AdminMentorship from './pages/Admin/AdminMentorship';
 import MentorDiscoveryPage from "pages/Mentorship/UI/menteePage.jsx";
 import MentorProfilePage from "pages/Mentorship/UI/mentorPage.jsx";
 import MyRequests from "pages/Mentorship/components/myRequest.jsx";
@@ -407,6 +408,7 @@ const Routes = () => {
               
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<UsersTable />} />
+              <Route path="/admin/mentorship" element={<ProtectedLayout><AdminMentorship /></ProtectedLayout>} />
 
               {/* Public Auth Page (no header) */}
               <Route path="/auth" element={<Auth />} />
