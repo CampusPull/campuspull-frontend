@@ -406,9 +406,9 @@ const Routes = () => {
 
 
               
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<UsersTable />} />
-              <Route path="/admin/mentorship" element={<ProtectedLayout><AdminMentorship /></ProtectedLayout>} />
+              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UsersTable /></ProtectedRoute>} />
+              <Route path="/admin/mentorship" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminMentorship /></ProtectedLayout></ProtectedRoute>} />
 
               {/* Public Auth Page (no header) */}
               <Route path="/auth" element={<Auth />} />

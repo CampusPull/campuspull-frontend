@@ -9,6 +9,8 @@ import { MentorRequestProvider } from "../../../context/mentorRequestContext";
 import RequestMentorModal from "../components/requestMentorModal";
 import MentorList from "../components/mentorList";
 import SignupModal from "../../../components/ui/SignupModal"; // FIX
+import { useAuth } from "../../../context/AuthContext";
+import AdminMentorship from "../../Admin/AdminMentorship";
 
 const PageContent = () => {
   const navigate = useNavigate();
@@ -155,6 +157,12 @@ const PageContent = () => {
 };
 
 const MentorsDiscoveryPage = () => {
+  const { user } = useAuth();
+
+  if (user?.role === "admin") {
+    return <AdminMentorship />;
+  }
+
   return (
     <MentorDiscoveryProvider>
       <PageContent />
