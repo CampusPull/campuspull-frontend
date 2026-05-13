@@ -403,7 +403,33 @@ export default function Profile() {
   const [newSkill, setNewSkill] = useState("");
   const [resume, setResume] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingBanner(true);
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      const { data } = await api.post("/profile/upload-photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const photoUrl = data.photoUrl || data.url;
+      if (photoUrl) {
+        await updateProfile({ bannerImage: photoUrl });
+        toast.success("Cover image updated successfully");
+      }
+    } catch (err) {
+      console.error("Banner upload error:", err);
+      toast.error("Failed to upload cover image");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
   // Crop modal state (UI-only addition)
   const [cropSrc, setCropSrc] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -763,14 +789,36 @@ ${
             <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden">
               {/* Cover */}
               <div
-                className="h-32 w-full relative"
+                className="h-32 w-full relative bg-gray-200"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+                  background: profile.bannerImage 
+                    ? `url(${profile.bannerImage}) center/cover no-repeat` 
+                    : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
                 }}
               >
-                <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+                {!profile.bannerImage && (
+                  <>
+                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                    <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+                  </>
+                )}
+                
+                {/* Banner Upload Button */}
+                <label className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold z-10">
+                  {uploadingBanner ? (
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FaCamera size={12} />
+                  )}
+                  <span>{profile.bannerImage ? "Change Cover" : "Add Cover"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                    className="hidden"
+                    disabled={uploadingBanner}
+                  />
+                </label>
               </div>
 
               {/* Avatar + Name */}
@@ -821,20 +869,7 @@ ${
                     : `${profile.degree || ""} Student`}
                 </p>
 
-                {/* Streak */}
-                <motion.div
-                  animate={{
-                    boxShadow: [
-                      "0 0 0px #f97316",
-                      "0 0 14px #f97316aa",
-                      "0 0 0px #f97316",
-                    ],
-                  }}
-                  transition={{ duration: 2.5, repeat: Infinity }}
-                  className="mt-4 w-full bg-gradient-to-r from-orange-100 to-amber-100 border border-orange-200 text-orange-600 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-sm"
-                >
-                  🔥 {profile.streakCount || 0} Day Streak
-                </motion.div>
+
 
                 {/* Social quick links */}
                 <div className="mt-4 flex flex-wrap justify-center gap-2 w-full">

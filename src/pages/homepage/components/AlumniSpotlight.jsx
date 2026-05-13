@@ -1,200 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../../utils/api';
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import { useExplore } from '../../../context/exploreContext'; 
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AlumniSpotlight = () => {
   const navigate = useNavigate();
   
-  // ✅ Context Hook for Connection Logic
   const { 
     sendRequest, 
     outgoingRequestIds, 
     acceptedConnectionIds 
   } = useExplore();
 
-  // ✅ State Management
   const [alumniStories, setAlumniStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Modal & Connection State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [connectionNote, setConnectionNote] = useState("");
   const [isSent, setIsSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
-  // ✅ 1. Fallback Static Data (Keeps your site alive if API fails)
-  const staticAlumni = [
-    {
-      _id: "1", // Use simulated MongoIDs for static data
-      name: "Swati Yadav",
-      currentRole: " IT Project Manager",
-      company: "Black Orange",
-      companyLogo: "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=100",
-      profileImage: "/assets/images/swati.png",
-      university: "ABESIT",
-      graduationYear: "2026",
-      mentorshipStatus: "Available",
-      specialization: ["Management", "Team Work", "Microservices"],
-      quote: `The transition from college to corporate wasn't easy, but having the right guidance made all the difference. Now I want to be that bridge for the next generation.`,
-      achievements: [
-        "Led Team to work on time",
-        "Mentored 4+ junior developers",
-        <a
-  href="https://youtu.be/SH9OT4Sf5g8?si=QUq34LaSQ5LKpiK1"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="flex items-center gap-1 text-red-600 underline hover:text-red-700"
->
-  ▶ Watch Podcast
-</a>
-
-      ],
-      beforeImage: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=300",
-      journey: {
-        college: "Computer Science Student",
-        firstJob: "IT Project Manager at Startup(Dehix)",
-        current: " Engineer at BlackOrange"
-      },
-      menteeCount: 5,
-      responseTime: "< 2 hours",
-      rating: 5.0
-    },
-     {
-      id: 2,
-      name: "Ashiya Rana",
-      currentRole: "Trainee",
-      company: "Erasmith",
-      companyLogo: "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=100",
-      profileImage: "/assets/images/ashi.png",
-      university: "ABESIT",
-      graduationYear: "2026",
-      mentorshipStatus: "Available",
-      specialization: ["Version Control (Git)", "Team Work", "Corporate Communication"],
-      quote: `Being a trainee in a fast-paced tech environment has helped me build strong fundamentals and a problem-solving mindset. Every challenge I face today is shaping me into a better professional for tomorrow.`,
-      achievements: [
-         "Successfully completed trainee onboarding program",
-  "Actively contributed to team tasks and internal projects",
-  "Recognized for adaptability and learning attitude",
-  "Participated in corporate training and skill development sessions"
-      ],
-      beforeImage: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=300",
-      journey: {
-        college: "Computer Science Student",
-        firstJob: "Internship at CodeCraft Infotech",
-        current: " Engineer at Erasmith"
-      },
-      menteeCount: 5,
-      responseTime: "< 2 hours",
-      rating: 5.0
-    },
-    {
-      id: 3,
-      name: "Riya Sharma",
-      currentRole: "Software Tranee",
-      company: "Contevolve",
-      companyLogo: "https://images.pexels.com/photos/3861958/pexels-photo-3861958.jpeg?auto=compress&cs=tinysrgb&w=100",
-      profileImage: "/assets/images/riya.png",
-      university: "ABESIT",
-      graduationYear: "2026",
-      mentorshipStatus: "Available",
-      specialization: ["Core Java & OOPs",
-  "Data Structures Basics",
-  "Frontend Development (HTML, CSS, JavaScript)",
-  "REST API Consumption",
-  "Debugging & Code Optimization"],
-      quote: `Starting my journey as a software trainee has taught me that strong fundamentals and consistency matter more than titles. Every line of code I write today is preparing me for bigger challenges tomorrow.`,
-      achievements: [
-       "Completed structured software trainee onboarding program",
-  "Developed and maintained small frontend modules",
-  "Worked with REST APIs under senior developer guidance",
-  "Improved debugging and problem-solving skills through live projects",
-  <a
-  href="https://youtu.be/oJXNEOpPCoI?si=kjDNbsgCwT7jR-2P"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="flex items-center gap-1 text-red-600 underline hover:text-red-700"
->
-  ▶ Watch Podcast
-</a>
-      ],
-      
-      beforeImage: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=300",
-      journey: {
-        college: "Software Engineering Student",
-        firstJob: "Software Developer",
-        current: "Software Tranee at Contevovle"
-      },
-      menteeCount: 4,
-      responseTime: "< 4 hours",
-      rating: 5.0
-    },
-    {
-      id: 4,
-      name: "Samayak Vansh",
-      currentRole: "Product Development Intern",
-      company: "Black Orange",
-      companyLogo: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=100",
-      profileImage: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=400",
-      university: "ABESIT",
-      graduationYear: "2026",
-      mentorshipStatus: "Available",
-      specialization: ["Machine Learning", "Deep Learning",],
-      quote: `Working as a product development intern has shown me how data and technology come together to build meaningful products. I believe learning fundamentals well and applying them to real problems is the key to long-term growth.`,
-      achievements: [
-        "Worked on data preprocessing and model training tasks",
-        "Running an NGO",
-  "Assisted in developing ML-based features for internal products",
-   <a
-  href="https://youtu.be/BuKWVegZKLI?si=orh4b4Y3xv7S67yP"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="flex items-center gap-1 text-red-600 underline hover:text-red-700"
->
-  ▶ Watch Podcast
-</a>
-  
-      ],
-      beforeImage: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=300",
-      journey: {
-        college: "Software Student",
-        firstJob: "Data Analyst",
-        current: "Product Development Intern"
-      },
-      menteeCount: 18,
-      responseTime: "< 1 day",
-      rating: 4.9
-    }
-  ];
-
   useEffect(() => {
     const fetchAlumni = async () => {
       try {
-        // Replace with your real endpoint
-        // const { data } = await axios.get('http://localhost:5000/api/alumni/spotlight');
-        // setAlumniStories(data);
-        
-        // For now, simulating API call with static data
-        setTimeout(() => {
-          setAlumniStories(staticAlumni);
-          setIsLoading(false);
-        }, 500);
+        const { data } = await api.get('/explore/users?role=alumni&limit=10');
+        const users = data.data || data.users || data || [];
+        setAlumniStories(Array.isArray(users) ? users : []);
       } catch (error) {
         console.error("Failed to fetch alumni:", error);
-        setAlumniStories(staticAlumni); // Fallback
+        setAlumniStories([]);
+      } finally {
         setIsLoading(false);
       }
     };
     fetchAlumni();
   }, []);
 
-  // ✅ 3. Auto-Play Carousel Effect
   useEffect(() => {
     if (!isAutoPlaying || alumniStories.length === 0) return;
     const interval = setInterval(() => {
@@ -203,33 +50,40 @@ const AlumniSpotlight = () => {
     return () => clearInterval(interval);
   }, [isAutoPlaying, alumniStories.length]);
 
-  // Navigation Handlers
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % alumniStories.length);
-    setIsAutoPlaying(false);
+    if (alumniStories.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % alumniStories.length);
+      setIsAutoPlaying(false);
+    }
   };
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + alumniStories.length) % alumniStories.length);
-    setIsAutoPlaying(false);
+    if (alumniStories.length > 0) {
+      setCurrentSlide((prev) => (prev - 1 + alumniStories.length) % alumniStories.length);
+      setIsAutoPlaying(false);
+    }
   };
 
   const currentAlumni = alumniStories[currentSlide];
-
-  // ✅ 4. Smart Connection Logic
-  // Check if current alumni ID exists in our Sets from Context
   const isPending = currentAlumni && outgoingRequestIds.has(currentAlumni._id);
   const isConnected = currentAlumni && acceptedConnectionIds.has(currentAlumni._id);
 
-  const handleConnectClick = () => {
+  const handleConnectClick = (e) => {
+    e.stopPropagation();
     if (isConnected) {
-      // If accepted, maybe go to chat?
-      alert(`You are already connected with ${currentAlumni.name}!`);
+      navigate('/chatPage', { 
+        state: { 
+          newChat: { 
+            id: currentAlumni._id, 
+            name: currentAlumni.name, 
+            profileImage: currentAlumni.profileImage 
+          } 
+        } 
+      });
       return;
     }
-    // Pause slider when modal opens
     setIsAutoPlaying(false);
     setIsModalOpen(true);
-    setConnectionNote(`Hi ${currentAlumni?.name}, I'm a student at ${currentAlumni?.university}. I'd love to connect and learn from your journey.`);
+    setConnectionNote(`Hi ${currentAlumni?.name || 'Alumni'}, I'm a student at ${currentAlumni?.college || 'University'}. I'd love to connect and learn from your journey.`);
   };
 
   const handleSendRequest = async (e) => {
@@ -237,18 +91,15 @@ const AlumniSpotlight = () => {
     setIsSending(true);
 
     try {
-      // ✅ Using the Context Function
       await sendRequest(currentAlumni._id, connectionNote);
-      
       setIsSending(false);
       setIsSent(true);
       
-      // Close modal after success animation
       setTimeout(() => {
         setIsModalOpen(false);
         setIsSent(false);
         setConnectionNote("");
-        setIsAutoPlaying(true); // Resume slider
+        setIsAutoPlaying(true); 
       }, 2000);
 
     } catch (error) {
@@ -259,269 +110,317 @@ const AlumniSpotlight = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96 bg-surface">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-academic-blue"></div>
+      <div className="flex justify-center items-center h-96 bg-slate-50">
+        <div className="relative flex justify-center items-center">
+          <div className="absolute animate-ping w-16 h-16 rounded-full bg-indigo-200 opacity-75"></div>
+          <div className="relative animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
       </div>
     );
   }
 
-  if (!currentAlumni) return null;
+  if (!currentAlumni || alumniStories.length === 0) return null;
+
+  const name = currentAlumni.name || 'Alumni Member';
+  const currentRole = currentAlumni.headline || currentAlumni.experience?.[0]?.role || 'Professional';
+  const company = currentAlumni.currentCompany || currentAlumni.experience?.[0]?.company || 'Organization';
+  const university = currentAlumni.college || 'University';
+  const profileImage = currentAlumni.profileImage || '/avatar.png';
+  const bio = currentAlumni.bio || "Passionate about technology and sharing experiences with the community. Let's connect and grow together.";
+  const skills = currentAlumni.skills?.length > 0 ? currentAlumni.skills.slice(0, 5) : ["Mentorship", "Leadership", "Technology"];
+  const journeyCollege = currentAlumni.education?.[0]?.degree || "Student";
+  const journeyFirstJob = currentAlumni.experience?.[currentAlumni.experience?.length - 1]?.role || "First Role";
 
   return (
-    <section className="py-16 bg-gradient-to-br from-surface to-white relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute top-10 left-10 w-20 h-20 bg-academic-blue rounded-full blur-2xl"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-achievement-amber rounded-full blur-3xl"></div>
+    <section className="py-24 bg-slate-50 relative overflow-hidden font-sans">
+      {/* Premium Background Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-40 -left-40 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-40 left-1/2 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-poppins font-bold text-wisdom-charcoal mb-3 sm:mb-4">
-            Alumni and Placed Students Success Stories
-          </h2>
-          <p className="text-base sm:text-xl text-insight-gray font-inter max-w-2xl mx-auto">
-            Learn from those who've walked the path before you. Connect with mentors who understand your journey.
-          </p>
+        {/* Header Section */}
+        <div className="text-center mb-16">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight"
+          >
+            Alumni Success Stories
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto"
+          >
+            Get inspired by those who've walked the path. Connect directly with mentors shaping the industry.
+          </motion.p>
         </div>
 
-        {/* Main Carousel */}
-        <div className="relative">
-          <div className="knowledge-card bg-white rounded-2xl shadow-brand-xl border border-slate-100 overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+        {/* Featured Glassmorphism Card */}
+        <div className="relative max-w-5xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={currentSlide}
+              onClick={() => navigate(`/profile/${currentAlumni._id}`)}
+              initial={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="cursor-pointer bg-white/70 backdrop-blur-2xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80 p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center"
+            >
               
-              {/* Left Side - Alumni Profile */}
-              <div className="p-5 sm:p-8 lg:p-12">
-                <div className="flex items-start space-x-3 sm:space-x-4 mb-6">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-3 border-academic-blue">
+              {/* Left Content Area (8 cols) */}
+              <div className="lg:col-span-7 flex flex-col h-full justify-center">
+                {/* Profile Badge & Image */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
+                  <div className="relative">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500">
                       <Image
-                        src={currentAlumni?.profileImage}
-                        alt={currentAlumni?.name}
-                        className="w-full h-full object-cover"
+                        src={profileImage}
+                        alt={name}
+                        className="w-full h-full object-cover rounded-full border-4 border-white"
                       />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-white">
-                      <Image
-                        src={currentAlumni?.companyLogo}
-                        alt={currentAlumni?.company}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="absolute -bottom-2 -right-2 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border-2 border-white shadow-sm flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                      Available
                     </div>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl sm:text-2xl font-poppins font-bold text-wisdom-charcoal mb-1">
-                      {currentAlumni?.name}
-                    </h3>
-                    <p className="text-base sm:text-lg text-academic-blue font-inter font-semibold mb-1">
-                      {currentAlumni?.currentRole}
-                    </p>
-                    <p className="text-insight-gray font-inter text-sm sm:text-base">
-                      {currentAlumni?.company} • {currentAlumni?.university} '{currentAlumni?.graduationYear}
-                    </p>
-                  </div>
-
-                  <div className={`hidden sm:block px-3 py-1 rounded-full text-xs font-inter font-medium flex-shrink-0 ${
-                    currentAlumni?.mentorshipStatus === 'Available' ? 'bg-emerald-50 text-progress-emerald' : 'bg-amber-50 text-achievement-amber'
-                  }`}>
-                    {currentAlumni?.mentorshipStatus}
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">{name}</h3>
+                    <p className="text-indigo-600 font-semibold text-lg">{currentRole}</p>
+                    <p className="text-slate-500 font-medium">{company}</p>
                   </div>
                 </div>
 
-                {/* Quote */}
-                <blockquote className="text-lg text-insight-gray font-inter leading-relaxed mb-6 italic">
-                  "{currentAlumni?.quote}"
-                </blockquote>
+                {/* Quote Box */}
+                <div className="relative mb-8 pl-6 border-l-4 border-indigo-200">
+                  <span className="absolute -top-4 -left-3 text-5xl text-indigo-100 font-serif leading-none">"</span>
+                  <p className="text-lg sm:text-xl text-slate-700 italic leading-relaxed relative z-10">
+                    {bio}
+                  </p>
+                </div>
 
-                {/* Specializations */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-inter font-semibold text-wisdom-charcoal mb-3">Expertise Areas</h4>
+                {/* Skills */}
+                <div className="mb-10">
                   <div className="flex flex-wrap gap-2">
-                    {currentAlumni?.specialization?.map((skill) => (
-                      <span key={skill} className="px-3 py-1 bg-academic-blue/10 text-academic-blue text-sm font-inter font-medium rounded-full">
+                    {skills.map((skill, idx) => (
+                      <span 
+                        key={idx} 
+                        className="px-4 py-1.5 bg-slate-100/80 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 text-sm font-medium rounded-full transition-colors border border-slate-200/60"
+                      >
                         {skill}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
-                  <div className="text-center">
-                    <div className="text-2xl font-poppins font-bold text-wisdom-charcoal">{currentAlumni?.menteeCount}</div>
-                    <div className="text-xs text-insight-gray font-inter">Mentees</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-poppins font-bold text-wisdom-charcoal">{currentAlumni?.rating}</div>
-                    <div className="text-xs text-insight-gray font-inter">Rating</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm font-poppins font-bold text-wisdom-charcoal mt-2">{currentAlumni?.responseTime}</div>
-                    <div className="text-xs text-insight-gray font-inter">Response</div>
-                  </div>
+                {/* Action Button */}
+                <div className="mt-auto">
+                  <button 
+                    onClick={handleConnectClick}
+                    disabled={isPending}
+                    className={`group relative overflow-hidden w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 ${
+                      isConnected 
+                        ? "bg-emerald-500 text-white shadow-emerald-500/25" 
+                        : isPending 
+                          ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
+                          : "bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon name={isConnected ? "MessageCircle" : isPending ? "Clock" : "UserPlus"} size={18} />
+                    <span>
+                      {isConnected ? "Message Connection" : isPending ? "Request Sent" : "Request Mentorship"}
+                    </span>
+                  </button>
                 </div>
-
-                {/* ✅ Dynamic Connect Button */}
-                <button 
-                  onClick={handleConnectClick}
-                  disabled={isPending}
-                  className={`w-full font-inter font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-brand-md flex items-center justify-center space-x-2 ${
-                    isConnected 
-                      ? "bg-green-600 hover:bg-green-700 text-white" 
-                      : isPending 
-                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                        : "bg-academic-blue hover:bg-blue-700 text-white hover:shadow-brand-lg"
-                  }`}
-                >
-                  <Icon name={isConnected ? "MessageCircle" : isPending ? "Clock" : "UserPlus"} size={18} />
-                  <span>
-                    {isConnected ? "Connected" : isPending ? "Request Pending" : "Connect as Mentor"}
-                  </span>
-                </button>
               </div>
 
-              {/* Right Side - Journey Visualization */}
-              <div className="bg-gradient-to-br from-academic-blue/5 to-credibility-indigo/5 p-5 sm:p-8 lg:p-12">
-                <h4 className="text-xl font-poppins font-bold text-wisdom-charcoal mb-8">Career Journey</h4>
+              {/* Right Content Area: Journey Track (5 cols) */}
+              <div className="lg:col-span-5 bg-gradient-to-b from-indigo-50/50 to-purple-50/50 rounded-3xl p-6 sm:p-8 border border-white shadow-inner h-full flex flex-col justify-center">
+                <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-6">Career Journey</h4>
                 
-                {/* Timeline */}
-                <div className="space-y-6 mb-8">
-                  {/* College Step */}
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center">
-                      <Icon name="GraduationCap" size={20} color="var(--color-insight-gray)" />
-                    </div>
-                    <div>
-                      <p className="font-inter font-semibold text-wisdom-charcoal">{currentAlumni?.journey?.college}</p>
-                      <p className="text-sm text-insight-gray">{currentAlumni?.university}</p>
-                    </div>
-                  </div>
-                  <div className="ml-6 border-l-2 border-dashed border-slate-300 h-8"></div>
+                <div className="relative">
+                  {/* Vertical Line */}
+                  <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-200 via-purple-200 to-transparent"></div>
                   
-                  {/* First Job */}
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-achievement-amber/20 rounded-full flex items-center justify-center">
-                      <Icon name="Briefcase" size={20} color="var(--color-achievement-amber)" />
+                  {/* Step 1 */}
+                  <div className="relative flex gap-5 mb-8 group">
+                    <div className="relative z-10 w-12 h-12 bg-white rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:border-indigo-300 transition-transform">
+                      <Icon name="GraduationCap" size={20} className="text-indigo-500" />
                     </div>
-                    <div>
-                      <p className="font-inter font-semibold text-wisdom-charcoal">{currentAlumni?.journey?.firstJob}</p>
-                      <p className="text-sm text-insight-gray">First Role</p>
-                    </div>
-                  </div>
-                  <div className="ml-6 border-l-2 border-dashed border-slate-300 h-8"></div>
-                  
-                  {/* Current Job */}
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-academic-blue/20 rounded-full flex items-center justify-center">
-                      <Icon name="Trophy" size={20} color="var(--color-academic-blue)" />
-                    </div>
-                    <div>
-                      <p className="font-inter font-semibold text-wisdom-charcoal">{currentAlumni?.journey?.current}</p>
-                      <p className="text-sm text-insight-gray">Current Position</p>
+                    <div className="pt-2">
+                      <h5 className="text-base font-bold text-slate-900 leading-tight">{journeyCollege}</h5>
+                      <p className="text-sm text-slate-500">{university}</p>
                     </div>
                   </div>
-                </div>
 
-                {/* Achievements */}
-                <div>
-                  <h5 className="text-lg font-inter font-semibold text-wisdom-charcoal mb-4">Key Achievements</h5>
-                  <div className="space-y-3">
-                    {currentAlumni?.achievements?.map((achievement, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-progress-emerald rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-insight-gray font-inter leading-relaxed">{achievement}</p>
-                      </div>
-                    ))}
+                  {/* Step 2 */}
+                  <div className="relative flex gap-5 mb-8 group">
+                    <div className="relative z-10 w-12 h-12 bg-white rounded-2xl shadow-sm border border-purple-100 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:border-purple-300 transition-transform">
+                      <Icon name="Briefcase" size={20} className="text-purple-500" />
+                    </div>
+                    <div className="pt-2">
+                      <h5 className="text-base font-bold text-slate-900 leading-tight">{journeyFirstJob}</h5>
+                      <p className="text-sm text-slate-500">First Role</p>
+                    </div>
+                  </div>
+
+                  {/* Step 3 (Current) */}
+                  <div className="relative flex gap-5 group">
+                    <div className="relative z-10 w-12 h-12 bg-slate-900 rounded-2xl shadow-md border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Icon name="Star" size={20} className="text-amber-400" />
+                    </div>
+                    <div className="pt-2">
+                      <h5 className="text-base font-bold text-slate-900 leading-tight">{currentRole}</h5>
+                      <p className="text-sm text-indigo-600 font-medium">{company}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Navigation Arrows */}
-          <button onClick={prevSlide} className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
-            <Icon name="ChevronLeft" size={18} />
-          </button>
-          <button onClick={nextSlide} className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 bg-white hover:bg-academic-blue text-academic-blue hover:text-white rounded-full shadow-brand-md transition-all flex items-center justify-center z-10">
-            <Icon name="ChevronRight" size={18} />
-          </button>
+          {/* Floating Navigation Buttons */}
+          {alumniStories.length > 1 && (
+            <>
+              <button 
+                onClick={prevSlide} 
+                className="absolute left-0 lg:-left-6 top-1/2 -translate-y-1/2 -ml-4 lg:ml-0 w-12 h-12 bg-white/90 backdrop-blur-sm text-slate-800 hover:text-indigo-600 hover:bg-white rounded-full shadow-[0_4px_20px_rgb(0,0,0,0.1)] border border-slate-100 transition-all flex items-center justify-center z-20 group"
+              >
+                <Icon name="ChevronLeft" size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+              <button 
+                onClick={nextSlide} 
+                className="absolute right-0 lg:-right-6 top-1/2 -translate-y-1/2 -mr-4 lg:mr-0 w-12 h-12 bg-white/90 backdrop-blur-sm text-slate-800 hover:text-indigo-600 hover:bg-white rounded-full shadow-[0_4px_20px_rgb(0,0,0,0.1)] border border-slate-100 transition-all flex items-center justify-center z-20 group"
+              >
+                <Icon name="ChevronRight" size={20} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </>
+          )}
+
+          {/* Carousel Indicators */}
+          {alumniStories.length > 1 && (
+            <div className="flex justify-center gap-2 mt-8">
+              {alumniStories.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setCurrentSlide(idx);
+                    setIsAutoPlaying(false);
+                  }}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentSlide ? "w-8 bg-indigo-600" : "w-2 bg-slate-300 hover:bg-slate-400"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* View All Button */}
-        <div className="text-center mt-12">
-          <button onClick={() => navigate('/explore')} className="inline-flex items-center space-x-2 px-8 py-3 bg-white hover:bg-academic-blue text-academic-blue hover:text-white border-2 border-academic-blue font-inter font-medium rounded-lg transition-all shadow-brand-md">
-            <span>View All Alumni</span>
-            <Icon name="Users" size={18} />
+        <div className="text-center mt-16">
+          <button 
+            onClick={() => navigate('/explore')} 
+            className="inline-flex items-center space-x-2 px-6 py-2.5 bg-white text-slate-700 hover:text-indigo-600 font-semibold rounded-full transition-all shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-md"
+          >
+            <span>Explore all alumni</span>
+            <Icon name="ArrowRight" size={16} />
           </button>
         </div>
       </div>
 
-      {/* ✅ CONNECTION REQUEST MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl transform transition-all scale-100">
-            {!isSent ? (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-poppins font-bold text-wisdom-charcoal">Connect with {currentAlumni?.name}</h3>
-                  <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <Icon name="X" size={20} color="#64748b" />
-                  </button>
-                </div>
-
-                <div className="flex items-center space-x-3 mb-6 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                   <div className="w-10 h-10 rounded-full overflow-hidden">
-                     <Image src={currentAlumni?.profileImage} className="w-full h-full object-cover"/>
-                   </div>
-                   <div>
-                     <p className="text-sm font-semibold text-wisdom-charcoal">{currentAlumni?.currentRole}</p>
-                     <p className="text-xs text-insight-gray">at {currentAlumni?.company}</p>
-                   </div>
-                </div>
-
-                <form onSubmit={handleSendRequest}>
-                  <label className="block text-sm font-medium text-wisdom-charcoal mb-2">Add a note (recommended)</label>
-                  <textarea
-                    value={connectionNote}
-                    onChange={(e) => setConnectionNote(e.target.value)}
-                    className="w-full h-32 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-academic-blue focus:border-transparent resize-none font-inter text-sm mb-6"
-                    placeholder="Tell them why you want to connect..."
-                    maxLength={300}
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 mb-2">
-                    <span>{connectionNote.length}/300</span>
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 border border-slate-300 text-wisdom-charcoal font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      disabled={isSending}
-                      className="flex-1 py-2.5 bg-academic-blue text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-brand-sm flex justify-center items-center"
-                    >
-                      {isSending ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : "Send Request"}
+      {/* Connection Modal (Glassmorphism) */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl border border-slate-100"
+            >
+              {!isSent ? (
+                <>
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900">Connect with {name}</h3>
+                      <p className="text-sm text-slate-500 mt-1">Send a personalized mentorship request.</p>
+                    </div>
+                    <button onClick={() => setIsModalOpen(false)} className="p-2 -mr-2 -mt-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors">
+                      <Icon name="X" size={20} />
                     </button>
                   </div>
-                </form>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                  <Icon name="Check" size={32} color="#059669" />
-                </div>
-                <h3 className="text-xl font-bold text-wisdom-charcoal mb-2">Request Sent!</h3>
-                <p className="text-insight-gray text-sm">{currentAlumni?.name} will be notified of your request.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
+                  <form onSubmit={handleSendRequest}>
+                    <div className="mb-6">
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Personalize your note</label>
+                      <textarea
+                        value={connectionNote}
+                        onChange={(e) => setConnectionNote(e.target.value)}
+                        className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-slate-700 text-sm transition-all"
+                        placeholder="Tell them why you want to connect..."
+                        maxLength={300}
+                      />
+                      <div className="flex justify-end text-xs text-slate-400 mt-2 font-medium">
+                        {connectionNote.length}/300
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <button 
+                        type="button" 
+                        onClick={() => setIsModalOpen(false)} 
+                        className="flex-1 py-3 bg-white text-slate-600 font-semibold rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        disabled={isSending}
+                        className="flex-1 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 flex justify-center items-center"
+                      >
+                        {isSending ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white/40 border-t-white"></div> : "Send Request"}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-center py-10"
+                >
+                  <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
+                      <Icon name="Check" size={28} className="text-emerald-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Request Sent!</h3>
+                  <p className="text-slate-500 text-sm max-w-[250px] mx-auto leading-relaxed">
+                    {name} has been notified and will review your request shortly.
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

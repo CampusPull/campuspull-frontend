@@ -57,42 +57,51 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-900 text-white border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <footer className="relative bg-[#0f172a] text-white overflow-hidden border-t border-slate-800">
+      {/* Subtle Background Glows */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16 lg:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           
           {/* Brand Section */}
-          <div className="lg:col-span-4">
-            <Link to="/" className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <Icon name="GraduationCap" size={24} color="white" />
+          <div className="lg:col-span-4 flex flex-col items-start">
+            <Link to="/" className="flex items-center space-x-3 mb-6 group">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
+                <Icon name="GraduationCap" size={26} color="white" />
               </div>
-              <span className="text-xl font-bold">Campus-pull</span>
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                CampusPull
+              </span>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Bridging the gap between academic learning and professional success. Connect with mentors and accelerate your career.
+            <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-sm">
+              Bridging the gap between academic learning and professional success. Connect with mentors, explore opportunities, and accelerate your career journey.
             </p>
             
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6 w-full">
               {achievements.map((item) => (
-                <div key={item.label}>
-                  <div className="text-lg font-bold text-white">{item.value}</div>
-                  <div className="text-xs text-slate-500 uppercase tracking-wider">{item.label}</div>
+                <div key={item.label} className="border-l-2 border-indigo-500/30 pl-4">
+                  <div className="text-2xl font-bold text-white mb-1">{item.value}</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{item.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Links Grid */}
-          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">{section.title}</h4>
-                <ul className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 mb-6">{section.title}</h4>
+                <ul className="space-y-4">
                   {section.links.map((link) => (
                     <li key={link.name}>
-                      <Link to={link.path} className="text-slate-400 hover:text-white text-sm transition-colors">
+                      <Link 
+                        to={link.path} 
+                        className="text-slate-400 hover:text-white hover:translate-x-1 inline-block transition-all duration-300 text-sm font-medium"
+                      >
                         {link.name}
                       </Link>
                     </li>
@@ -104,14 +113,20 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-center">
-          <p className="text-slate-500 text-sm">
-            © {currentYear} Campus-pull. Build with grit by Satyam.
+        <div className="mt-16 pt-8 border-t border-slate-800/60 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
+          <p className="text-slate-500 text-sm font-medium">
+            © {currentYear} CampusPull. Built with grit by Satyam.
           </p>
-          <div className="flex space-x-6">
+          <div className="flex space-x-4">
             {socialLinks.map((social) => (
-              <a key={social.name} href={social.url} className="text-slate-500 hover:text-white transition-colors">
-                <Icon name={social.icon} size={20} />
+              <a 
+                key={social.name} 
+                href={social.url} 
+                target="_blank"
+                rel="noreferrer"
+                className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-lg"
+              >
+                <Icon name={social.icon} size={18} />
               </a>
             ))}
           </div>

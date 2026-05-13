@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 
 const MentorCard = ({
   mentor,
@@ -6,6 +7,7 @@ const MentorCard = ({
   onRestrictedAction,
   myRequests,
 }) => {
+  const navigate = useNavigate();
   const user = mentor.userId;
 
   const request = myRequests?.find((r) => r.mentorId === mentor.userId._id);
@@ -26,7 +28,8 @@ const MentorCard = ({
     }
   }
 
-  const handleRequest = () => {
+  const handleRequest = (e) => {
+    e.stopPropagation();
     if (isGuest) {
       onRestrictedAction?.();
       return;
@@ -34,8 +37,15 @@ const MentorCard = ({
     onRequest(mentor);
   };
 
+  const handleCardClick = () => {
+    navigate(`/profile/${user._id}`);
+  };
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+    <div 
+      onClick={handleCardClick}
+      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+    >
        {/* Top gradient accent */}
        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
 
