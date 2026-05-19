@@ -97,10 +97,10 @@ export const ExploreProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      const incoming = data.filter((req) => req.recipient._id === user._id);
+      const incoming = data.filter((req) => req?.recipient?._id && req.recipient._id === user._id);
       const outgoingIds = new Set(
         data
-          .filter((req) => req.requester._id === user._id)
+          .filter((req) => req?.requester?._id && req?.recipient?._id && req.requester._id=== user._id)
           .map((req) => req.recipient._id)
       );
 

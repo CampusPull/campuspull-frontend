@@ -90,7 +90,20 @@ const PublicProfile = () => {
     );
   } else if (isConnected) {
     actionButton = (
-      <button className="w-full bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 shadow-sm transition">
+      <button 
+        onClick={() => {
+          navigate('/chatPage', { 
+            state: { 
+              newChat: { 
+                id: profile._id, 
+                name: profile.name, 
+                profileImage: profile.profileImage 
+              } 
+            } 
+          });
+        }}
+        className="w-full bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 shadow-sm transition"
+      >
         Message
       </button>
     );
@@ -158,8 +171,25 @@ const PublicProfile = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* ================= LEFT SIDEBAR ================= */}
         <div className="space-y-6">
-          <Card className="h-fit text-center">
-            <div className="relative inline-block">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden h-fit text-center">
+            {/* Cover */}
+            <div
+              className="h-32 w-full relative bg-gray-200"
+              style={{
+                background: profile.bannerImage 
+                  ? `url(${profile.bannerImage}) center/cover no-repeat` 
+                  : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+              }}
+            >
+              {!profile.bannerImage && (
+                <>
+                  <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+                </>
+              )}
+            </div>
+
+            <div className="relative inline-block px-6 pb-6 -mt-16">
               {/* Profile Image */}
               {profile.profileImage ? (
                 <img
@@ -174,10 +204,6 @@ const PublicProfile = () => {
                 </div>
               )}
 
-              {/* Streak Badge */}
-              <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow border-2 border-white flex items-center gap-1">
-                🔥 {profile.streakCount || 0}
-              </div>
             </div>
 
             <h2 className="text-2xl font-bold mt-4 text-gray-800">
@@ -217,7 +243,7 @@ const PublicProfile = () => {
 
             {/* Action Button */}
             <div className="mt-6">{actionButton}</div>
-          </Card>
+          </div>
 
           {/* Skills Card */}
           <Card>

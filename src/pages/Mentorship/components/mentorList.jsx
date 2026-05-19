@@ -15,12 +15,13 @@ const MentorList = ({ mentors, onRequest, isGuest, onRestrictedAction, myRequest
     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
       {mentors.map((mentor) => (
         <MentorCard
-  mentor={mentor}
-  onRequest={onRequest}
-  isGuest={isGuest}
-  onRestrictedAction={onRestrictedAction}
-  myRequests={myRequests}
-/>
+          key={mentor.id ?? mentor._id ?? mentor.email}
+          mentor={mentor}
+          onRequest={onRequest}
+          isGuest={isGuest}
+          onRestrictedAction={onRestrictedAction}
+          myRequests={myRequests}
+        />
       ))}
     </div>
   );
