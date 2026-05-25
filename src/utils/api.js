@@ -1,32 +1,19 @@
 import axios from "axios";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL, // Use the constant
   withCredentials: true,
 });
-
-// Request interceptor to attach Authorization header
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (originalRequest.url?.includes("/auth/login")) {
+   
+    if (originalRequest.url.includes("/auth/login")) {
         return Promise.reject(error);
     }
 
