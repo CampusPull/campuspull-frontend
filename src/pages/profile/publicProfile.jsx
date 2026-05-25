@@ -178,7 +178,7 @@ const PublicProfile = () => {
               style={{
                 background: profile.bannerImage 
                   ? `url(${profile.bannerImage}) center/cover no-repeat` 
-                  : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+                  : "url('/assets/images/default-cover.png') center/cover no-repeat",
               }}
             >
               {!profile.bannerImage && (

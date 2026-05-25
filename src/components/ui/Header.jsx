@@ -126,7 +126,7 @@ const Header = () => {
     : roleFeatures[user?.role] || [];
 
   const authorizedItems = allNavigationItems.filter((item) =>
-    allowedFeatures.includes(item.name),
+    allowedFeatures.includes(item.name) && item.name !== "Alumni Stories" && item.name !== "Profile"
   );
 
   const hamburgerItemNames = [

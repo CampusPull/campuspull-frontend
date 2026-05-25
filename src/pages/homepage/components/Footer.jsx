@@ -13,7 +13,7 @@ const Footer = () => {
       links: [
         { name: "Explore Network", path: "/explore" },
         { name: "Community Forum", path: "/community" },
-        { name: "Resources", path: "/resources" }
+        { name: "Resources", path: "/resources-hub" }
       ]
     },
     {
@@ -27,17 +27,9 @@ const Footer = () => {
     {
       title: "Company",
       links: [
-        { name: "About Campus-pull", path: "/about" },
-        { name: "Our Mission", path: "/mission" },
+        { name: "About Campus-pull", path: "/about-link-mate" },
+        { name: "Our Mission", path: "/about-link-mate" },
         { name: "Careers", path: "/careers" }
-      ]
-    },
-    {
-      title: "Legal",
-      links: [
-        { name: "Privacy Policy", path: "/privacy" },
-        { name: "Terms of Service", path: "/terms" },
-        { name: "Guidelines", path: "/guidelines" }
       ]
     }
   ];

@@ -134,6 +134,49 @@ export const InternshipProvider = ({ children }) => {
     [accessToken]
   );
 
+  // ✅ TOGGLE SAVE/BOOKMARK (NEW)
+  const toggleSaveInternship = useCallback(
+    async (id) => {
+      if (!accessToken) throw new Error("Not authenticated");
+
+      const res = await api.post(`/internships/${id}/save`, {}, getAuthHeaders());
+      const { saved } = res.data;
+
+      // Update state locally
+      setInternships((prev) =>
+        prev.map((item) => {
+          if (item._id === id) {
+            const userId = user?._id || user?.id;
+            let updatedSavedBy = item.savedBy || [];
+            if (saved) {
+              if (!updatedSavedBy.includes(userId)) {
+                updatedSavedBy = [...updatedSavedBy, userId];
+              }
+            } else {
+              updatedSavedBy = updatedSavedBy.filter((uid) => uid !== userId);
+            }
+            return { ...item, savedBy: updatedSavedBy };
+          }
+          return item;
+        })
+      );
+
+      return res.data;
+    },
+    [accessToken, user]
+  );
+
+  // ✅ DIRECT APPLY ON WEBSITE (NEW)
+  const applyToInternship = useCallback(
+    async (id, formData) => {
+      if (!accessToken) throw new Error("Not authenticated");
+
+      const res = await api.post(`/internships/${id}/apply`, formData, getAuthHeaders());
+      return res.data;
+    },
+    [accessToken]
+  );
+
   const contextValue = useMemo(
     () => ({
       internships,
@@ -150,6 +193,8 @@ export const InternshipProvider = ({ children }) => {
       updateInternship,
       toggleInternshipStatus, // ✅ NEW
       deleteInternship,
+      toggleSaveInternship, // ✅ NEW
+      applyToInternship, // ✅ NEW
     }),
     [
       internships,
@@ -166,6 +211,8 @@ export const InternshipProvider = ({ children }) => {
       updateInternship,
       toggleInternshipStatus,
       deleteInternship,
+      toggleSaveInternship,
+      applyToInternship,
     ]
   );
 

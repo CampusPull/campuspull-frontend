@@ -202,10 +202,16 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                           {pyq.title}
                         </p>
                       </div>
-                      <div
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${getDifficultyColor(pyq?.difficulty)}`}
-                      >
-                        {getDifficultyLabel(pyq?.difficulty)}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${getDifficultyColor(pyq?.difficulty)}`}
+                        >
+                          {getDifficultyLabel(pyq?.difficulty)}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-1 rounded-lg">
+                          <Icon name="Download" size={13} className="text-slate-400" />
+                          <span>{pyq.downloads || 0}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -305,11 +311,17 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                       </p>
                     </div>
 
-                    <div
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border backdrop-blur-sm
-        ${getDifficultyColor(pyq?.difficulty)} bg-white/90`}
-                    >
-                      {getDifficultyLabel(pyq?.difficulty)}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border backdrop-blur-sm
+          ${getDifficultyColor(pyq?.difficulty)} bg-white/90`}
+                      >
+                        {getDifficultyLabel(pyq?.difficulty)}
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-white bg-black/40 backdrop-blur-md px-2 py-1 rounded-lg">
+                        <Icon name="Download" size={11} className="text-white" />
+                        <span>{pyq.downloads || 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

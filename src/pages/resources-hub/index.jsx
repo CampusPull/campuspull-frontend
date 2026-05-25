@@ -58,10 +58,13 @@ const ResourcesHub = () => {
     ) return false;
     for (const [key, values] of Object.entries(filters)) {
       if (values?.length > 0) {
-        if (Array.isArray(resource?.[key])) {
-          if (!resource[key].some(val => values.includes(String(val)))) return false;
+        const targetKey = key === 'subject' ? 'branch' : key;
+        const fieldValue = resource?.[targetKey] !== undefined ? resource?.[targetKey] : resource?.[key];
+        
+        if (Array.isArray(fieldValue)) {
+          if (!fieldValue.some(val => values.includes(String(val)))) return false;
         } else {
-          if (!values.includes(String(resource?.[key]))) return false;
+          if (!values.includes(String(fieldValue))) return false;
         }
       }
     }
@@ -224,7 +227,7 @@ const ResourcesHub = () => {
                 ) : (
                   Object.entries(
                     sortedResources.reduce((acc, resource) => {
-                      const category = resource.subject || 'Uncategorized';
+                      const category = resource.branch || resource.subject || 'Uncategorized';
                       if (!acc[category]) acc[category] = [];
                       acc[category].push(resource);
                       return acc;

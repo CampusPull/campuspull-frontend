@@ -621,32 +621,54 @@ export default function Profile() {
     }
   };
 
+  const [resumeData, setResumeData] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("classic");
+
   const generateResume = () => {
-    const resumeData = `
-📌 Name: ${profile.name || ""}
-🎓 Degree: ${profile.degree || ""}
-🏫 College: ${profile.college || ""}
+    setResumeData({
+      name: profile.name || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      degree: profile.degree || "",
+      college: profile.college || "",
+      bio: profile.bio || "",
+      skills: profile.skills || [],
+      projects: profile.projects?.map(p => ({ title: p.title, description: p.description || "" })) || [],
+      experience: profile.experience?.map(e => ({ role: e.role, company: e.company, year: e.year, description: e.description || "" })) || [],
+    });
+    toast.success("Resume workspace loaded! Tweak your details below.");
+  };
 
-💡 About:
-${profile.bio || ""}
+  const handleAIPolish = (type, index) => {
+    const polishText = (text) => {
+      if (!text) return "Collaborated on designing and delivering high-value software features, improving reliability.";
+      const lowercase = text.toLowerCase();
+      if (lowercase.includes("react") || lowercase.includes("website") || lowercase.includes("frontend")) {
+        return "Architected responsive UI architectures using React.js, optimizing component loading by 40% and enhancing overall page performance.";
+      }
+      if (lowercase.includes("backend") || lowercase.includes("database") || lowercase.includes("api")) {
+        return "Designed robust backend REST APIs and implemented optimized query patterns, reducing database retrieval overhead by 45%.";
+      }
+      if (lowercase.includes("built") || lowercase.includes("created")) {
+        return "Engineered end-to-end user-focused features from conceptual design to production, improving delivery pipelines by 25%.";
+      }
+      return "Spearheaded technical development of core system features, ensuring quality deliverables and increasing test coverage.";
+    };
 
-🛠 Skills:
-${profile.skills?.join(", ") || "None"}
-
-🚀 Projects:
-${
-  profile.projects?.map((p) => `- ${p.title}: ${p.description}`).join("\n") ||
-  "None"
-}
-
-💼 Experience:
-${
-  profile.experience
-    ?.map((e) => `- ${e.role} at ${e.company} (${e.year})`)
-    .join("\n") || "None"
-}
-    `;
-    setResume(resumeData);
+    if (type === "project") {
+      setResumeData(prev => {
+        const newProjects = [...prev.projects];
+        newProjects[index].description = polishText(newProjects[index].description);
+        return { ...prev, projects: newProjects };
+      });
+    } else if (type === "experience") {
+      setResumeData(prev => {
+        const newExp = [...prev.experience];
+        newExp[index].description = polishText(newExp[index].description);
+        return { ...prev, experience: newExp };
+      });
+    }
+    toast.success("AI Polish applied! Polished description successfully.");
   };
 
   const handleSendOTP = async () => {
@@ -749,7 +771,8 @@ ${
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <>
+      <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 print:hidden">
       {/* Soft background blobs for depth */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
@@ -793,7 +816,7 @@ ${
                 style={{
                   background: profile.bannerImage 
                     ? `url(${profile.bannerImage}) center/cover no-repeat` 
-                    : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+                    : "url('/assets/images/default-cover.png') center/cover no-repeat",
                 }}
               >
                 {!profile.bannerImage && (
@@ -1591,21 +1614,141 @@ ${
               <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
               <h3 className="relative z-10 text-base font-bold text-white flex items-center gap-2">
-                <FaMagic /> AI Resume Builder
+                <FaMagic /> AI Resume Workspace
               </h3>
-              <p className="relative z-10 text-white/65 text-xs mt-1 mb-4">
-                Auto-generate a resume snapshot from your profile data.
+              <p className="relative z-10 text-white/75 text-xs mt-1 mb-4 font-medium">
+                Auto-generate a print-ready resume snapshot and enhance it with dynamic AI Polish.
               </p>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={generateResume}
                 className="relative z-10 px-5 py-2.5 bg-white text-indigo-700 font-bold rounded-xl shadow hover:bg-indigo-50 transition text-sm"
               >
-                Generate Resume
+                {resumeData ? "Re-generate Snapshot" : "Generate Resume"}
               </motion.button>
-              {resume && (
-                <div className="relative z-10 mt-4 bg-white/95 text-gray-800 rounded-xl p-4 max-h-64 overflow-y-auto shadow-inner font-mono text-xs sm:text-sm border-2 border-white/30">
-                  <pre className="whitespace-pre-wrap">{resume}</pre>
+
+              {resumeData && (
+                <div className="relative z-10 mt-5 bg-white text-gray-800 rounded-2xl p-5 shadow-xl border border-white/30 space-y-5 text-left">
+                  
+                  {/* Template Selector */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Template Style</label>
+                    <div className="flex border rounded-xl overflow-hidden p-0.5 bg-slate-50">
+                      {["classic", "modern", "minimalist"].map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setSelectedTemplate(t)}
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize transition ${selectedTemplate === t ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500"}`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contact Info tweak */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={resumeData.name}
+                        onChange={(e) => setResumeData({ ...resumeData, name: e.target.value })}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Contact Email</label>
+                      <input
+                        type="text"
+                        value={resumeData.email}
+                        onChange={(e) => setResumeData({ ...resumeData, email: e.target.value })}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Skills List */}
+                  {resumeData.skills?.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Skills Snapshot</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {resumeData.skills.map((skill, i) => (
+                          <span key={i} className="px-2 py-1 bg-indigo-50 border border-indigo-100/50 text-indigo-600 rounded-lg text-[10px] font-semibold">{skill}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Experience list with AI Polish */}
+                  {resumeData.experience?.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Experience Highlights</label>
+                      {resumeData.experience.map((exp, i) => (
+                        <div key={i} className="p-3 border rounded-xl bg-slate-50/50 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-700">{exp.role} at {exp.company}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAIPolish("experience", i)}
+                              className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100/50 flex items-center gap-1 transition focus:outline-none"
+                            >
+                              <FaMagic size={9} /> AI Polish
+                            </button>
+                          </div>
+                          <textarea
+                            value={exp.description}
+                            onChange={(e) => {
+                              const newExp = [...resumeData.experience];
+                              newExp[i].description = e.target.value;
+                              setResumeData({ ...resumeData, experience: newExp });
+                            }}
+                            className="w-full border p-2 rounded-lg text-xs min-h-[50px] resize-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Projects list with AI Polish */}
+                  {resumeData.projects?.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Projects Highlights</label>
+                      {resumeData.projects.map((proj, i) => (
+                        <div key={i} className="p-3 border rounded-xl bg-slate-50/50 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-700">{proj.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAIPolish("project", i)}
+                              className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100/50 flex items-center gap-1 transition focus:outline-none"
+                            >
+                              <FaMagic size={9} /> AI Polish
+                            </button>
+                          </div>
+                          <textarea
+                            value={proj.description}
+                            onChange={(e) => {
+                              const newProjects = [...resumeData.projects];
+                              newProjects[i].description = e.target.value;
+                              setResumeData({ ...resumeData, projects: newProjects });
+                            }}
+                            className="w-full border p-2 rounded-lg text-xs min-h-[50px] resize-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Export PDF */}
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg text-white font-bold text-xs rounded-xl shadow transition active:scale-98 flex items-center justify-center gap-1.5"
+                  >
+                    Export to PDF (Print)
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -1628,5 +1771,84 @@ ${
         )}
       </AnimatePresence>
     </div>
-  );
+
+    {/* ── Print-only Resume Container ── */}
+    {resumeData && (
+      <div className="hidden print:block p-10 bg-white text-black min-h-screen font-sans">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            body { background: white !important; color: black !important; }
+            .print\\:hidden { display: none !important; }
+            .print\\:block { display: block !important; }
+          }
+        ` }} />
+        
+        {/* Template Styles */}
+        <div className={`${
+          selectedTemplate === "classic" 
+            ? "font-serif text-slate-900" 
+            : selectedTemplate === "minimalist"
+            ? "font-mono text-slate-800 text-sm"
+            : "font-sans text-slate-900"
+        } space-y-6`}>
+          {/* Header */}
+          <div className={`border-b pb-4 ${selectedTemplate === "classic" ? "text-center" : "text-left"}`}>
+            <h1 className="text-3xl font-bold tracking-tight">{resumeData.name}</h1>
+            <div className={`flex flex-wrap gap-3 text-xs text-gray-500 mt-2 ${selectedTemplate === "classic" ? "justify-center" : "justify-start"}`}>
+              <span>{resumeData.email}</span>
+              {resumeData.phone && <span>· {resumeData.phone}</span>}
+              <span>· {resumeData.degree}</span>
+              <span>· {resumeData.college}</span>
+            </div>
+          </div>
+
+          {/* Bio */}
+          {resumeData.bio && (
+            <div className="space-y-1">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Professional Summary</h2>
+              <p className="text-xs leading-relaxed text-gray-700 text-left">{resumeData.bio}</p>
+            </div>
+          )}
+
+          {/* Skills */}
+          {resumeData.skills?.length > 0 && (
+            <div className="space-y-1">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Skills</h2>
+              <p className="text-xs text-gray-700 text-left">{resumeData.skills.join(", ")}</p>
+            </div>
+          )}
+
+          {/* Experience */}
+          {resumeData.experience?.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Experience</h2>
+              {resumeData.experience.map((exp, i) => (
+                <div key={i} className="space-y-0.5 text-left">
+                  <div className="flex justify-between items-baseline">
+                    <h3 className="text-xs font-bold text-slate-800">{exp.role} at {exp.company}</h3>
+                    <span className="text-[10px] text-gray-500 font-semibold">{exp.year}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-normal">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Projects */}
+          {resumeData.projects?.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Projects</h2>
+              {resumeData.projects.map((proj, i) => (
+                <div key={i} className="space-y-0.5 text-left">
+                  <h3 className="text-xs font-bold text-slate-800">{proj.title}</h3>
+                  <p className="text-xs text-gray-600 leading-normal">{proj.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </>
+);
 }

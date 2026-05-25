@@ -10,6 +10,10 @@ const UploadModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Note File Upload States
+  const [noteFileType, setNoteFileType] = useState("file"); // "file" or "url"
+  const [noteFile, setNoteFile] = useState(null);
+
   // Form Data State
   const [commonData, setCommonData] = useState({ title: "", description: "", tags: "", thumbnail: null });
   const [notesData, setNotesData] = useState({ branch: "", semester: "", link: "" });
@@ -21,6 +25,7 @@ const UploadModal = ({ isOpen, onClose }) => {
     setNotesData({ branch: "", semester: "", link: "" });
     setPyqData({ company: "", year: "", difficulty: "Easy", link: "" });
     setModules([{ moduleTitle: "", moduleDescription: "", resources: [{ title: "", link: "" }] }]);
+    setNoteFile(null);
   };
 
   if (!isOpen) return null;
@@ -62,7 +67,14 @@ const UploadModal = ({ isOpen, onClose }) => {
       if (commonData.thumbnail) payload.append("thumbnail", commonData.thumbnail);
 
       if (type === "notes") {
-        payload.append("link", notesData.link);
+        if (noteFileType === "file") {
+          if (!noteFile) {
+            throw new Error("Please select a document file to upload!");
+          }
+          payload.append("file", noteFile);
+        } else {
+          payload.append("link", notesData.link || "");
+        }
         payload.append("branch", notesData.branch);
         payload.append("semester", notesData.semester);
         await uploadNotes(payload);
@@ -99,9 +111,77 @@ const UploadModal = ({ isOpen, onClose }) => {
   );
   const renderNotesInputs = () => (
     <>
-      <div><label className="block mb-1 font-medium">Link (PDF / GDrive / etc.)</label><input type="text" placeholder="https://" required name="link" value={notesData.link} onChange={handleNotesChange} className="w-full border rounded px-3 py-2" /></div>
-      <input type="text" placeholder="Branch" name="branch" value={notesData.branch} onChange={handleNotesChange} className="w-full border rounded px-3 py-2"/>
-      <input type="number" placeholder="Semester" name="semester" value={notesData.semester} onChange={handleNotesChange} className="w-full border rounded px-3 py-2"/>
+      <div className="space-y-1">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Source Type</label>
+        <div className="flex border rounded-xl overflow-hidden p-0.5 bg-slate-50">
+          <button
+            type="button"
+            onClick={() => setNoteFileType("file")}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${noteFileType === "file" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500"}`}
+          >
+            Upload PDF/Doc File
+          </button>
+          <button
+            type="button"
+            onClick={() => setNoteFileType("url")}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${noteFileType === "url" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500"}`}
+          >
+            Provide External Link
+          </button>
+        </div>
+      </div>
+
+      {noteFileType === "file" ? (
+        <div>
+          <label className="block mb-1 font-medium">Document File (PDF, DOCX, PPTX) *</label>
+          <input
+            type="file"
+            accept=".pdf,.docx,.pptx"
+            onChange={(e) => setNoteFile(e.target.files[0])}
+            className="w-full border rounded px-3 py-2 text-sm"
+            required={noteFileType === "file"}
+          />
+        </div>
+      ) : (
+        <div>
+          <label className="block mb-1 font-medium">Link (GDrive / External URL) *</label>
+          <input
+            type="text"
+            placeholder="https://"
+            name="link"
+            value={notesData.link}
+            onChange={handleNotesChange}
+            className="w-full border rounded px-3 py-2"
+            required={noteFileType === "url"}
+          />
+        </div>
+      )}
+
+      <div>
+        <label className="block mb-1 font-medium">Branch *</label>
+        <input
+          type="text"
+          placeholder="e.g. CSE, ECE, ME"
+          name="branch"
+          value={notesData.branch}
+          onChange={handleNotesChange}
+          className="w-full border rounded px-3 py-2"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium">Semester *</label>
+        <input
+          type="number"
+          placeholder="e.g. 3, 5, 8"
+          name="semester"
+          value={notesData.semester}
+          onChange={handleNotesChange}
+          className="w-full border rounded px-3 py-2"
+          required
+        />
+      </div>
     </>
   );
   const renderPyqInputs = () => (

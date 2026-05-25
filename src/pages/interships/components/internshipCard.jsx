@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
-import { FiMapPin, FiClock, FiCreditCard, FiArrowRight } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
+import { FiMapPin, FiClock, FiCreditCard, FiArrowRight, FiBookmark } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useInternships } from "../../../context/internshipContext";
+import { useAuth } from "../../../context/AuthContext";
 
 const InternshipCard = ({
   internship,
@@ -10,6 +12,10 @@ const InternshipCard = ({
   onToggleStatus,
   onEdit,
 }) => {
+  const navigate = useNavigate();
+  const { toggleSaveInternship } = useInternships();
+  const { user } = useAuth();
+
   const {
     _id,
     title,
@@ -39,11 +45,28 @@ const InternshipCard = ({
 
   const isClosed = status === "closed";
 
+  const userId = user?._id || user?.id;
+  const isSaved = internship.savedBy?.includes(userId);
+
+  const handleSave = async (e) => {
+    e.stopPropagation();
+    if (isGuest) {
+      onRestrictedAction();
+      return;
+    }
+    try {
+      await toggleSaveInternship(_id);
+    } catch (err) {
+      console.error("Save Internship Error:", err);
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(79,70,229,0.10)" }}
       transition={{ duration: 0.2 }}
-      className={`group bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col h-full ${
+      onClick={() => navigate(`/internships/${_id}`)}
+      className={`group bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col h-full cursor-pointer relative ${
         isClosed ? "opacity-70" : ""
       }`}
       style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
@@ -53,9 +76,20 @@ const InternshipCard = ({
 
       <div className="p-6 flex flex-col h-full relative">
         
+        {/* Bookmark Button */}
+        <button
+          onClick={handleSave}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white border border-gray-100 hover:shadow-md transition-all duration-200 z-10 text-gray-400 hover:text-indigo-600 focus:outline-none"
+        >
+          <FiBookmark
+            size={16}
+            className={isSaved ? "fill-indigo-600 text-indigo-600" : "text-gray-400 group-hover:text-indigo-500"}
+          />
+        </button>
+
         {/* 🔴 CLOSED BADGE */}
         {isClosed && (
-          <span className="absolute top-4 right-4 text-[10px] font-bold px-2 py-1 bg-red-500 text-white rounded-lg">
+          <span className="absolute top-4 right-14 text-[10px] font-bold px-2 py-1 bg-red-500 text-white rounded-lg">
             CLOSED
           </span>
         )}
@@ -128,29 +162,36 @@ const InternshipCard = ({
           <div className="flex items-center justify-between">
             {/* View */}
             <Link
-  to={`/internships/${_id}`}
-  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
-    isClosed
-      ? "bg-gray-200 text-gray-700"
-      : `bg-gradient-to-r ${accent} text-white hover:shadow-lg`
-  }`}
->
-  View Details
-  <FiArrowRight size={12} />
-</Link>
+              to={`/internships/${_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+                isClosed
+                  ? "bg-gray-200 text-gray-700"
+                  : `bg-gradient-to-r ${accent} text-white hover:shadow-lg`
+              }`}
+            >
+              View Details
+              <FiArrowRight size={12} />
+            </Link>
 
             {/* 🔐 ADMIN CONTROLS */}
             {isAdmin && (
               <div className="flex gap-2">
                 <button
-                  onClick={() => onEdit(internship)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(internship);
+                  }}
                   className="text-xs px-3 py-1 bg-blue-500 text-white rounded-lg"
                 >
                   Edit
                 </button>
 
                 <button
-                  onClick={() => onToggleStatus(_id, status)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleStatus(_id, status);
+                  }}
                   className={`text-xs px-3 py-1 rounded-lg ${
                     isClosed
                       ? "bg-green-500 text-white"
