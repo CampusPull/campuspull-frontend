@@ -63,41 +63,41 @@ const InternshipCard = ({
 
   return (
     <motion.div
-      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(79,70,229,0.10)" }}
-      transition={{ duration: 0.2 }}
+      whileHover={{ y: -5, boxShadow: "0 12px 30px -8px rgba(79,70,229,0.12)" }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       onClick={() => navigate(`/internships/${_id}`)}
-      className={`group bg-white border border-gray-100 rounded-3xl overflow-hidden flex flex-col h-full cursor-pointer relative ${
-        isClosed ? "opacity-70" : ""
+      className={`group bg-white border border-slate-100 rounded-3xl overflow-hidden flex flex-col h-full cursor-pointer relative transition-all duration-300 ${
+        isClosed ? "opacity-60 grayscale-[10%]" : ""
       }`}
-      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.01)" }}
     >
-      {/* Accent */}
-      <div className={`h-1.5 bg-gradient-to-r ${accent}`} />
+      {/* Accent Indicator */}
+      <div className={`h-1.5 bg-gradient-to-r ${accent} transition-transform duration-300 group-hover:scale-y-110`} />
 
       <div className="p-6 flex flex-col h-full relative">
         
         {/* Bookmark Button */}
         <button
           onClick={handleSave}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white border border-gray-100 hover:shadow-md transition-all duration-200 z-10 text-gray-400 hover:text-indigo-600 focus:outline-none"
+          className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/90 hover:bg-white border border-slate-100 hover:shadow-md transition-all duration-300 z-10 text-slate-400 hover:text-indigo-600 hover:scale-105 active:scale-95 focus:outline-none"
         >
           <FiBookmark
             size={16}
-            className={isSaved ? "fill-indigo-600 text-indigo-600" : "text-gray-400 group-hover:text-indigo-500"}
+            className={`transition-all duration-300 ${isSaved ? "fill-indigo-600 text-indigo-600 scale-110" : "text-slate-400 group-hover:scale-105"}`}
           />
         </button>
 
         {/* 🔴 CLOSED BADGE */}
         {isClosed && (
-          <span className="absolute top-4 right-14 text-[10px] font-bold px-2 py-1 bg-red-500 text-white rounded-lg">
-            CLOSED
+          <span className="absolute top-4.5 right-14 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 bg-rose-500 text-white rounded-lg shadow-sm shadow-rose-500/10">
+            Closed
           </span>
         )}
 
         {/* Header */}
-        <div className="flex items-start gap-4 mb-5">
+        <div className="flex items-start gap-4 mb-5 pr-8">
           <div className="relative flex-shrink-0">
-            <div className="w-14 h-14 rounded-2xl border-2 border-gray-100 bg-gray-50 shadow-sm overflow-hidden flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl border-2 border-slate-100 bg-slate-50 shadow-sm overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
               {companyLogo ? (
                 <img
                   src={companyLogo}
@@ -106,7 +106,7 @@ const InternshipCard = ({
                   onError={(e) => (e.target.style.display = "none")}
                 />
               ) : (
-                <span className="text-lg font-extrabold text-indigo-400">
+                <span className="text-xl font-extrabold text-indigo-400">
                   {companyName?.charAt(0).toUpperCase()}
                 </span>
               )}
@@ -114,67 +114,55 @@ const InternshipCard = ({
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors leading-snug line-clamp-2">
+            <h3 className="text-base font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors leading-snug line-clamp-2">
               {title}
             </h3>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 truncate">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1.5 truncate">
               {companyName}
             </p>
           </div>
+        </div>
 
+        {/* Tags Row */}
+        <div className="flex flex-wrap gap-2.5 mb-6">
           {type && (
-            <span className="text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg">
+            <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 bg-indigo-50/80 text-indigo-600 rounded-full border border-indigo-100/30">
               {type}
             </span>
           )}
-        </div>
-
-        {/* Info */}
-        <div className="flex flex-wrap gap-2 mb-5">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
-            <FiCreditCard size={12} />
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-50/50 text-blue-600 text-[11px] font-bold border border-blue-100/50">
+            <FiCreditCard size={12} className="text-blue-500/80" />
             {stipend > 0 ? `₹${stipend?.toLocaleString()}/mo` : "Unpaid"}
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-100">
-            <FiClock size={12} />
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50/50 text-indigo-600 text-[11px] font-bold border border-indigo-100/50">
+            <FiClock size={12} className="text-indigo-500/80" />
             {formattedDuration}
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
-            <FiMapPin size={12} />
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50/50 text-emerald-600 text-[11px] font-bold border border-emerald-100/50">
+            <FiMapPin size={12} className="text-emerald-500/80" />
             {location}
           </div>
         </div>
 
         <div className="flex-1" />
 
-        {/* Footer */}
-        <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
-          
-          {/* ✅ STATUS TEXT */}
-          <span
-            className={`text-xs font-medium ${
-              isClosed ? "text-red-500" : "text-emerald-500"
-            }`}
-          >
-            {isClosed ? "Closed" : "Actively hiring"}
-          </span>
-
+        {/* Footer Actions */}
+        <div className="flex flex-col gap-3.5 pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between">
-            {/* View */}
             <Link
               to={`/internships/${_id}`}
               onClick={(e) => e.stopPropagation()}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+              className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer shadow-md hover:-translate-y-0.5 hover:shadow-lg ${
                 isClosed
-                  ? "bg-gray-200 text-gray-700"
-                  : `bg-gradient-to-r ${accent} text-white hover:shadow-lg`
+                  ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                  : `bg-gradient-to-r ${accent} text-white hover:shadow-indigo-500/20`
               }`}
             >
-              View Details
-              <FiArrowRight size={12} />
+              <span>View Details</span>
+              <FiArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
 
-            {/* 🔐 ADMIN CONTROLS */}
+            {/* Admin Action Buttons */}
             {isAdmin && (
               <div className="flex gap-2">
                 <button
@@ -182,7 +170,7 @@ const InternshipCard = ({
                     e.stopPropagation();
                     onEdit(internship);
                   }}
-                  className="text-xs px-3 py-1 bg-blue-500 text-white rounded-lg"
+                  className="text-xs font-bold px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition"
                 >
                   Edit
                 </button>
@@ -192,10 +180,10 @@ const InternshipCard = ({
                     e.stopPropagation();
                     onToggleStatus(_id, status);
                   }}
-                  className={`text-xs px-3 py-1 rounded-lg ${
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition ${
                     isClosed
-                      ? "bg-green-500 text-white"
-                      : "bg-red-500 text-white"
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
+                      : "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100"
                   }`}
                 >
                   {isClosed ? "Open" : "Close"}

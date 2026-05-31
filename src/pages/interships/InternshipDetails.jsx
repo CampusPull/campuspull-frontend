@@ -395,15 +395,11 @@ const handleToggleStatus = async () => {
                     </div>
                     <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow" />
                   </div>
-                  <span
-                    className={`inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full ${
-                      isClosed
-                        ? "bg-red-100 text-red-600"
-                        : "bg-green-100 text-green-600"
-                    }`}
-                  >
-                    {isClosed ? "Closed" : "Actively Hiring"}
-                  </span>
+                  {isClosed && (
+                    <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-600">
+                      Closed
+                    </span>
+                  )}
 
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">

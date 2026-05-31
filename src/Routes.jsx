@@ -42,10 +42,11 @@ const Layout = ({ children }) => {
   return (
     <>
       <Header />
-      <div className="pt-16">{children}</div>
+      <div className="pt-10">{children}</div>
     </>
   );
 };
+
 
  
 import { FeedProvider } from "./context/feedContext.jsx";
@@ -70,12 +71,12 @@ import { Navigate } from "react-router-dom";
 
 
 const ProtectedLayout = ({ children }) => {
-  return (
-    <>
-      <Header />
-      <div className="pt-16">{children}</div>
-    </>
-  );
+  return (
+    <>
+      <Header />
+      <div className="pt-10">{children}</div>
+    </>
+  );
 };
 
 

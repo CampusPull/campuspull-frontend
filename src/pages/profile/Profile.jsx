@@ -797,7 +797,7 @@ export default function Profile() {
       </AnimatePresence>
 
       {/* ── Page Layout ── */}
-      <div className="relative w-full px-4 md:px-8 lg:px-12 py-24">
+      <div className="relative w-full px-4 md:px-8 lg:px-12 py-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-7">
 
           {/* ════════════════════ SIDEBAR ════════════════════ */}

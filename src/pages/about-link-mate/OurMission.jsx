@@ -70,7 +70,7 @@ const OurMission = () => {
     {
       phase: "Phase 3 - Recruiter Pipeline Integration (Q4 2026)",
       desc: "Opening direct placement channels. Vetted tech recruiters can search, filter, and hire outstanding students based on validated skills and college benchmarks.",
-      status: "Upcoming"
+      status: "In Progress"
     },
     {
       phase: "Phase 4 - Multi-University Expansion (Q1 2027)",
@@ -217,6 +217,8 @@ const OurMission = () => {
                       <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase ${
                         item.status === "Active" 
                         ? "bg-green-500/10 text-green-400 border border-green-500/20" 
+                        : item.status === "In Progress"
+                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                         : item.status === "Upcoming" 
                         ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
                         : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
