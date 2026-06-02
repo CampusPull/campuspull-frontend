@@ -229,14 +229,14 @@ const Header = () => {
       >
         {/* 1. Logo Pill (Left Side) */}
         <div 
-          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center relative overflow-hidden ${
+          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center flex-nowrap shrink-0 relative overflow-hidden ${
             scrolled 
               ? isDarkPage 
-                ? "py-1.5 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
-                : "py-1.5 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+                ? "h-10 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
+                : "h-10 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
               : isDarkPage 
-                ? "py-2 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
-                : "py-2 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+                ? "h-12 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
+                : "h-12 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
           }`}
           style={{
             boxShadow: isDarkPage 
@@ -260,21 +260,21 @@ const Header = () => {
               whileTap={{ scale: 0.95 }}
               src="/assets/images/logocampus.png" 
               alt="CampusPull Logo" 
-              className={`h-8 w-auto object-contain transition-all duration-300 ${isDarkPage ? "brightness-110" : "brightness-100"}`}
+              className={`transition-all duration-300 w-auto object-contain ${scrolled ? "h-7" : "h-8"} ${isDarkPage ? "brightness-110" : "brightness-100"}`}
             />
           </Link> 
         </div>
 
         {/* 2. Navigation Pill (Exact Center, Hidden on Mobile/Tablet) */}
         <nav 
-          className={`pointer-events-auto hidden xl:flex items-center gap-1.5 rounded-full border transition-all duration-300 relative overflow-hidden ${
+          className={`pointer-events-auto hidden xl:flex items-center flex-nowrap shrink-0 gap-1.5 rounded-full border transition-all duration-300 relative overflow-hidden ${
             scrolled 
               ? isDarkPage 
-                ? "py-1.5 px-5 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
-                : "py-1.5 px-5 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+                ? "h-10 px-5 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
+                : "h-10 px-5 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
               : isDarkPage 
-                ? "py-2 px-6 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
-                : "py-2 px-6 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+                ? "h-12 px-6 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
+                : "h-12 px-6 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
           }`}
           style={{
             boxShadow: isDarkPage 
@@ -320,14 +320,14 @@ const Header = () => {
 
         {/* 3. Actions & Hamburger Pill (Right Side) */}
         <div 
-          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center gap-2.5 relative ${
+          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center flex-nowrap shrink-0 gap-2.5 relative ${
             scrolled 
               ? isDarkPage 
-                ? "py-1.5 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
-                : "py-1.5 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+                ? "h-10 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white" 
+                : "h-10 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
               : isDarkPage 
-                ? "py-2 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
-                : "py-2 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+                ? "h-12 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white" 
+                : "h-12 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
           }`}
           style={{
             boxShadow: isDarkPage 
@@ -349,10 +349,10 @@ const Header = () => {
 
           {/* Guest Auth Buttons (Desktop only) */}
           {isGuest && (
-            <div className="hidden lg:flex items-center gap-2 mr-1 relative z-10">
+            <div className="hidden lg:flex items-center gap-2 mr-1 relative z-10 flex-nowrap whitespace-nowrap shrink-0">
               <Link
                 to="/auth"
-                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors whitespace-nowrap shrink-0 ${
                   isDarkPage 
                     ? "text-slate-300 bg-white/5 hover:bg-white/15" 
                     : "text-slate-600 bg-slate-100 hover:bg-slate-200"
@@ -362,7 +362,7 @@ const Header = () => {
               </Link>
               <Link
                 to="/auth?signup=true"
-                className="px-4 py-1.5 text-xs font-bold shadow-sm rounded-full transition-colors text-white bg-indigo-600 hover:bg-indigo-700"
+                className="px-4 py-1.5 text-xs font-bold shadow-sm rounded-full transition-colors text-white bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap shrink-0"
               >
                 Sign Up
               </Link>
@@ -410,7 +410,7 @@ const Header = () => {
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="pl-3.5 pr-2 py-2 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                className="pl-3.5 pr-2 py-1.5 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 aria-label="Toggle navigation menu"
               >
                 <Icon name="Menu" size={17} />

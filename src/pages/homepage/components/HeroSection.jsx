@@ -55,7 +55,7 @@ export default function HeroSection() {
     {
       type: "gradient",
       bgClass: "from-indigo-950 via-slate-950 to-indigo-900/40",
-      icon: <FiUsers className="text-4xl text-indigo-400 mb-4 animate-bounce" />,
+      icon: <FiUsers className="text-4xl text-indigo-400 animate-bounce" />,
       title: "Find Alumni ",
       highlight: "Mentorship",
       subtitle: "Get 1-on-1 guidance, mock interviews, and career support directly from graduates who've walked the path.",
@@ -65,7 +65,7 @@ export default function HeroSection() {
     {
       type: "gradient",
       bgClass: "from-blue-950 via-slate-950 to-cyan-900/40",
-      icon: <FiBookOpen className="text-4xl text-cyan-400 mb-4 animate-pulse" />,
+      icon: <FiBookOpen className="text-4xl text-cyan-400 animate-pulse" />,
       title: "Study Notes & ",
       highlight: "Interview PYQs",
       subtitle: "Access curated branch-wise university notes, roadmaps, and verified company previous year questions.",
@@ -75,7 +75,7 @@ export default function HeroSection() {
     {
       type: "gradient",
       bgClass: "from-emerald-950 via-slate-950 to-teal-900/40",
-      icon: <FiBriefcase className="text-4xl text-emerald-400 mb-4 hover:rotate-12 transition-transform" />,
+      icon: <FiBriefcase className="text-4xl text-emerald-400 hover:rotate-12 transition-transform" />,
       title: "Direct Internship ",
       highlight: "Openings",
       subtitle: "Apply directly for industry internships on the website with your PDF resume. No tedious external forms.",
