@@ -62,20 +62,22 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col bg-white/80 backdrop-blur-xl border-r border-white/50 shadow-sm">
+    <div className="h-full flex flex-col bg-white p-2 text-slate-700">
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-indigo-50">
-        <div className="flex items-center space-x-2">
-          <Icon name="Filter" size={20} className="text-indigo-600" />
-          <h3 className="font-bold text-gray-800">Filters</h3>
+      <div className="flex items-center justify-between p-5 border-b border-slate-100">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/10 text-white">
+            <Icon name="Filter" size={15} />
+          </div>
+          <h3 className="font-extrabold text-slate-800 tracking-tight font-poppins">Filters</h3>
           {getActiveFiltersCount() > 0 && (
-            <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+            <span className="bg-indigo-50 text-indigo-600 text-xs font-black px-2.5 py-1 rounded-full border border-indigo-100">
               {getActiveFiltersCount()}
             </span>
           )}
         </div>
         {isMobile && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-red-50 hover:text-red-500 rounded-full">
+          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-slate-100 hover:text-slate-600 rounded-full border-none">
             <Icon name="X" size={20} />
           </Button>
         )}
@@ -83,40 +85,37 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
 
       {/* Clear Filters */}
       {getActiveFiltersCount() > 0 && (
-        <div className="p-4 border-b border-indigo-50">
-          <Button 
-            variant="outline" 
-            size="sm" 
+        <div className="p-4 border-b border-slate-100">
+          <button
             onClick={onClearFilters}
-            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all"
-            iconName="RotateCcw"
-            iconPosition="left"
+            className="w-full py-3 rounded-2xl border border-transparent text-slate-400 font-bold text-xs hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer bg-transparent"
           >
+            <Icon name="RotateCcw" size={12} />
             Reset Filters
-          </Button>
+          </button>
         </div>
       )}
 
       {/* Filter Sections */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-3">
         {filterSections?.map((section) => (
-          <div key={section?.key} className="bg-white/50 rounded-xl border border-white/60 overflow-hidden">
+          <div key={section?.key} className="bg-slate-50/50 rounded-2xl border border-slate-200/60 overflow-hidden">
             <button
               onClick={() => toggleSection(section?.key)}
-              className="w-full flex items-center justify-between p-3 hover:bg-white/80 transition-colors duration-200"
+              className="w-full flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors duration-200 border-none bg-transparent cursor-pointer text-left"
             >
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                    <Icon name={section?.icon} size={16} />
+                <div className="p-2 bg-indigo-50 rounded-xl text-indigo-500 border border-indigo-100/30">
+                  <Icon name={section?.icon} size={15} />
                 </div>
-                <span className="font-semibold text-gray-700 text-sm">
+                <span className="font-extrabold text-slate-700 text-sm font-poppins">
                   {section?.title}
                 </span>
               </div>
               <Icon 
                 name={expandedSections?.[section?.key] ? "ChevronUp" : "ChevronDown"} 
-                size={16} 
-                className="text-gray-400" 
+                size={15} 
+                className="text-slate-400" 
               />
             </button>
 
@@ -127,33 +126,33 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
                   
                   return (
                     <label 
-                        key={option?.value}
-                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all duration-200 group ${
-                            isChecked ? 'bg-indigo-50 ring-1 ring-indigo-100' : 'hover:bg-gray-50'
-                        }`}
+                      key={option?.value}
+                      className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-200 group select-none ${
+                        isChecked ? 'bg-indigo-50/80 border border-indigo-100/30' : 'hover:bg-slate-100/50 border border-transparent'
+                      }`}
                     >
-                        <div className="flex items-center space-x-3">
-                            {/* Custom Checkbox */}
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all duration-200 ${
-                                isChecked 
-                                ? 'bg-indigo-600 border-indigo-600 shadow-sm' 
-                                : 'border-gray-300 bg-white group-hover:border-indigo-400'
-                            }`}>
-                                {isChecked && <Icon name="Check" size={10} className="text-white" />}
-                            </div>
-                            
-                            {/* Hidden Native Checkbox */}
-                            <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => handleFilterChange(section?.key, option?.value, e?.target?.checked)}
-                                className="hidden"
-                            />
-                            
-                            <span className={`text-sm ${isChecked ? 'font-medium text-indigo-700' : 'text-gray-600 group-hover:text-gray-900'}`}>
-                                {option?.label}
-                            </span>
+                      <div className="flex items-center space-x-3">
+                        {/* Custom Checkbox */}
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all duration-200 ${
+                          isChecked 
+                          ? 'bg-indigo-600 border-indigo-600 shadow-sm' 
+                          : 'border-slate-300 bg-white group-hover:border-indigo-400'
+                        }`}>
+                          {isChecked && <Icon name="Check" size={10} className="text-white" />}
                         </div>
+                        
+                        {/* Hidden Native Checkbox */}
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => handleFilterChange(section?.key, option?.value, e?.target?.checked)}
+                          className="hidden"
+                        />
+                        
+                        <span className={`text-xs font-bold ${isChecked ? 'text-indigo-600' : 'text-slate-600 group-hover:text-slate-800'}`}>
+                          {option?.label}
+                        </span>
+                      </div>
                     </label>
                   );
                 })}
@@ -167,8 +166,8 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
 
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center sm:justify-center">
-        <div className="bg-white w-full sm:w-96 max-h-[85vh] sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center sm:justify-center">
+        <div className="bg-white w-full sm:w-96 max-h-[85vh] sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-100">
           {sidebarContent}
         </div>
       </div>
@@ -176,7 +175,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
   }
 
   return (
-    <div className="h-full rounded-2xl overflow-hidden shadow-sm border border-white/60">
+    <div className="h-fit w-80 rounded-3xl overflow-hidden shadow-sm border border-slate-100 bg-white">
       {sidebarContent}
     </div>
   );

@@ -111,15 +111,17 @@ const UploadModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const inputClass = "block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
       {/* Framer motion wrapper for entry */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative w-full max-w-md bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(79,70,229,0.12)] max-h-[92vh]"
+        className="relative w-full max-w-md bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl max-h-[92vh] text-slate-800"
       >
         {/* Accent Top Bar */}
         <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 shrink-0" />
@@ -127,20 +129,20 @@ const UploadModal = ({ isOpen, onClose }) => {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100/80 text-slate-400 hover:text-indigo-600 focus:outline-none transition-all duration-200 hover:scale-105 active:scale-95 z-10"
+          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-400 hover:text-slate-600 focus:outline-none transition-all duration-200 hover:scale-105 active:scale-95 z-10 cursor-pointer"
         >
           <FiX size={14} />
         </button>
 
-        {/* Header Section (Fixed at Top) */}
+        {/* Header Section */}
         <div className="px-6 pt-6 pb-3 text-center shrink-0">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-tr from-indigo-50 to-blue-50 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/30 mb-3 transition-transform hover:scale-105 duration-300">
+          <div className="mx-auto w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500 border border-indigo-100/30 mb-3 shadow-sm">
             <FiUploadCloud size={22} className="animate-pulse" />
           </div>
-          <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1.5">
+          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none mb-1.5 font-poppins">
             Upload Resource
           </h2>
-          <p className="text-slate-400 text-[11px] md:text-xs max-w-[280px] mx-auto leading-normal">
+          <p className="text-slate-400 text-[11px] md:text-xs max-w-[280px] mx-auto leading-normal font-semibold">
             Share notes, PDFs, PPTs, and study materials with the student community.
           </p>
         </div>
@@ -150,7 +152,7 @@ const UploadModal = ({ isOpen, onClose }) => {
           <div className="flex-grow overflow-y-auto px-6 pb-4 space-y-4 scrollbar-thin">
             
             {/* Subject Name Input */}
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 Subject Name <span className="text-rose-500">*</span>
               </label>
@@ -164,13 +166,13 @@ const UploadModal = ({ isOpen, onClose }) => {
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
                   placeholder=""
-                  className="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-xs font-semibold"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             {/* Two column layout for Code and Teacher */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
               {/* Subject Code Input */}
               <div className="space-y-1">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
@@ -186,7 +188,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                     value={subjectCode}
                     onChange={(e) => setSubjectCode(e.target.value)}
                     placeholder=""
-                    className="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-xs font-semibold"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -205,18 +207,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                     value={teacherName}
                     onChange={(e) => setTeacherName(e.target.value)}
                     placeholder=""
-                    className="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-xs font-semibold"
+                    className={inputClass}
                   />
                 </div>
               </div>
             </div>
 
             {/* Segmented Toggle */}
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 Upload Type
               </label>
-              <div className="relative flex p-0.5 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/20">
+              <div className="relative flex p-0.5 bg-slate-100 rounded-xl border border-slate-200/60">
                 {/* Sliding highlighter background */}
                 <div className="absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all duration-300 pointer-events-none"
                   style={{
@@ -227,8 +229,8 @@ const UploadModal = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setNoteFileType("file")}
-                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none ${
-                    noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-500 hover:text-slate-800"
+                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                    noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   <FiUploadCloud size={13} />
@@ -237,8 +239,8 @@ const UploadModal = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setNoteFileType("url")}
-                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none ${
-                    noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-500 hover:text-slate-800"
+                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                    noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   <FiLink size={13} />
@@ -257,10 +259,10 @@ const UploadModal = ({ isOpen, onClose }) => {
                   onClick={triggerFileSelect}
                   className={`group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
                     isDragging
-                      ? "border-indigo-500 bg-indigo-50/20 shadow-[0_0_15px_rgba(99,102,241,0.06)]"
+                      ? "border-indigo-500 bg-indigo-50"
                       : noteFile
-                      ? "border-emerald-500 bg-emerald-50/5"
-                      : "border-slate-200 hover:border-indigo-400 bg-slate-50/20 hover:bg-slate-50/40"
+                      ? "border-emerald-500 bg-emerald-50/50"
+                      : "border-slate-200 hover:border-indigo-400 bg-white"
                   }`}
                 >
                   <input
@@ -273,8 +275,8 @@ const UploadModal = ({ isOpen, onClose }) => {
                   
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
                     noteFile 
-                      ? "bg-emerald-50 text-emerald-600" 
-                      : "bg-slate-100 text-slate-400 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-600"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                      : "bg-slate-50 text-slate-400 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-500 border border-slate-200"
                   }`}>
                     <FiUploadCloud size={15} />
                   </div>
@@ -284,24 +286,24 @@ const UploadModal = ({ isOpen, onClose }) => {
                       <p className="text-[11px] font-bold text-slate-700 truncate max-w-[280px]">
                         {noteFile.name}
                       </p>
-                      <p className="text-[9px] text-emerald-600 font-semibold flex items-center justify-center gap-1">
+                      <p className="text-[9px] text-emerald-600 font-bold flex items-center justify-center gap-1">
                         <span>✓ File Selected</span>
                         <span className="text-slate-400">({(noteFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">
+                      <p className="text-[11px] font-bold text-slate-400 group-hover:text-indigo-500 transition-colors">
                         Drop your file here or <span className="underline">browse</span>
                       </p>
-                      <p className="text-[9px] text-slate-400 font-medium">
+                      <p className="text-[9px] text-slate-400 font-semibold">
                         PDF, DOCX, PPTX, PPT (Max 20MB)
                       </p>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-1 text-left">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                     Drive / External Link <span className="text-rose-500">*</span>
                   </label>
@@ -315,10 +317,10 @@ const UploadModal = ({ isOpen, onClose }) => {
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
                       placeholder=""
-                      className="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/80 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-xs font-semibold"
+                      className={inputClass}
                     />
                   </div>
-                  <p className="text-[9px] text-slate-400 font-medium pl-1 mt-1">
+                  <p className="text-[9px] text-slate-400 font-bold pl-1 mt-1">
                     Ensure link permission is set to "Anyone with the link".
                   </p>
                 </div>
@@ -328,12 +330,12 @@ const UploadModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Sticky Bottom Actions */}
-          <div className="px-6 pb-6 pt-3 bg-white border-t border-slate-100/85 shrink-0 space-y-3">
+          <div className="px-6 pb-6 pt-3 bg-white border-t border-slate-100 shrink-0 space-y-3">
             {error && (
               <motion.p
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-rose-500 text-[10px] font-bold text-center bg-rose-50 border border-rose-100 rounded-xl py-2 px-3"
+                className="text-rose-600 text-[10px] font-bold text-center bg-rose-50 border border-rose-200 rounded-xl py-2 px-3 animate-pulse"
               >
                 {error}
               </motion.p>
@@ -342,7 +344,7 @@ const UploadModal = ({ isOpen, onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 rounded-xl shadow-md hover:shadow-lg shadow-indigo-500/5 hover:shadow-indigo-500/15 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-1.5 focus:outline-none"
+              className="w-full py-3.5 px-6 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl shadow-md hover:shadow-lg shadow-indigo-500/10 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none cursor-pointer"
             >
               {loading ? (
                 <>

@@ -86,11 +86,16 @@ export default function HeroSection() {
 
   // Auto-play slides
   useEffect(() => {
+    // If the video is unmuted and we are currently on the video slide (slide 0),
+    // pause/disable the autoplay so the landing page stays on it.
+    if (!isMuted && currentSlide === 0) {
+      return;
+    }
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 8000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, isMuted, currentSlide]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -100,10 +105,36 @@ export default function HeroSection() {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
+  // Keep video element muted and play status perfectly in sync with React state
+  useEffect(() => {
+    if (slides[currentSlide].type === "video" && videoRef.current) {
+      videoRef.current.muted = isMuted;
+      if (!isMuted) {
+        videoRef.current.volume = 1.0;
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.log("Audio play prevented or failed:", err);
+            // Fallback to muted to allow video playback if autoplay blocked
+            setIsMuted(true);
+          });
+        }
+      }
+    }
+  }, [isMuted, currentSlide]);
+
   const toggleMute = () => {
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      const newMuted = !videoRef.current.muted;
+      videoRef.current.muted = newMuted;
+      setIsMuted(newMuted);
+      if (!newMuted) {
+        videoRef.current.volume = 1.0;
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => console.log("Play failed on user unmute:", err));
+        }
+      }
     }
   };
 

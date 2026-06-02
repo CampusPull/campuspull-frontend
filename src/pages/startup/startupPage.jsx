@@ -61,16 +61,16 @@ const StartupPage = () => {
 
       <div className="max-w-7xl mx-auto">
 
-      {loading && <p>Loading startups...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+        {loading && <p>Loading startups...</p>}
+        {error && <p className="text-red-500">{error}</p>}
 
-      {!loading && !error && (
-        <StartupList
-          startups={startups}
-          isGuest={isGuest}                           // FIX: pass to list
-          onRestrictedAction={() => setShowAuthModal(true)} // FIX: pass modal trigger
-        />
-      )}
+        {!loading && !error && (
+          <StartupList
+            startups={startups}
+            isGuest={isGuest}                           // FIX: pass to list
+            onRestrictedAction={() => setShowAuthModal(true)} // FIX: pass modal trigger
+          />
+        )}
       </div>
 
       {open && <AddStartupModal onClose={() => setOpen(false)} />}
