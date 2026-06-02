@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import Header from "../../components/ui/Header";
 import HeroSection from "./components/HeroSection";
 import AlumniSpotlight from "./components/AlumniSpotlight";
-import MobileSearchBar from "./components/MobileSearchBar";
 import Footer from "./components/Footer";
 import PodcastSection from "./components/podcastSection";
 
@@ -245,9 +244,6 @@ const Homepage = () => {
     <div className="min-h-screen bg-slate-950 text-white overflow-hidden selection:bg-indigo-500/30">
       {/* Header */}
       <Header />
-      
-      {/* Mobile Search Bar */}
-      <MobileSearchBar />
       
       {/* Main Content */}
       <main className="pt-0 flex flex-col gap-24 relative z-10 pb-20">
