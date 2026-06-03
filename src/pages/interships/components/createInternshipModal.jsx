@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useInternships } from "../../../context/internshipContext";
 import { useAuth } from "context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiUploadCloud, FiFile, FiCheck, FiBriefcase } from "react-icons/fi";
+import { FiX, FiUploadCloud, FiFile, FiCheck, FiBriefcase, FiAlertCircle } from "react-icons/fi";
 
 const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
@@ -27,6 +27,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   const [logoPreview, setLogoPreview] = useState("");
   const [isDragActive, setIsDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -64,6 +65,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
 
     const createdBy = user?._id || user?.id;
     if (!createdBy) {
@@ -103,6 +105,12 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       console.error("Create internship failed:", err);
+      setError(
+        err.response?.data?.errors || 
+        err.response?.data?.message || 
+        err.response?.data || 
+        "Create internship failed. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -363,6 +371,17 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                 </div>
               </div>
             </div>
+
+            {/* Error display */}
+            {error && (
+              <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-semibold border border-rose-100 dark:border-rose-900/30">
+                <FiAlertCircle size={15} className="shrink-0 mt-0.5" />
+                <div className="text-left w-full overflow-hidden">
+                  <p className="font-bold">{typeof error === "string" ? error : "Please correct the errors below:"}</p>
+                  <pre className="text-[10px] font-mono mt-1.5 whitespace-pre-wrap bg-white/50 dark:bg-black/20 p-2 rounded-lg max-h-[150px] overflow-y-auto">{JSON.stringify(error, null, 2)}</pre>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">

@@ -271,7 +271,7 @@ const Homepage = () => {
                 Featured Internships
               </h2>
               <p className="text-sm text-slate-400 mt-2 max-w-xl">
-                Browse direct entry roles vetted by CampusPull. Apply instantly using your stored credentials and PDF resume.
+                Browse direct entry roles vetted by CampusPull. Apply using the official links attached to each opening.
               </p>
             </div>
             <Link to="/internships" className="group flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-bold text-sm cursor-pointer whitespace-nowrap">

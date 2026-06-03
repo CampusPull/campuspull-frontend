@@ -145,7 +145,7 @@ const InternshipDetails = () => {
   const isGuest = !user;
 
 
-  const { toggleInternshipStatus, updateInternship, applyToInternship } = useInternships();
+  const { toggleInternshipStatus, updateInternship } = useInternships();
 
 const handleToggleStatus = async () => {
   if (!internship) return;
@@ -167,15 +167,6 @@ const handleToggleStatus = async () => {
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  // Direct Apply States
-  const [isApplyDrawerOpen, setIsApplyDrawerOpen] = useState(false);
-  const [resumeFile, setResumeFile] = useState(null);
-  const [coverLetter, setCoverLetter] = useState("");
-  const [applying, setApplying] = useState(false);
-  const [applySuccess, setApplySuccess] = useState(false);
-  const [applyError, setApplyError] = useState("");
-  const [isDragActive, setIsDragActive] = useState(false);
 
   const isAdmin = user?.role === "admin";
   const isClosed = internship?.status === "closed";
@@ -204,73 +195,9 @@ const handleToggleStatus = async () => {
       return;
     }
 
-    setIsApplyDrawerOpen(true);
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setIsDragActive(true);
-    } else if (e.type === "dragleave") {
-      setIsDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.type === "application/pdf" || file.name.endsWith(".pdf") || file.name.endsWith(".docx")) {
-        setResumeFile(file);
-        setApplyError("");
-      } else {
-        setApplyError("Please upload a PDF or DOCX file only.");
-      }
-    }
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.type === "application/pdf" || file.name.endsWith(".pdf") || file.name.endsWith(".docx")) {
-        setResumeFile(file);
-        setApplyError("");
-      } else {
-        setApplyError("Please upload a PDF or DOCX file only.");
-      }
-    }
-  };
-
-  const handleApplySubmit = async (e) => {
-    e.preventDefault();
-    if (!resumeFile) {
-      setApplyError("Resume file is required!");
-      return;
-    }
-    setApplying(true);
-    setApplyError("");
-
-    const formData = new FormData();
-    formData.append("resume", resumeFile);
-    formData.append("coverLetter", coverLetter);
-
-    try {
-      await applyToInternship(internship._id, formData);
-      setApplySuccess(true);
-      setTimeout(() => {
-        setIsApplyDrawerOpen(false);
-        setApplySuccess(false);
-        setResumeFile(null);
-        setCoverLetter("");
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setApplyError(err.response?.data?.message || "Failed to submit application. You might have already applied!");
-    } finally {
-      setApplying(false);
+    // Open the attached apply link in a new tab
+    if (internship.applyLink) {
+      window.open(internship.applyLink, "_blank");
     }
   };
 
@@ -676,160 +603,6 @@ const handleToggleStatus = async () => {
           </div>
         </div>
       </motion.div>
-      {/* ── Direct Apply Drawer ── */}
-      <AnimatePresence>
-        {isApplyDrawerOpen && (
-          <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-              onClick={() => !applying && setIsApplyDrawerOpen(false)}
-            />
-
-            {/* Sliding Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="relative w-full max-w-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl border-l border-slate-100 dark:border-slate-800 flex flex-col h-full z-10"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800/80 flex justify-between items-center bg-gradient-to-r from-indigo-50/30 to-blue-50/20">
-                <div>
-                  <h3 className="text-lg font-extrabold text-slate-800 dark:text-white">Apply for Internship</h3>
-                  <p className="text-xs text-slate-400 font-semibold mt-0.5">{internship.title} @ {internship.companyName}</p>
-                </div>
-                <button
-                  disabled={applying}
-                  onClick={() => setIsApplyDrawerOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <FiX size={20} />
-                </button>
-              </div>
-
-              {/* Success Screen */}
-              {applySuccess ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/25"
-                  >
-                    <FiCheck size={32} />
-                  </motion.div>
-                  <h4 className="text-xl font-bold text-slate-800 dark:text-white">Application Submitted!</h4>
-                  <p className="text-sm text-slate-500 max-w-xs">
-                    Your resume and cover letter have been sent to <strong>{internship.companyName}</strong>. Good luck!
-                  </p>
-                </div>
-              ) : (
-                /* Form */
-                <form onSubmit={handleApplySubmit} className="flex-1 flex flex-col p-6 overflow-y-auto space-y-6">
-                  
-                  {/* File Upload */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                      Upload Resume (PDF/DOCX) *
-                    </label>
-                    <div
-                      onDragEnter={handleDrag}
-                      onDragOver={handleDrag}
-                      onDragLeave={handleDrag}
-                      onDrop={handleDrop}
-                      onClick={() => !applying && document.getElementById("applyResumeInput").click()}
-                      className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[140px] relative ${
-                        isDragActive
-                          ? "border-indigo-500 bg-indigo-50/50"
-                          : resumeFile
-                          ? "border-emerald-500 bg-emerald-50/20"
-                          : "border-slate-200 hover:border-indigo-400 bg-slate-50/50"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        id="applyResumeInput"
-                        onChange={handleFileChange}
-                        accept=".pdf,.docx"
-                        className="hidden"
-                      />
-
-                      {resumeFile ? (
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
-                            <FiFileText size={24} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-700 line-clamp-1">{resumeFile.name}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{(resumeFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center space-y-2">
-                          <FiUploadCloud size={32} className="text-slate-400 animate-bounce" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-600">Drag & drop your resume file</p>
-                            <p className="text-xs text-slate-400 mt-1">PDF or DOCX format (Max 10MB)</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cover Letter */}
-                  <div className="flex-1 flex flex-col min-h-[180px]">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                      Cover Letter (Optional)
-                    </label>
-                    <textarea
-                      placeholder="Explain why you are the best fit for this opportunity..."
-                      value={coverLetter}
-                      onChange={(e) => setCoverLetter(e.target.value)}
-                      disabled={applying}
-                      className="flex-1 w-full border border-slate-200 bg-white p-4 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800 resize-none"
-                    />
-                  </div>
-
-                  {/* Error display */}
-                  {applyError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-xs font-semibold border border-red-100">
-                      <FiAlertCircle size={14} className="shrink-0" />
-                      <span>{applyError}</span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="pt-4 border-t border-slate-100 flex gap-3">
-                    <button
-                      type="button"
-                      disabled={applying}
-                      onClick={() => setIsApplyDrawerOpen(false)}
-                      className="flex-1 py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-500 font-bold rounded-2xl text-sm transition-colors focus:outline-none"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={applying || !resumeFile}
-                      className="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:shadow-lg text-white font-bold rounded-2xl text-sm transition-all focus:outline-none disabled:opacity-50 flex items-center justify-center"
-                    >
-                      {applying ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        "Submit Application"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 };

@@ -17,6 +17,8 @@ const ActiveFilters = ({ filters, onRemoveFilter, onClearAll }) => {
     const typeLabels = { notes: 'Study Notes', pyqs: 'Interview PYQs', roadmaps: 'Career Roadmaps' };
     activeChips.push({ category: 'type', value: filters.type, label: `Type: ${typeLabels[filters.type] || filters.type}` });
   }
+  // Commented out for now
+  /*
   if (filters.verifiedOnly) {
     activeChips.push({ category: 'verifiedOnly', value: true, label: 'Verified Only' });
   }
@@ -25,6 +27,7 @@ const ActiveFilters = ({ filters, onRemoveFilter, onClearAll }) => {
       activeChips.push({ category: 'branch', value: b, label: getBranchLabel(b) });
     });
   }
+  */
   if (filters.semester && filters.semester.length > 0) {
     filters.semester.forEach(s => {
       activeChips.push({ category: 'semester', value: s, label: getSemesterLabel(s) });

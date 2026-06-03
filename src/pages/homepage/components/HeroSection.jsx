@@ -78,7 +78,7 @@ export default function HeroSection() {
       icon: <FiBriefcase className="text-4xl text-emerald-400 hover:rotate-12 transition-transform" />,
       title: "Direct Internship ",
       highlight: "Openings",
-      subtitle: "Apply directly for industry internships on the website with your PDF resume. No tedious external forms.",
+      subtitle: "Find and apply for verified industry internships using direct official application links.",
       ctaText: "Explore Internships",
       ctaLink: "/internships",
     }
@@ -111,7 +111,7 @@ export default function HeroSection() {
       videoRef.current.muted = isMuted;
       if (!isMuted) {
         videoRef.current.volume = 1.0;
-        const playPromise = videoRef.current.play();
+        const playPromise = videoRef.current.play(); 
         if (playPromise !== undefined) {
           playPromise.catch((err) => {
             console.log("Audio play prevented or failed:", err);

@@ -1,21 +1,41 @@
 import React, { useState, useContext } from "react";
 import { ResourceContext } from "../../../context/resourceContext";
 import { motion } from "framer-motion";
-import { FiX, FiUploadCloud, FiLink, FiBookOpen, FiHash, FiUser } from "react-icons/fi";
+import { 
+  FiX, 
+  FiUploadCloud, 
+  FiLink, 
+  FiBookOpen, 
+  FiHash, 
+  FiUser, 
+  FiTag, 
+  FiCompass, 
+  FiBriefcase, 
+  FiAward, 
+  FiPlus 
+} from "react-icons/fi";
 
-const UploadModal = ({ isOpen, onClose }) => {
-  const { uploadNotes } = useContext(ResourceContext);
+const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
+  const { uploadNotes, uploadRoadmap, uploadPYQ } = useContext(ResourceContext);
 
+  const [type, setType] = useState("notes");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Simplified Form Fields
+  // Notes Form State
   const [subjectName, setSubjectName] = useState("");
   const [subjectCode, setSubjectCode] = useState("");
   const [teacherName, setTeacherName] = useState("");
   const [noteFileType, setNoteFileType] = useState("file"); // "file" or "url"
   const [noteFile, setNoteFile] = useState(null);
   const [link, setLink] = useState("");
+
+  // Roadmap & PYQ Common Form State
+  const [commonData, setCommonData] = useState({ title: "", description: "", tags: "", thumbnail: null });
+  // PYQ Specific Form State
+  const [pyqData, setPyqData] = useState({ company: "", year: "", difficulty: "Easy", link: "" });
+  // Roadmap Specific Form State
+  const [modules, setModules] = useState([{ moduleTitle: "", moduleDescription: "", resources: [{ title: "", link: "" }] }]);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -28,8 +48,14 @@ const UploadModal = ({ isOpen, onClose }) => {
     setNoteFile(null);
     setLink("");
     setNoteFileType("file");
+
+    setCommonData({ title: "", description: "", tags: "", thumbnail: null });
+    setPyqData({ company: "", year: "", difficulty: "Easy", link: "" });
+    setModules([{ moduleTitle: "", moduleDescription: "", resources: [{ title: "", link: "" }] }]);
+    setType("notes");
   };
 
+  // --- Notes Drag/Drop Handlers ---
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -71,6 +97,45 @@ const UploadModal = ({ isOpen, onClose }) => {
     document.getElementById("note-file-input")?.click();
   };
 
+  // --- Roadmap/PYQ Change Handlers ---
+  const handleCommonChange = (e) => setCommonData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleThumbnailSelect = (e) => setCommonData(prev => ({ ...prev, thumbnail: e.target.files[0] }));
+  const handlePyqChange = (e) => setPyqData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleModuleChange = (modIdx, e) => {
+    const newModules = [...modules];
+    newModules[modIdx][e.target.name] = e.target.value;
+    setModules(newModules);
+  };
+
+  const handleResourceChange = (modIdx, resIdx, e) => {
+    const newModules = [...modules];
+    newModules[modIdx].resources[resIdx][e.target.name] = e.target.value;
+    setModules(newModules);
+  };
+
+  const addModule = () => setModules([...modules, { moduleTitle: "", moduleDescription: "", resources: [{ title: "", link: "" }] }]);
+  
+  const removeModule = (modIdx) => {
+    if (modules.length > 1) {
+      setModules(modules.filter((_, idx) => idx !== modIdx));
+    }
+  };
+
+  const addResource = (modIdx) => {
+    const newModules = [...modules];
+    newModules[modIdx].resources.push({ title: "", link: "" });
+    setModules(newModules);
+  };
+
+  const removeResource = (modIdx, resIdx) => {
+    const newModules = [...modules];
+    if (newModules[modIdx].resources.length > 1) {
+      newModules[modIdx].resources = newModules[modIdx].resources.filter((_, idx) => idx !== resIdx);
+      setModules(newModules);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -78,29 +143,63 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     try {
       const payload = new FormData();
-      payload.append("title", subjectName);
-      
-      // If "Uploaded By" is filled, add it to description, otherwise keep it blank
-      const desc = teacherName ? `Uploaded by: ${teacherName}` : "";
-      payload.append("description", desc);
-      payload.append("tags", ""); // Keep empty tags
 
-      if (noteFileType === "file") {
-        if (!noteFile) {
-          throw new Error("Please select a document file to upload!");
+      if (type === "notes") {
+        payload.append("title", subjectName);
+        
+        // If "Uploaded By" is filled, add it to description, otherwise keep it blank
+        const desc = teacherName ? `Uploaded by: ${teacherName}` : "";
+        payload.append("description", desc);
+        payload.append("tags", ""); // Keep empty tags
+
+        if (noteFileType === "file") {
+          if (!noteFile) {
+            throw new Error("Please select a document file to upload!");
+          }
+          if (noteFile.size > 20 * 1024 * 1024) {
+            throw new Error("File is too large! Maximum allowed size is 20MB.");
+          }
+          payload.append("file", noteFile);
+        } else {
+          payload.append("link", link || "");
         }
-        if (noteFile.size > 20 * 1024 * 1024) {
-          throw new Error("File is too large! Maximum allowed size is 20MB.");
+        
+        payload.append("branch", subjectCode);
+        payload.append("semester", "1"); // Default semester 1 to satisfy backend validation
+        
+        await uploadNotes(payload);
+
+      } else if (type === "roadmap") {
+        if (!commonData.title.trim()) {
+          throw new Error("Please provide a roadmap title!");
         }
-        payload.append("file", noteFile);
-      } else {
-        payload.append("link", link || "");
+        payload.append("title", commonData.title);
+        payload.append("description", commonData.description || "");
+        payload.append("tags", commonData.tags || "");
+        if (commonData.thumbnail) {
+          payload.append("thumbnail", commonData.thumbnail);
+        }
+        payload.append("modules", JSON.stringify(modules));
+        await uploadRoadmap(payload);
+
+      } else if (type === "pyq") {
+        if (!pyqData.company.trim()) {
+          throw new Error("Please provide a company name!");
+        }
+        if (!pyqData.link.trim()) {
+          throw new Error("Please provide a link to the PYQs!");
+        }
+        payload.append("description", commonData.description || "");
+        payload.append("tags", commonData.tags || "");
+        if (commonData.thumbnail) {
+          payload.append("thumbnail", commonData.thumbnail);
+        }
+        payload.append("link", pyqData.link);
+        payload.append("company", pyqData.company);
+        payload.append("year", pyqData.year || "");
+        payload.append("difficulty", pyqData.difficulty);
+        await uploadPYQ(payload);
       }
-      
-      payload.append("branch", subjectCode);
-      payload.append("semester", "1"); // Default semester 1 to satisfy backend validation
-      
-      await uploadNotes(payload);
 
       resetForms();
       onClose();
@@ -111,7 +210,11 @@ const UploadModal = ({ isOpen, onClose }) => {
     }
   };
 
+  // Styling Utilities
   const inputClass = "block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm";
+  const textareaClass = "block w-full px-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm min-h-[80px]";
+  const selectClass = "block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm cursor-pointer";
+  const fileInputClass = "block w-full px-4 py-2 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 text-slate-700 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm cursor-pointer";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -121,7 +224,7 @@ const UploadModal = ({ isOpen, onClose }) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="relative w-full max-w-md bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl max-h-[92vh] text-slate-800"
+        className={`relative w-full ${type === 'roadmap' ? 'max-w-lg' : 'max-w-md'} bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl max-h-[92vh] text-slate-800 transition-all duration-300`}
       >
         {/* Accent Top Bar */}
         <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 shrink-0" />
@@ -143,7 +246,9 @@ const UploadModal = ({ isOpen, onClose }) => {
             Upload Resource
           </h2>
           <p className="text-slate-400 text-[11px] md:text-xs max-w-[280px] mx-auto leading-normal font-semibold">
-            Share notes, PDFs, PPTs, and study materials with the student community.
+            {type === 'notes' && "Share notes, PDFs, PPTs, and study materials with the student community."}
+            {type === 'roadmap' && "Design and publish learning roadmaps for various careers and topics."}
+            {type === 'pyq' && "Upload Previous Year interview questions from top recruiting companies."}
           </p>
         </div>
 
@@ -151,161 +256,438 @@ const UploadModal = ({ isOpen, onClose }) => {
         <form onSubmit={handleSubmit} className="flex-grow flex flex-col overflow-hidden">
           <div className="flex-grow overflow-y-auto px-6 pb-4 space-y-4 scrollbar-thin">
             
-            {/* Subject Name Input */}
-            <div className="space-y-1 text-left">
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Subject Name <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative rounded-xl shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <FiBookOpen size={14} />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={subjectName}
-                  onChange={(e) => setSubjectName(e.target.value)}
-                  placeholder=""
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            {/* Two column layout for Code and Teacher */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
-              {/* Subject Code Input */}
-              <div className="space-y-1">
+            {/* Resource Type Selector (Visible only if user has access to upload all types) */}
+            {canUploadAll && (
+              <div className="space-y-1 text-left">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Subject Code <span className="text-rose-500">*</span>
+                  Resource Type
                 </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <FiHash size={14} />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={subjectCode}
-                    onChange={(e) => setSubjectCode(e.target.value)}
-                    placeholder=""
-                    className={inputClass}
+                <div className="relative flex p-0.5 bg-slate-100 rounded-xl border border-slate-200/60">
+                  {/* Sliding highlighter background */}
+                  <div className="absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all duration-300 pointer-events-none"
+                    style={{
+                      width: 'calc(33.33% - 3px)',
+                      left: type === 'notes' ? '2.5px' : type === 'roadmap' ? 'calc(33.33% + 1px)' : 'calc(66.66% + 0.5px)'
+                    }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setType("notes")}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                      type === "notes" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    <FiBookOpen size={13} />
+                    <span>Study Notes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType("roadmap")}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                      type === "roadmap" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    <FiCompass size={13} />
+                    <span>Roadmap</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType("pyq")}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                      type === "pyq" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    <FiBriefcase size={13} />
+                    <span>PYQ</span>
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* Uploaded By Input */}
-              <div className="space-y-1">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Uploaded By (Teacher)
-                </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <FiUser size={14} />
+            {/* Render Notes Form */}
+            {type === "notes" && (
+              <>
+                {/* Subject Name Input */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Subject Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <FiBookOpen size={14} />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={subjectName}
+                      onChange={(e) => setSubjectName(e.target.value)}
+                      placeholder=""
+                      className={inputClass}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={teacherName}
-                    onChange={(e) => setTeacherName(e.target.value)}
-                    placeholder=""
-                    className={inputClass}
-                  />
                 </div>
-              </div>
-            </div>
 
-            {/* Segmented Toggle */}
-            <div className="space-y-1 text-left">
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Upload Type
-              </label>
-              <div className="relative flex p-0.5 bg-slate-100 rounded-xl border border-slate-200/60">
-                {/* Sliding highlighter background */}
-                <div className="absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all duration-300 pointer-events-none"
-                  style={{
-                    width: 'calc(50% - 3px)',
-                    left: noteFileType === 'file' ? '2.5px' : 'calc(50% + 0.5px)'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setNoteFileType("file")}
-                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                    noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <FiUploadCloud size={13} />
-                  <span>Upload File</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNoteFileType("url")}
-                  className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                    noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <FiLink size={13} />
-                  <span>Drive Link</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Conditional Input UI */}
-            <div className="min-h-[110px] flex flex-col justify-center">
-              {noteFileType === "file" ? (
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={triggerFileSelect}
-                  className={`group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                    isDragging
-                      ? "border-indigo-500 bg-indigo-50"
-                      : noteFile
-                      ? "border-emerald-500 bg-emerald-50/50"
-                      : "border-slate-200 hover:border-indigo-400 bg-white"
-                  }`}
-                >
-                  <input
-                    type="file"
-                    id="note-file-input"
-                    accept=".pdf,.docx,.pptx,.ppt,.doc,.zip,.rar"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                    noteFile 
-                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
-                      : "bg-slate-50 text-slate-400 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-500 border border-slate-200"
-                  }`}>
-                    <FiUploadCloud size={15} />
+                {/* Two column layout for Code and Teacher */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+                  {/* Subject Code Input */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Subject Code <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative rounded-xl shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <FiHash size={14} />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={subjectCode}
+                        onChange={(e) => setSubjectCode(e.target.value)}
+                        placeholder=""
+                        className={inputClass}
+                      />
+                    </div>
                   </div>
-                  
-                  {noteFile ? (
-                    <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-slate-700 truncate max-w-[280px]">
-                        {noteFile.name}
-                      </p>
-                      <p className="text-[9px] text-emerald-600 font-bold flex items-center justify-center gap-1">
-                        <span>✓ File Selected</span>
-                        <span className="text-slate-400">({(noteFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
-                      </p>
+
+                  {/* Uploaded By Input */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Uploaded By (Teacher)
+                    </label>
+                    <div className="relative rounded-xl shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <FiUser size={14} />
+                      </div>
+                      <input
+                        type="text"
+                        value={teacherName}
+                        onChange={(e) => setTeacherName(e.target.value)}
+                        placeholder=""
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Segmented Toggle for Notes Type */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Upload Type
+                  </label>
+                  <div className="relative flex p-0.5 bg-slate-100 rounded-xl border border-slate-200/60">
+                    {/* Sliding highlighter background */}
+                    <div className="absolute inset-y-0.5 rounded-lg bg-white shadow-sm transition-all duration-300 pointer-events-none"
+                      style={{
+                        width: 'calc(50% - 3px)',
+                        left: noteFileType === 'file' ? '2.5px' : 'calc(50% + 0.5px)'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setNoteFileType("file")}
+                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                        noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <FiUploadCloud size={13} />
+                      <span>Upload File</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNoteFileType("url")}
+                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
+                        noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <FiLink size={13} />
+                      <span>Drive Link</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Conditional Input UI for Notes */}
+                <div className="min-h-[110px] flex flex-col justify-center">
+                  {noteFileType === "file" ? (
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={triggerFileSelect}
+                      className={`group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                        isDragging
+                          ? "border-indigo-500 bg-indigo-50"
+                          : noteFile
+                          ? "border-emerald-500 bg-emerald-50/50"
+                          : "border-slate-200 hover:border-indigo-400 bg-white"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        id="note-file-input"
+                        accept=".pdf,.docx,.pptx,.ppt,.doc,.zip,.rar"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                        noteFile 
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                          : "bg-slate-50 text-slate-400 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-500 border border-slate-200"
+                      }`}>
+                        <FiUploadCloud size={15} />
+                      </div>
+                      
+                      {noteFile ? (
+                        <div className="space-y-0.5">
+                          <p className="text-[11px] font-bold text-slate-700 truncate max-w-[280px]">
+                            {noteFile.name}
+                          </p>
+                          <p className="text-[9px] text-emerald-600 font-bold flex items-center justify-center gap-1">
+                            <span>✓ File Selected</span>
+                            <span className="text-slate-400">({(noteFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-0.5">
+                          <p className="text-[11px] font-bold text-slate-400 group-hover:text-indigo-500 transition-colors">
+                            Drop your file here or <span className="underline">browse</span>
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-semibold">
+                            PDF, DOCX, PPTX, PPT (Max 20MB)
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-slate-400 group-hover:text-indigo-500 transition-colors">
-                        Drop your file here or <span className="underline">browse</span>
-                      </p>
-                      <p className="text-[9px] text-slate-400 font-semibold">
-                        PDF, DOCX, PPTX, PPT (Max 20MB)
+                    <div className="space-y-1 text-left">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Drive / External Link <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative rounded-xl shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <FiLink size={14} />
+                        </div>
+                        <input
+                          type="url"
+                          required={noteFileType === "url"}
+                          value={link}
+                          onChange={(e) => setLink(e.target.value)}
+                          placeholder=""
+                          className={inputClass}
+                        />
+                      </div>
+                      <p className="text-[9px] text-slate-400 font-bold pl-1 mt-1">
+                        Ensure link permission is set to "Anyone with the link".
                       </p>
                     </div>
                   )}
                 </div>
-              ) : (
+              </>
+            )}
+
+            {/* Render Roadmap Form */}
+            {type === "roadmap" && (
+              <>
+                {/* Roadmap Title */}
                 <div className="space-y-1 text-left">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Drive / External Link <span className="text-rose-500">*</span>
+                    Roadmap Title <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <FiBookOpen size={14} />
+                    </div>
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      value={commonData.title}
+                      onChange={handleCommonChange}
+                      placeholder=""
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={commonData.description}
+                    onChange={handleCommonChange}
+                    placeholder=""
+                    className={textareaClass}
+                  />
+                </div>
+
+                {/* Thumbnail File Selector */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Thumbnail Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailSelect}
+                    className={fileInputClass}
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Tags (comma-separated)
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <FiTag size={14} />
+                    </div>
+                    <input
+                      type="text"
+                      name="tags"
+                      value={commonData.tags}
+                      onChange={handleCommonChange}
+                      placeholder=""
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {/* Roadmap Modules List */}
+                <div className="space-y-4 text-left">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                    <FiCompass size={14} />
+                    <span>Roadmap Modules</span>
+                  </h3>
+                  <div className="space-y-4 max-h-[220px] overflow-y-auto pr-1.5 scrollbar-thin">
+                    {modules.map((mod, modIdx) => (
+                      <div key={modIdx} className="p-4 border border-slate-200 bg-slate-50/50 rounded-2xl space-y-3 relative">
+                        {modules.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeModule(modIdx)}
+                            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-all border-none bg-transparent cursor-pointer"
+                            title="Remove Module"
+                          >
+                            <FiX size={14} />
+                          </button>
+                        )}
+                        <div className="space-y-1 pr-6">
+                          <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400">
+                            Module {modIdx + 1} Title <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder=""
+                            name="moduleTitle"
+                            value={mod.moduleTitle}
+                            onChange={(e) => handleModuleChange(modIdx, e)}
+                            className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 font-semibold text-xs focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400">
+                            Module {modIdx + 1} Description
+                          </label>
+                          <textarea
+                            placeholder=""
+                            name="moduleDescription"
+                            value={mod.moduleDescription}
+                            onChange={(e) => handleModuleChange(modIdx, e)}
+                            className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-[11px] font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm min-h-[60px]"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2 pl-4 border-l-2 border-dashed border-slate-200">
+                          <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Lessons / Resources</h4>
+                          {mod.resources.map((res, resIdx) => (
+                            <div key={resIdx} className="flex gap-2 items-center">
+                              <input
+                                type="text"
+                                placeholder=""
+                                name="title"
+                                value={res.title}
+                                onChange={(e) => handleResourceChange(modIdx, resIdx, e)}
+                                className="w-1/2 bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-[11px] font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm"
+                                required
+                              />
+                              <input
+                                type="url"
+                                placeholder=""
+                                name="link"
+                                value={res.link}
+                                onChange={(e) => handleResourceChange(modIdx, resIdx, e)}
+                                className="flex-1 bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-[11px] font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm"
+                                required
+                              />
+                              {mod.resources.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeResource(modIdx, resIdx)}
+                                  className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-all border-none bg-transparent cursor-pointer"
+                                  title="Remove Lesson"
+                                >
+                                  <FiX size={12} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => addResource(modIdx)}
+                            className="mt-1 bg-white hover:bg-indigo-50/50 text-indigo-600 border border-slate-200 hover:border-indigo-200 font-bold text-[10px] py-1.5 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
+                          >
+                            <FiPlus size={14} />
+                            <span>Add Lesson</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addModule}
+                    className="w-full bg-slate-50 hover:bg-indigo-50/30 text-indigo-600 border border-indigo-200/50 font-bold text-[11px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
+                  >
+                    <FiPlus size={16} />
+                    <span>Add Module</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Render PYQ Form */}
+            {type === "pyq" && (
+              <>
+                {/* Company Name */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Company <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <FiBriefcase size={14} />
+                    </div>
+                    <input
+                      type="text"
+                      name="company"
+                      required
+                      value={pyqData.company}
+                      onChange={handlePyqChange}
+                      placeholder=""
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {/* Link */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    GDrive / Document Link <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative rounded-xl shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -313,19 +695,109 @@ const UploadModal = ({ isOpen, onClose }) => {
                     </div>
                     <input
                       type="url"
-                      required={noteFileType === "url"}
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
+                      name="link"
+                      required
+                      value={pyqData.link}
+                      onChange={handlePyqChange}
                       placeholder=""
                       className={inputClass}
                     />
                   </div>
-                  <p className="text-[9px] text-slate-400 font-bold pl-1 mt-1">
-                    Ensure link permission is set to "Anyone with the link".
-                  </p>
                 </div>
-              )}
-            </div>
+
+                {/* Two column layout for Year and Difficulty */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+                  {/* Year */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Year
+                    </label>
+                    <div className="relative rounded-xl shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <FiHash size={14} />
+                      </div>
+                      <input
+                        type="number"
+                        name="year"
+                        value={pyqData.year}
+                        onChange={handlePyqChange}
+                        placeholder=""
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Difficulty
+                    </label>
+                    <div className="relative rounded-xl shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <FiAward size={14} />
+                      </div>
+                      <select
+                        name="difficulty"
+                        value={pyqData.difficulty}
+                        onChange={handlePyqChange}
+                        className={selectClass}
+                      >
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={commonData.description}
+                    onChange={handleCommonChange}
+                    placeholder=""
+                    className={textareaClass}
+                  />
+                </div>
+
+                {/* Thumbnail File Selector */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Thumbnail Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailSelect}
+                    className={fileInputClass}
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Tags (comma-separated)
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <FiTag size={14} />
+                    </div>
+                    <input
+                      type="text"
+                      name="tags"
+                      value={commonData.tags}
+                      onChange={handleCommonChange}
+                      placeholder=""
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
 

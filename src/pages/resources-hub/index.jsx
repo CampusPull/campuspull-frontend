@@ -493,7 +493,7 @@ const ResourcesHub = () => {
             onClick={() => setIsUploadOpen(true)}
             title="Upload Resource"
           >
-            <Icon name="Plus" size={20} />
+            <Icon name="Plus" size={24} />
           </button>
         )}
 

@@ -134,7 +134,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
           )}
         </div>
 
-        {/* SECTION 2: Verified Only Toggle (Common to all) */}
+        {/* SECTION 2: Verified Only Toggle (Common to all) - Commented out for future teacher use
         <div className="bg-slate-50/40 rounded-2xl border border-slate-200/50 p-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-indigo-50 rounded-xl text-indigo-500 border border-indigo-100/20">
@@ -158,11 +158,12 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
             />
           </button>
         </div>
+        */}
 
         {/* SECTION 3: Notes Specific Filters (Branch & Semester) */}
         {activeType === RESOURCE_TYPES.NOTES && (
           <>
-            {/* Branch Accordion */}
+            {/* Branch Accordion - Commented out
             <div className="bg-slate-50/40 rounded-2xl border border-slate-200/50 overflow-hidden">
               <button
                 onClick={() => toggleSection('branch')}
@@ -211,6 +212,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters, isMobile, onCl
                 </div>
               )}
             </div>
+            */}
 
             {/* Semester Accordion */}
             <div className="bg-slate-50/40 rounded-2xl border border-slate-200/50 overflow-hidden">
