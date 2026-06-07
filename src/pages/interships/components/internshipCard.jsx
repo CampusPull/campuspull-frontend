@@ -103,13 +103,24 @@ const InternshipCard = ({
                   src={companyLogo}
                   alt={companyName}
                   className="w-full h-full object-cover"
-                  onError={(e) => (e.target.style.display = "none")}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    if (e.target.nextSibling) {
+                      e.target.nextSibling.style.display = "flex";
+                    }
+                  }}
                 />
-              ) : (
+              ) : null}
+              <div
+                className={`w-full h-full bg-gradient-to-br from-indigo-100 to-blue-100 items-center justify-center ${companyLogo ? "hidden" : "flex"}`}
+                style={{
+                  display: companyLogo ? "none" : "flex",
+                }}
+              >
                 <span className="text-xl font-extrabold text-indigo-400">
                   {companyName?.charAt(0).toUpperCase()}
                 </span>
-              )}
+              </div>
             </div>
           </div>
 
@@ -162,34 +173,6 @@ const InternshipCard = ({
               <FiArrowRight size={13} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
 
-            {/* Admin Action Buttons */}
-            {isAdmin && (
-              <div className="flex gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(internship);
-                  }}
-                  className="text-xs font-bold px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleStatus(_id, status);
-                  }}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition ${
-                    isClosed
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
-                      : "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100"
-                  }`}
-                >
-                  {isClosed ? "Open" : "Close"}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

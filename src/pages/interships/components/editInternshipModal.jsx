@@ -22,6 +22,7 @@ const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
     companyName: "",
     companyWebsite: "",
     status: "open",
+    type: "remote",
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -45,6 +46,7 @@ const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
         companyName: internship.companyName || "",
         companyWebsite: internship.companyWebsite || "",
         status: internship.status || "open",
+        type: internship.type || "remote",
       });
       setLogoPreview(internship.companyLogo || "");
       setLogoFile(null);
@@ -117,6 +119,7 @@ const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
     formData.append("companyName", form.companyName);
     formData.append("companyWebsite", form.companyWebsite);
     formData.append("status", form.status);
+    formData.append("type", form.type);
 
     if (logoFile) {
       formData.append("companyLogo", logoFile);
@@ -239,7 +242,7 @@ const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Duration Value */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Duration Value</label>
@@ -265,6 +268,21 @@ const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
                 >
                   <option value="week">Week(s)</option>
                   <option value="month">Month(s)</option>
+                </select>
+              </div>
+
+              {/* Internship Type */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Internship Type</label>
+                <select
+                  name="type"
+                  value={form.type}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  <option value="remote">Remote</option>
+                  <option value="on-site">On-site</option>
+                  <option value="hybrid">Hybrid</option>
                 </select>
               </div>
             </div>

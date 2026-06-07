@@ -57,7 +57,7 @@ export const ResourceProvider = ({ children }) => {
       setError(null);
       if (isGuest) {
         const res = await api.get("/public/resources");
-        
+
         // Handle both possible backend shapes: Structured Object OR Flat Array
         if (res.data.notes || res.data.data?.notes) {
           const payload = res.data.data?.notes ? res.data.data : res.data;
@@ -67,15 +67,15 @@ export const ResourceProvider = ({ children }) => {
         } else {
           // Flat array fallback (paginated discriminator models)
           const allResources = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
-          
+
           const roadmapsArray = allResources.filter(r => r.modules !== undefined || r.type === 'roadmap' || r.resourceType === 'roadmap');
           const pyqsArray = allResources.filter(r => r.company !== undefined || r.type === 'pyq' || r.resourceType === 'pyq');
-          const notesArray = allResources.filter(r => 
-            r.modules === undefined && r.company === undefined && 
+          const notesArray = allResources.filter(r =>
+            r.modules === undefined && r.company === undefined &&
             r.type !== 'roadmap' && r.type !== 'pyq' &&
             r.resourceType !== 'roadmap' && r.resourceType !== 'pyq'
           );
-          
+
           setResources(notesArray);
           setRoadmaps(roadmapsArray);
           setPyqs(pyqsArray);
