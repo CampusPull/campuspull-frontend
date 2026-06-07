@@ -5,7 +5,21 @@ import Button from "../../../components/ui/Button";
 import { ResourceContext } from "../../../context/resourceContext";
 
 const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteClick }) => {
-  const { user, setShowAuthModal } = useContext(ResourceContext);
+  const { user, setShowAuthModal, incrementDownload } = useContext(ResourceContext);
+
+  const handleAccess = async (e, pyq) => {
+    e?.stopPropagation();
+    if (isGuest) {
+      setShowAuthModal(true);
+      return;
+    }
+    try {
+      await incrementDownload(pyq._id, "pyq");
+      if (pyq?.link) window.open(pyq.link, "_blank");
+    } catch (err) {
+      console.error("Failed to access PYQ:", err);
+    }
+  };
   const [selectedCompany, setSelectedCompany] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [showAllCompanies, setShowAllCompanies] = useState(false);
@@ -271,7 +285,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                         )}
                         <button
                           className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold px-4 py-2 rounded-xl border-none shadow-sm hover:shadow-lg text-xs cursor-pointer flex items-center justify-center gap-1"
-                          onClick={() => isGuest ? setShowAuthModal(true) : window.open(pyq?.link, "_blank")}
+                          onClick={(e) => handleAccess(e, pyq)}
                         >
                           View PYQ
                         </button>
@@ -396,7 +410,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                     )}
                     <button
                       className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl py-2 px-4.5 active:scale-95 transition-all border-none text-xs cursor-pointer flex items-center justify-center shadow-md hover:shadow-lg"
-                      onClick={() => isGuest ? setShowAuthModal(true) : window.open(pyq?.link, "_blank")}
+                      onClick={(e) => handleAccess(e, pyq)}
                     >
                       Access
                     </button>

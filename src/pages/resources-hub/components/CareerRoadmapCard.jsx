@@ -5,7 +5,7 @@ import Button from "../../../components/ui/Button";
 import { ResourceContext } from "../../../context/resourceContext";
 
 const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteClick, isGuest, onRestrictedAction }) => {
-  const { toggleBookmark, toggleLessonProgress, user } = useContext(ResourceContext);
+  const { toggleBookmark, toggleLessonProgress, incrementView, user } = useContext(ResourceContext);
 
   const [expandedModules, setExpandedModules] = useState({});
   const [isBookmarked, setIsBookmarked] = useState(roadmap?.isBookmarked || false);
@@ -39,8 +39,16 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
 
   const modulesCount = modules?.length || 0;
 
-  const toggleModule = (moduleId) => {
+  const toggleModule = async (moduleId) => {
+    const isExpanding = !expandedModules[moduleId];
     setExpandedModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }));
+    if (isExpanding) {
+      try {
+        await incrementView(_id, "roadmap");
+      } catch (err) {
+        console.error("Failed to increment roadmap view:", err);
+      }
+    }
   };
 
   const handleBookmark = async (e) => {

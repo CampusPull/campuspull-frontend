@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { getInternshipById } from "../../services/internshipService";
 import { useInternships } from "../../context/internshipContext";
 import { useAuth } from "../../context/AuthContext";
+import EditInternshipModal from "./components/editInternshipModal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMapPin,
@@ -145,28 +146,58 @@ const InternshipDetails = () => {
   const isGuest = !user;
 
 
-  const { toggleInternshipStatus, updateInternship } = useInternships();
+  const { toggleInternshipStatus, toggleSaveInternship } = useInternships();
 
-const handleToggleStatus = async () => {
-  if (!internship) return;
+  const handleToggleStatus = async () => {
+    if (!internship) return;
 
-  try {
-    const updated = await toggleInternshipStatus(
-      internship._id,
-      internship.status
-    );
+    try {
+      const updated = await toggleInternshipStatus(
+        internship._id,
+        internship.status
+      );
 
-    setInternship(updated);
-  } catch (err) {
-    console.error("Toggle failed", err);
-  }
-};
+      setInternship(updated);
+    } catch (err) {
+      console.error("Toggle failed", err);
+    }
+  };
 
   const [internship, setInternship] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (internship) {
+      const userId = user?._id || user?.id;
+      setSaved(internship.savedBy?.includes(userId) || false);
+    }
+  }, [internship, user]);
+
+  const handleSave = async () => {
+    if (isGuest) {
+      setShowGuestModal(true);
+      return;
+    }
+    try {
+      await toggleSaveInternship(internship._id);
+      const userId = user?._id || user?.id;
+      setInternship((prev) => {
+        if (!prev) return prev;
+        const savedBy = prev.savedBy || [];
+        const exists = savedBy.includes(userId);
+        const newSavedBy = exists
+          ? savedBy.filter((uid) => uid !== userId)
+          : [...savedBy, userId];
+        return { ...prev, savedBy: newSavedBy };
+      });
+    } catch (err) {
+      console.error("Save Internship Error:", err);
+    }
+  };
 
   const isAdmin = user?.role === "admin";
   const isClosed = internship?.status === "closed";
@@ -345,17 +376,15 @@ const handleToggleStatus = async () => {
                   {isAdmin && (
                     <>
                       <button
-                        onClick={() =>
-                          navigate(`/admin/internships/edit/${internship._id}`)
-                        }
-                        className="px-3 py-2 text-xs font-bold bg-blue-500 text-white rounded-xl"
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="px-3 py-2 text-xs font-bold bg-blue-500 text-white rounded-xl hover:scale-105 active:scale-95 transition-all duration-200"
                       >
                         Edit
                       </button>
 
                       <button
                         onClick={handleToggleStatus}
-                        className={`px-3 py-2 text-xs font-bold rounded-xl ${
+                        className={`px-3 py-2 text-xs font-bold rounded-xl hover:scale-105 active:scale-95 transition-all duration-200 ${
                           isClosed
                             ? "bg-green-500 text-white"
                             : "bg-red-500 text-white"
@@ -366,7 +395,7 @@ const handleToggleStatus = async () => {
                     </>
                   )}
                   <button
-                    onClick={() => setSaved((s) => !s)}
+                    onClick={handleSave}
                     title="Save internship"
                     className={`p-2.5 rounded-xl border transition-all duration-200 ${
                       saved
@@ -603,6 +632,13 @@ const handleToggleStatus = async () => {
           </div>
         </div>
       </motion.div>
+
+      <EditInternshipModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        internship={internship}
+        onSuccess={(updated) => setInternship(updated)}
+      />
     </>
   );
 };

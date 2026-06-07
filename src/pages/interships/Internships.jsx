@@ -4,6 +4,7 @@ import InternshipCard from "./components/internshipCard";
 import InternshipFilter from "./components/internshipfilter";
 import Pagination from "./components/pagination";
 import CreateInternshipModal from "./components/createInternshipModal";
+import EditInternshipModal from "./components/editInternshipModal";
 import { useAuth } from "../../context/AuthContext";
 import SignupModal from "../../components/ui/SignupModal";
 import { motion } from "framer-motion";
@@ -41,16 +42,37 @@ const StatPill = ({ value, label }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Internships = () => {
-  const { internships, currentPage, totalPages, loading, fetchInternships } =
-    useInternships();
+  const {
+    internships,
+    currentPage,
+    totalPages,
+    loading,
+    fetchInternships,
+    toggleInternshipStatus,
+  } = useInternships();
 
   const { user } = useAuth();
   const isGuest = !user;
 
   const [filters, setFilters] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedInternship, setSelectedInternship] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await toggleInternshipStatus(id, currentStatus);
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
+  };
+
+  const handleEdit = (internship) => {
+    setSelectedInternship(internship);
+    setIsEditModalOpen(true);
+  };
 
   useEffect(() => {
     fetchInternships();
@@ -112,7 +134,10 @@ const Internships = () => {
               <InternshipCard
                 internship={internship}
                 isGuest={isGuest}
+                isAdmin={user?.role === "admin"}
                 onRestrictedAction={() => setShowAuthModal(true)}
+                onToggleStatus={handleToggleStatus}
+                onEdit={handleEdit}
               />
             </motion.div>
           ))}
@@ -258,6 +283,13 @@ const Internships = () => {
       <CreateInternshipModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <EditInternshipModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        internship={selectedInternship}
+        onSuccess={() => fetchInternships(currentPage, filters)}
       />
 
       {/* Guest Signup Modal */}

@@ -239,19 +239,41 @@ export const ResourceProvider = ({ children }) => {
     }
   };
 
+  // Helper to normalize resource types to backend-expected strings: notes, roadmap, pyq
+  const getEndpointType = (type) => {
+    if (!type) return "notes";
+    const t = type.toLowerCase();
+    if (t.includes("note")) return "notes";
+    if (t.includes("roadmap")) return "roadmap";
+    if (t.includes("pyq") || t.includes("interview")) return "pyq";
+    return t;
+  };
+
+  // Helper to map resource types to frontend state keys: notes, roadmaps, pyqs
+  const getStateKeyType = (type) => {
+    if (!type) return "notes";
+    const t = type.toLowerCase();
+    if (t.includes("note")) return "notes";
+    if (t.includes("roadmap")) return "roadmaps";
+    if (t.includes("pyq") || t.includes("interview")) return "pyqs";
+    return t;
+  };
+
   const updateState = (type, updatedItem) => {
     const merge = (prev) =>
       prev.map((r) => (r._id === updatedItem._id ? { ...r, ...updatedItem } : r));
-    if (type === "notes") setResources(merge);
-    if (type === "pyqs") setPyqs(merge);
-    if (type === "roadmaps") setRoadmaps(merge);
+    const stateKey = getStateKeyType(type);
+    if (stateKey === "notes") setResources(merge);
+    if (stateKey === "pyqs") setPyqs(merge);
+    if (stateKey === "roadmaps") setRoadmaps(merge);
     setBookmarkedResources(merge);
   };
 
   // ===== Interactions =====
   const incrementView = async (id, type) => {
     try {
-      const res = await api.patch(`/resources/${type}/${id}/view`);
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/view`);
       updateState(type, res.data);
     } catch (err) {
       console.error("View increment error:", err);
@@ -262,7 +284,8 @@ export const ResourceProvider = ({ children }) => {
     // FIX: guest download triggers modal (spec: "Download triggers modal")
     if (isGuest) { setShowAuthModal(true); return; }
     try {
-      const res = await api.patch(`/resources/${type}/${id}/download`);
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/download`);
       updateState(type, res.data);
     } catch (err) {
       console.error("Download increment error:", err);
@@ -273,7 +296,8 @@ export const ResourceProvider = ({ children }) => {
     // FIX: guest bookmark triggers modal
     if (isGuest) { setShowAuthModal(true); return; }
     try {
-      const res = await api.patch(`/resources/${type}/${id}/bookmark`, {}, getAuthHeaders());
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/bookmark`, {}, getAuthHeaders());
       updateState(type, res.data);
     } catch (err) {
       console.error("Bookmark toggle error:", err);
