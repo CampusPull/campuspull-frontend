@@ -23,6 +23,7 @@ import {
   FaCode,
   FaCheck,
   FaCrop,
+  FaDownload,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileContext } from "../../context/profileContext";
@@ -374,6 +375,74 @@ const CropModal = ({ src, onCancel, onCrop }) => {
   );
 };
 
+// ─── Image Popup Modal ───────────────────────────────────────────────────────
+const ImagePopup = ({ isOpen, onClose, src, title }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-4 cursor-zoom-out select-none"
+    >
+      {/* Top action bar */}
+      <div className="absolute top-4 right-4 flex items-center gap-3 z-10" onClick={(e) => e.stopPropagation()}>
+        <a
+          href={src}
+          download={title ? `${title.toLowerCase().replace(/\s+/g, "-")}.jpg` : "download.jpg"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+          title="Download Image"
+        >
+          <FaDownload size={16} />
+        </a>
+        <button
+          onClick={onClose}
+          className="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+          title="Close"
+        >
+          <FaTimes size={16} />
+        </button>
+      </div>
+
+      {/* Main Image Container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="relative flex flex-col items-center max-w-[90vw] max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={src}
+          alt={title || "Full size image"}
+          className="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl border border-white/10 cursor-default"
+        />
+        {title && (
+          <div className="mt-4 px-4 py-1.5 bg-white/15 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold shadow-lg">
+            {title}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 // ─── Main Profile Component ───────────────────────────────────────────────────
 export default function Profile() {
   const {
@@ -450,6 +519,9 @@ export default function Profile() {
   // Crop modal state (UI-only addition)
   const [cropSrc, setCropSrc] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
+
+  // Image viewer modal state
+  const [popupImage, setPopupImage] = useState({ isOpen: false, src: "", title: "" });
 
   // State for Personal & Academic Info Form
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -813,6 +885,18 @@ export default function Profile() {
           )}
         </AnimatePresence>
 
+        {/* ── Image Popup Modal ── */}
+        <AnimatePresence>
+          {popupImage.isOpen && (
+            <ImagePopup
+              isOpen={popupImage.isOpen}
+              src={popupImage.src}
+              title={popupImage.title}
+              onClose={() => setPopupImage({ isOpen: false, src: "", title: "" })}
+            />
+          )}
+        </AnimatePresence>
+
         {/* ── Page Layout ── */}
         <div className="relative w-full px-4 md:px-8 lg:px-12 py-12">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-7">
@@ -829,7 +913,11 @@ export default function Profile() {
               <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden">
                 {/* Cover */}
                 <div
-                  className="h-32 w-full relative bg-gray-200"
+                  onClick={() => {
+                    const coverSrc = bannerPreview || profile.bannerImage || "/assets/images/default-cover.png";
+                    setPopupImage({ isOpen: true, src: coverSrc, title: "Cover Photo" });
+                  }}
+                  className="h-32 w-full relative bg-gray-200 cursor-pointer overflow-hidden group/cover"
                   style={{
                     background: bannerPreview
                       ? `url(${bannerPreview}) center/cover no-repeat`
@@ -845,15 +933,24 @@ export default function Profile() {
                     </>
                   )}
 
-                  <div className="absolute top-4 right-4 flex gap-2 z-10">
+                  {/* Subtle hover overlay to view cover */}
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <span className="bg-black/50 text-white text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1.5 font-bold border border-white/10 uppercase tracking-wider">
+                      <FaGlobe size={11} /> View Cover
+                    </span>
+                  </div>
+
+                  <div className="absolute top-4 right-4 flex gap-2 z-10" onClick={(e) => e.stopPropagation()}>
                     {/* Banner Upload Button */}
-                    <label className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold">
+                    <label
+                      title={profile.bannerImage ? "Change Cover" : "Add Cover"}
+                      className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center justify-center"
+                    >
                       {uploadingBanner ? (
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <FaCamera size={12} />
                       )}
-                      <span>{profile.bannerImage ? "Change Cover" : "Add Cover"}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -868,10 +965,10 @@ export default function Profile() {
                       <button
                         onClick={handleDeleteBanner}
                         disabled={uploadingBanner}
-                        className="bg-red-600/60 hover:bg-red-600/80 text-white p-2 rounded-lg backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold"
+                        title="Delete Cover"
+                        className="bg-red-600/60 hover:bg-red-600/80 text-white p-2 rounded-lg backdrop-blur-md transition-colors shadow-sm flex items-center justify-center"
                       >
                         <FaTrash size={12} />
-                        <span>Delete Cover</span>
                       </button>
                     )}
                   </div>
@@ -879,7 +976,10 @@ export default function Profile() {
 
                 {/* Avatar + Name */}
                 <div className="flex flex-col items-center text-center px-6 pb-6 -mt-16 relative">
-                  <div className="relative group">
+                  <div
+                    onClick={() => setPopupImage({ isOpen: true, src: profile.profileImage || "/default-avatar.png", title: "Profile Photo" })}
+                    className="relative group cursor-pointer"
+                  >
                     <motion.img
                       whileHover={{ scale: 1.05 }}
                       transition={{ type: "spring", stiffness: 200 }}
@@ -888,8 +988,18 @@ export default function Profile() {
                       className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl object-cover bg-gray-100"
                     />
 
+                    {/* Subtle hover overlay to view profile photo */}
+                    <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none ring-4 ring-white">
+                      <span className="bg-black/50 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-sm font-bold border border-white/10 uppercase tracking-wider">
+                        View
+                      </span>
+                    </div>
+
                     {/* Camera btn */}
-                    <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all z-10 ring-2 ring-white">
+                    <label
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all z-10 ring-2 ring-white"
+                    >
                       {uploadingImage ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
@@ -907,7 +1017,10 @@ export default function Profile() {
                     {/* Delete btn */}
                     {profile.profileImage && (
                       <button
-                        onClick={handleRemovePhoto}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemovePhoto();
+                        }}
                         className="absolute top-0 right-0 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition opacity-0 group-hover:opacity-100 ring-2 ring-white"
                         title="Remove Photo"
                       >
