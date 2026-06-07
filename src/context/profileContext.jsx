@@ -169,59 +169,21 @@ export const ProfileProvider = ({ children }) => {
   // --- 9. 🚀 NEW: Upload/Delete Banner (Cover) ---
   const uploadBanner = useCallback(async (file) => {
     if (!accessToken) return;
+    const formData = new FormData();
+    formData.append("photo", file);
 
-    const attemptUpload = async (fieldName) => {
-      const formData = new FormData();
-      formData.append(fieldName, file);
-      return await api.post("/profile/cover-image", formData, {
+    try {
+      const { data } = await api.post("/profile/cover-image", formData, {
         headers: { 
           Authorization: `Bearer ${accessToken}` 
         },
       });
-    };
 
-    try {
-      // 1. Try with "photo" (as defined in local routes/profile.js)
-      try {
-        const { data } = await attemptUpload("photo");
-        const photoUrl = data.photoUrl || data.url;
-        setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
-        return photoUrl;
-      } catch (err) {
-        // If it's a 400 Bad Request, try common fallback field names
-        if (err.response?.status === 400) {
-          console.warn("Upload with 'photo' field failed with 400. Trying fallback field 'banner'...");
-          try {
-            const { data } = await attemptUpload("banner");
-            const photoUrl = data.photoUrl || data.url;
-            setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
-            return photoUrl;
-          } catch (err2) {
-            if (err2.response?.status === 400) {
-              console.warn("Upload with 'banner' field failed with 400. Trying fallback field 'bannerImage'...");
-              try {
-                const { data } = await attemptUpload("bannerImage");
-                const photoUrl = data.photoUrl || data.url;
-                setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
-                return photoUrl;
-              } catch (err3) {
-                if (err3.response?.status === 400) {
-                  console.warn("Upload with 'bannerImage' field failed with 400. Trying fallback field 'image'...");
-                  const { data } = await attemptUpload("image");
-                  const photoUrl = data.photoUrl || data.url;
-                  setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
-                  return photoUrl;
-                }
-                throw err3;
-              }
-            }
-            throw err2;
-          }
-        }
-        throw err;
-      }
+      const photoUrl = data.photoUrl || data.url;
+      setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
+      return photoUrl;
     } catch (err) {
-      console.error("Banner Upload Logic Error after fallbacks:", err);
+      console.error("Banner Upload Logic Error:", err);
       if (err.response) {
         console.error("Server Response Error Data:", err.response.data);
       }

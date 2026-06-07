@@ -390,6 +390,8 @@ export default function Profile() {
     addSkill,
     sendPasswordOTP,
     verifyPasswordOTP,
+    uploadBanner,
+    deleteBanner,
   } = useContext(ProfileContext);
 
   // --- STATE ---
@@ -404,32 +406,47 @@ export default function Profile() {
   const [resume, setResume] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   const handleBannerUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Create a local object URL for instant preview (optimistic UI)
+    const localUrl = URL.createObjectURL(file);
+    setBannerPreview(localUrl);
+
     try {
       setUploadingBanner(true);
-      const formData = new FormData();
-      formData.append("photo", file);
-
-      const { data } = await api.post("/profile/upload-photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const photoUrl = data.photoUrl || data.url;
-      if (photoUrl) {
-        await updateProfile({ bannerImage: photoUrl });
-        toast.success("Cover image updated successfully");
-      }
+      await uploadBanner(file);
+      toast.success("Cover image updated successfully");
     } catch (err) {
       console.error("Banner upload error:", err);
-      toast.error("Failed to upload cover image");
+      const errMsg = err.response?.data?.message || err.message || "Failed to upload cover image";
+      toast.error(errMsg);
+      setBannerPreview(null); // revert preview on error
     } finally {
       setUploadingBanner(false);
+      URL.revokeObjectURL(localUrl); // clean up resource
     }
   };
+
+  const handleDeleteBanner = async () => {
+    if (window.confirm("Are you sure you want to delete your cover image?")) {
+      try {
+        setUploadingBanner(true);
+        await deleteBanner();
+        toast.success("Cover image deleted successfully");
+      } catch (err) {
+        console.error("Banner delete error:", err);
+        const errMsg = err.response?.data?.message || err.message || "Failed to delete cover image";
+        toast.error(errMsg);
+      } finally {
+        setUploadingBanner(false);
+      }
+    }
+  };
+
   // Crop modal state (UI-only addition)
   const [cropSrc, setCropSrc] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
@@ -814,34 +831,50 @@ export default function Profile() {
                 <div
                   className="h-32 w-full relative bg-gray-200"
                   style={{
-                    background: profile.bannerImage
-                      ? `url(${profile.bannerImage}) center/cover no-repeat`
-                      : "url('/assets/images/default-cover.png') center/cover no-repeat",
+                    background: bannerPreview
+                      ? `url(${bannerPreview}) center/cover no-repeat`
+                      : profile.bannerImage
+                        ? `url(${profile.bannerImage}) center/cover no-repeat, url('/assets/images/default-cover.png') center/cover no-repeat`
+                        : "url('/assets/images/default-cover.png') center/cover no-repeat",
                   }}
                 >
-                  {!profile.bannerImage && (
+                  {!profile.bannerImage && !bannerPreview && (
                     <>
                       <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
                       <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
                     </>
                   )}
 
-                  {/* Banner Upload Button */}
-                  <label className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold z-10">
-                    {uploadingBanner ? (
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FaCamera size={12} />
+                  <div className="absolute top-4 right-4 flex gap-2 z-10">
+                    {/* Banner Upload Button */}
+                    <label className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold">
+                      {uploadingBanner ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <FaCamera size={12} />
+                      )}
+                      <span>{profile.bannerImage ? "Change Cover" : "Add Cover"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                        disabled={uploadingBanner}
+                      />
+                    </label>
+
+                    {/* Banner Delete Button */}
+                    {profile.bannerImage && (
+                      <button
+                        onClick={handleDeleteBanner}
+                        disabled={uploadingBanner}
+                        className="bg-red-600/60 hover:bg-red-600/80 text-white p-2 rounded-lg backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold"
+                      >
+                        <FaTrash size={12} />
+                        <span>Delete Cover</span>
+                      </button>
                     )}
-                    <span>{profile.bannerImage ? "Change Cover" : "Add Cover"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleBannerUpload}
-                      className="hidden"
-                      disabled={uploadingBanner}
-                    />
-                  </label>
+                  </div>
                 </div>
 
                 {/* Avatar + Name */}
