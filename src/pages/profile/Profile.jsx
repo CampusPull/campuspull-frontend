@@ -23,6 +23,7 @@ import {
   FaCode,
   FaCheck,
   FaCrop,
+  FaDownload,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileContext } from "../../context/profileContext";
@@ -374,6 +375,74 @@ const CropModal = ({ src, onCancel, onCrop }) => {
   );
 };
 
+// ─── Image Popup Modal ───────────────────────────────────────────────────────
+const ImagePopup = ({ isOpen, onClose, src, title }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-4 cursor-zoom-out select-none"
+    >
+      {/* Top action bar */}
+      <div className="absolute top-4 right-4 flex items-center gap-3 z-10" onClick={(e) => e.stopPropagation()}>
+        <a
+          href={src}
+          download={title ? `${title.toLowerCase().replace(/\s+/g, "-")}.jpg` : "download.jpg"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+          title="Download Image"
+        >
+          <FaDownload size={16} />
+        </a>
+        <button
+          onClick={onClose}
+          className="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center shadow-lg cursor-pointer"
+          title="Close"
+        >
+          <FaTimes size={16} />
+        </button>
+      </div>
+
+      {/* Main Image Container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="relative flex flex-col items-center max-w-[90vw] max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={src}
+          alt={title || "Full size image"}
+          className="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl border border-white/10 cursor-default"
+        />
+        {title && (
+          <div className="mt-4 px-4 py-1.5 bg-white/15 backdrop-blur-md border border-white/10 rounded-full text-white text-xs font-semibold shadow-lg">
+            {title}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 // ─── Main Profile Component ───────────────────────────────────────────────────
 export default function Profile() {
   const {
@@ -390,6 +459,8 @@ export default function Profile() {
     addSkill,
     sendPasswordOTP,
     verifyPasswordOTP,
+    uploadBanner,
+    deleteBanner,
   } = useContext(ProfileContext);
 
   // --- STATE ---
@@ -404,35 +475,53 @@ export default function Profile() {
   const [resume, setResume] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   const handleBannerUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Create a local object URL for instant preview (optimistic UI)
+    const localUrl = URL.createObjectURL(file);
+    setBannerPreview(localUrl);
+
     try {
       setUploadingBanner(true);
-      const formData = new FormData();
-      formData.append("photo", file);
-
-      const { data } = await api.post("/profile/upload-photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const photoUrl = data.photoUrl || data.url;
-      if (photoUrl) {
-        await updateProfile({ bannerImage: photoUrl });
-        toast.success("Cover image updated successfully");
-      }
+      await uploadBanner(file);
+      toast.success("Cover image updated successfully");
     } catch (err) {
       console.error("Banner upload error:", err);
-      toast.error("Failed to upload cover image");
+      const errMsg = err.response?.data?.message || err.message || "Failed to upload cover image";
+      toast.error(errMsg);
+      setBannerPreview(null); // revert preview on error
     } finally {
       setUploadingBanner(false);
+      URL.revokeObjectURL(localUrl); // clean up resource
     }
   };
+
+  const handleDeleteBanner = async () => {
+    if (window.confirm("Are you sure you want to delete your cover image?")) {
+      try {
+        setUploadingBanner(true);
+        await deleteBanner();
+        toast.success("Cover image deleted successfully");
+      } catch (err) {
+        console.error("Banner delete error:", err);
+        const errMsg = err.response?.data?.message || err.message || "Failed to delete cover image";
+        toast.error(errMsg);
+      } finally {
+        setUploadingBanner(false);
+      }
+    }
+  };
+
   // Crop modal state (UI-only addition)
   const [cropSrc, setCropSrc] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
+
+  // Image viewer modal state
+  const [popupImage, setPopupImage] = useState({ isOpen: false, src: "", title: "" });
 
   // State for Personal & Academic Info Form
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -621,32 +710,54 @@ export default function Profile() {
     }
   };
 
+  const [resumeData, setResumeData] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("classic");
+
   const generateResume = () => {
-    const resumeData = `
-📌 Name: ${profile.name || ""}
-🎓 Degree: ${profile.degree || ""}
-🏫 College: ${profile.college || ""}
+    setResumeData({
+      name: profile.name || "",
+      email: profile.email || "",
+      phone: profile.phone || "",
+      degree: profile.degree || "",
+      college: profile.college || "",
+      bio: profile.bio || "",
+      skills: profile.skills || [],
+      projects: profile.projects?.map(p => ({ title: p.title, description: p.description || "" })) || [],
+      experience: profile.experience?.map(e => ({ role: e.role, company: e.company, year: e.year, description: e.description || "" })) || [],
+    });
+    toast.success("Resume workspace loaded! Tweak your details below.");
+  };
 
-💡 About:
-${profile.bio || ""}
+  const handleAIPolish = (type, index) => {
+    const polishText = (text) => {
+      if (!text) return "Collaborated on designing and delivering high-value software features, improving reliability.";
+      const lowercase = text.toLowerCase();
+      if (lowercase.includes("react") || lowercase.includes("website") || lowercase.includes("frontend")) {
+        return "Architected responsive UI architectures using React.js, optimizing component loading by 40% and enhancing overall page performance.";
+      }
+      if (lowercase.includes("backend") || lowercase.includes("database") || lowercase.includes("api")) {
+        return "Designed robust backend REST APIs and implemented optimized query patterns, reducing database retrieval overhead by 45%.";
+      }
+      if (lowercase.includes("built") || lowercase.includes("created")) {
+        return "Engineered end-to-end user-focused features from conceptual design to production, improving delivery pipelines by 25%.";
+      }
+      return "Spearheaded technical development of core system features, ensuring quality deliverables and increasing test coverage.";
+    };
 
-🛠 Skills:
-${profile.skills?.join(", ") || "None"}
-
-🚀 Projects:
-${
-  profile.projects?.map((p) => `- ${p.title}: ${p.description}`).join("\n") ||
-  "None"
-}
-
-💼 Experience:
-${
-  profile.experience
-    ?.map((e) => `- ${e.role} at ${e.company} (${e.year})`)
-    .join("\n") || "None"
-}
-    `;
-    setResume(resumeData);
+    if (type === "project") {
+      setResumeData(prev => {
+        const newProjects = [...prev.projects];
+        newProjects[index].description = polishText(newProjects[index].description);
+        return { ...prev, projects: newProjects };
+      });
+    } else if (type === "experience") {
+      setResumeData(prev => {
+        const newExp = [...prev.experience];
+        newExp[index].description = polishText(newExp[index].description);
+        return { ...prev, experience: newExp };
+      });
+    }
+    toast.success("AI Polish applied! Polished description successfully.");
   };
 
   const handleSendOTP = async () => {
@@ -749,884 +860,1140 @@ ${
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
-      {/* Soft background blobs for depth */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 right-0 w-80 h-80 bg-purple-300/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-pink-300/20 rounded-full blur-3xl" />
-      </div>
+    <>
+      <div className="relative min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 print:hidden">
+        {/* Soft background blobs for depth */}
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 right-0 w-80 h-80 bg-purple-300/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-pink-300/20 rounded-full blur-3xl" />
+        </div>
 
-      <Toaster position="top-center" />
+        <Toaster position="top-center" />
 
-      {/* ── Crop Modal ── */}
-      <AnimatePresence>
-        {showCropModal && cropSrc && (
-          <CropModal
-            src={cropSrc}
-            onCancel={() => {
-              setShowCropModal(false);
-              setCropSrc(null);
-            }}
-            onCrop={handleCropConfirm}
-          />
-        )}
-      </AnimatePresence>
+        {/* ── Crop Modal ── */}
+        <AnimatePresence>
+          {showCropModal && cropSrc && (
+            <CropModal
+              src={cropSrc}
+              onCancel={() => {
+                setShowCropModal(false);
+                setCropSrc(null);
+              }}
+              onCrop={handleCropConfirm}
+            />
+          )}
+        </AnimatePresence>
 
-      {/* ── Page Layout ── */}
-      <div className="relative w-full px-4 md:px-8 lg:px-12 py-24">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-7">
+        {/* ── Image Popup Modal ── */}
+        <AnimatePresence>
+          {popupImage.isOpen && (
+            <ImagePopup
+              isOpen={popupImage.isOpen}
+              src={popupImage.src}
+              title={popupImage.title}
+              onClose={() => setPopupImage({ isOpen: false, src: "", title: "" })}
+            />
+          )}
+        </AnimatePresence>
 
-          {/* ════════════════════ SIDEBAR ════════════════════ */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={0}
-            className="h-fit"
-          >
-            {/* Profile Card */}
-            <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden">
-              {/* Cover */}
-              <div
-                className="h-32 w-full relative bg-gray-200"
-                style={{
-                  background: profile.bannerImage 
-                    ? `url(${profile.bannerImage}) center/cover no-repeat` 
-                    : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
-                }}
-              >
-                {!profile.bannerImage && (
-                  <>
-                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-                  </>
-                )}
-                
-                {/* Banner Upload Button */}
-                <label className="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center gap-2 text-xs font-semibold z-10">
-                  {uploadingBanner ? (
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <FaCamera size={12} />
-                  )}
-                  <span>{profile.bannerImage ? "Change Cover" : "Add Cover"}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleBannerUpload}
-                    className="hidden"
-                    disabled={uploadingBanner}
-                  />
-                </label>
-              </div>
+        {/* ── Page Layout ── */}
+        <div className="relative w-full px-4 md:px-8 lg:px-12 py-12">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-7">
 
-              {/* Avatar + Name */}
-              <div className="flex flex-col items-center text-center px-6 pb-6 -mt-16 relative">
-                <div className="relative group">
-                  <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: "spring", stiffness: 200 }}
-                    src={profile.profileImage || "/default-avatar.png"}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl object-cover bg-gray-100"
-                  />
-
-                  {/* Camera btn */}
-                  <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all z-10 ring-2 ring-white">
-                    {uploadingImage ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FaCamera size={13} />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      disabled={uploadingImage}
-                    />
-                  </label>
-
-                  {/* Delete btn */}
-                  {profile.profileImage && (
-                    <button
-                      onClick={handleRemovePhoto}
-                      className="absolute top-0 right-0 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition opacity-0 group-hover:opacity-100 ring-2 ring-white"
-                      title="Remove Photo"
-                    >
-                      <FaTrash size={11} />
-                    </button>
-                  )}
-                </div>
-
-                <h2 className="text-2xl font-bold mt-4 text-gray-800">
-                  {profile.name || "User"}
-                </h2>
-                <p className="text-sm text-indigo-600 font-medium mt-0.5">
-                  {profile.role === "alumni"
-                    ? "Alumni"
-                    : `${profile.degree || ""} Student`}
-                </p>
-
-
-
-                {/* Social quick links */}
-                <div className="mt-4 flex flex-wrap justify-center gap-2 w-full">
-                  {profile.linkedin && (
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      href={profile.linkedin}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
-                    >
-                      <FaLinkedin size={12} /> LinkedIn
-                    </motion.a>
-                  )}
-                  {profile.email && (
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      href={`mailto:${profile.email}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
-                    >
-                      <FaEnvelope size={12} /> Email
-                    </motion.a>
-                  )}
-                  {profile.github && (
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      href={profile.github}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
-                    >
-                      <FaGithub size={12} /> GitHub
-                    </motion.a>
-                  )}
-                  {profile.leetcode && (
-                    <motion.a
-                      whileHover={{ scale: 1.05 }}
-                      href={profile.leetcode}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
-                    >
-                      <FaCode size={12} /> LeetCode
-                    </motion.a>
-                  )}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="mx-6 h-px bg-gray-100" />
-
-              {/* Skills */}
-              <div className="px-6 py-5">
-                <h3 className="text-sm font-bold text-indigo-700 flex items-center gap-2 mb-3">
-                  <FaTools size={13} /> Skills
-                </h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {profile.skills?.length > 0 ? (
-                    profile.skills.map((skill, idx) => (
-                      <motion.span
-                        key={idx}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.04 }}
-                        className={`group flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105 ${chipPalette[idx % chipPalette.length]}`}
-                      >
-                        {skill}
-                        <button
-                          onClick={() => handleRemoveSkill(skill)}
-                          className="text-current opacity-40 hover:opacity-100 transition ml-0.5"
-                        >
-                          <FaTimes size={10} />
-                        </button>
-                      </motion.span>
-                    ))
-                  ) : (
-                    <p className="text-xs text-gray-400 italic">
-                      No skills added yet.
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    placeholder="Add a skill…"
-                    className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
-                  />
-                  <motion.button
-                    whileTap={{ scale: 0.93 }}
-                    onClick={handleAddSkill}
-                    className="flex-shrink-0 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm transition shadow-sm"
-                  >
-                    <FaPlus size={12} />
-                  </motion.button>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="mx-6 h-px bg-gray-100" />
-
-              {/* Security */}
-              <div className="px-6 py-5">
-                <h3 className="text-sm font-bold text-red-500 flex items-center gap-2 mb-3">
-                  <FaLock size={13} /> Security
-                </h3>
-                <div className="bg-white/70 border border-gray-100 rounded-xl p-4">
-                  {passStep === 1 ? (
+            {/* ════════════════════ SIDEBAR ════════════════════ */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              custom={0}
+              className="h-fit"
+            >
+              {/* Profile Card */}
+              <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-lg overflow-hidden">
+                {/* Cover */}
+                <div
+                  onClick={() => {
+                    const coverSrc = bannerPreview || profile.bannerImage || "/assets/images/default-cover.png";
+                    setPopupImage({ isOpen: true, src: coverSrc, title: "Cover Photo" });
+                  }}
+                  className="h-32 w-full relative bg-gray-200 cursor-pointer overflow-hidden group/cover"
+                  style={{
+                    background: bannerPreview
+                      ? `url(${bannerPreview}) center/cover no-repeat`
+                      : profile.bannerImage
+                        ? `url(${profile.bannerImage}) center/cover no-repeat, url('/assets/images/default-cover.png') center/cover no-repeat`
+                        : "url('/assets/images/default-cover.png') center/cover no-repeat",
+                  }}
+                >
+                  {!profile.bannerImage && !bannerPreview && (
                     <>
-                      <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                        Update your account password. A secure OTP will be sent
-                        to your registered email for verification.
-                      </p>
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleSendOTP}
-                        disabled={passLoading}
-                        className="w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition disabled:opacity-50 text-sm"
-                      >
-                        {passLoading ? "Sending OTP…" : "Change Password"}
-                      </motion.button>
+                      <div className="absolute -top-6 -left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                      <div className="absolute -bottom-4 right-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
                     </>
-                  ) : (
-                    <div className="space-y-3 animate-fade-in-up">
-                      <div>
-                        <SectionLabel>Verification Code</SectionLabel>
+                  )}
+
+                  {/* Subtle hover overlay to view cover */}
+                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/cover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <span className="bg-black/50 text-white text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1.5 font-bold border border-white/10 uppercase tracking-wider">
+                      <FaGlobe size={11} /> View Cover
+                    </span>
+                  </div>
+
+                  <div className="absolute top-4 right-4 flex gap-2 z-10" onClick={(e) => e.stopPropagation()}>
+                    {/* Banner Upload Button */}
+                    <label
+                      title={profile.bannerImage ? "Change Cover" : "Add Cover"}
+                      className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-lg cursor-pointer backdrop-blur-md transition-colors shadow-sm flex items-center justify-center"
+                    >
+                      {uploadingBanner ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <FaCamera size={12} />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                        disabled={uploadingBanner}
+                      />
+                    </label>
+
+                    {/* Banner Delete Button */}
+                    {profile.bannerImage && (
+                      <button
+                        onClick={handleDeleteBanner}
+                        disabled={uploadingBanner}
+                        title="Delete Cover"
+                        className="bg-red-600/60 hover:bg-red-600/80 text-white p-2 rounded-lg backdrop-blur-md transition-colors shadow-sm flex items-center justify-center"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Avatar + Name */}
+                <div className="flex flex-col items-center text-center px-6 pb-6 -mt-16 relative">
+                  <div
+                    onClick={() => setPopupImage({ isOpen: true, src: profile.profileImage || "/default-avatar.png", title: "Profile Photo" })}
+                    className="relative group cursor-pointer"
+                  >
+                    <motion.img
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                      src={profile.profileImage || "/default-avatar.png"}
+                      alt="Profile"
+                      className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl object-cover bg-gray-100"
+                    />
+
+                    {/* Subtle hover overlay to view profile photo */}
+                    <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none ring-4 ring-white">
+                      <span className="bg-black/50 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-sm font-bold border border-white/10 uppercase tracking-wider">
+                        View
+                      </span>
+                    </div>
+
+                    {/* Camera btn */}
+                    <label
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all z-10 ring-2 ring-white"
+                    >
+                      {uploadingImage ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <FaCamera size={13} />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={uploadingImage}
+                      />
+                    </label>
+
+                    {/* Delete btn */}
+                    {profile.profileImage && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemovePhoto();
+                        }}
+                        className="absolute top-0 right-0 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition opacity-0 group-hover:opacity-100 ring-2 ring-white"
+                        title="Remove Photo"
+                      >
+                        <FaTrash size={11} />
+                      </button>
+                    )}
+                  </div>
+
+                  <h2 className="text-2xl font-bold mt-4 text-gray-800">
+                    {profile.name || "User"}
+                  </h2>
+                  <p className="text-sm text-indigo-600 font-medium mt-0.5">
+                    {profile.role === "alumni"
+                      ? "Alumni"
+                      : `${profile.degree || ""} Student`}
+                  </p>
+
+
+
+                  {/* Social quick links */}
+                  <div className="mt-4 flex flex-wrap justify-center gap-2 w-full">
+                    {profile.linkedin && (
+                      <motion.a
+                        whileHover={{ scale: 1.05 }}
+                        href={profile.linkedin}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                      >
+                        <FaLinkedin size={12} /> LinkedIn
+                      </motion.a>
+                    )}
+                    {profile.email && (
+                      <motion.a
+                        whileHover={{ scale: 1.05 }}
+                        href={`mailto:${profile.email}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-100 transition"
+                      >
+                        <FaEnvelope size={12} /> Email
+                      </motion.a>
+                    )}
+                    {profile.github && (
+                      <motion.a
+                        whileHover={{ scale: 1.05 }}
+                        href={profile.github}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
+                      >
+                        <FaGithub size={12} /> GitHub
+                      </motion.a>
+                    )}
+                    {profile.leetcode && (
+                      <motion.a
+                        whileHover={{ scale: 1.05 }}
+                        href={profile.leetcode}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
+                      >
+                        <FaCode size={12} /> LeetCode
+                      </motion.a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-gray-100" />
+
+                {/* Skills */}
+                <div className="px-6 py-5">
+                  <h3 className="text-sm font-bold text-indigo-700 flex items-center gap-2 mb-3">
+                    <FaTools size={13} /> Skills
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {profile.skills?.length > 0 ? (
+                      profile.skills.map((skill, idx) => (
+                        <motion.span
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className={`group flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105 ${chipPalette[idx % chipPalette.length]}`}
+                        >
+                          {skill}
+                          <button
+                            onClick={() => handleRemoveSkill(skill)}
+                            className="text-current opacity-40 hover:opacity-100 transition ml-0.5"
+                          >
+                            <FaTimes size={10} />
+                          </button>
+                        </motion.span>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">
+                        No skills added yet.
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      placeholder="Add a skill…"
+                      className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none"
+                      onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.93 }}
+                      onClick={handleAddSkill}
+                      className="flex-shrink-0 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm transition shadow-sm"
+                    >
+                      <FaPlus size={12} />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-6 h-px bg-gray-100" />
+
+                {/* Security */}
+                <div className="px-6 py-5">
+                  <h3 className="text-sm font-bold text-red-500 flex items-center gap-2 mb-3">
+                    <FaLock size={13} /> Security
+                  </h3>
+                  <div className="bg-white/70 border border-gray-100 rounded-xl p-4">
+                    {passStep === 1 ? (
+                      <>
+                        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                          Update your account password. A secure OTP will be sent
+                          to your registered email for verification.
+                        </p>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={handleSendOTP}
+                          disabled={passLoading}
+                          className="w-full py-2.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition disabled:opacity-50 text-sm"
+                        >
+                          {passLoading ? "Sending OTP…" : "Change Password"}
+                        </motion.button>
+                      </>
+                    ) : (
+                      <div className="space-y-3 animate-fade-in-up">
+                        <div>
+                          <SectionLabel>Verification Code</SectionLabel>
+                          <input
+                            type="text"
+                            maxLength="6"
+                            value={passOtp}
+                            onChange={(e) =>
+                              setPassOtp(e.target.value.replace(/\D/g, ""))
+                            }
+                            placeholder="• • • • • •"
+                            className="w-full p-3 text-center tracking-[0.5em] font-mono text-lg font-bold border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>New Password</SectionLabel>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter new password"
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none text-sm"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              setPassStep(1);
+                              setPassOtp("");
+                              setNewPassword("");
+                            }}
+                            className="flex-1 py-2.5 text-gray-500 font-semibold hover:bg-gray-100 rounded-xl text-sm transition"
+                          >
+                            Cancel
+                          </button>
+                          <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={handleUpdatePassword}
+                            disabled={passLoading}
+                            className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50 text-sm"
+                          >
+                            {passLoading ? "Verifying…" : "Update"}
+                          </motion.button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* ════════════════════ MAIN CONTENT ════════════════════ */}
+            <div className="md:col-span-2 space-y-6">
+
+              {/* ── Personal & Academic Info ── */}
+              <Card delay={1}>
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
+                    <span className="p-1.5 bg-indigo-100 rounded-lg">
+                      <FaUniversity size={14} />
+                    </span>
+                    Personal &amp; Academic Info
+                  </h3>
+                  {!isEditingInfo && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsEditingInfo(true)}
+                      className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
+                    >
+                      <FaPen size={10} /> Edit
+                    </motion.button>
+                  )}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {isEditingInfo ? (
+                    <motion.div
+                      key="edit"
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
+                      exit={{ opacity: 0, y: -8 }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                      {/* Full Name */}
+                      <div className="col-span-1 md:col-span-2">
+                        <SectionLabel>Full Name</SectionLabel>
                         <input
                           type="text"
-                          maxLength="6"
-                          value={passOtp}
+                          value={infoForm.name}
                           onChange={(e) =>
-                            setPassOtp(e.target.value.replace(/\D/g, ""))
+                            setInfoForm({ ...infoForm, name: e.target.value })
                           }
-                          placeholder="• • • • • •"
-                          className="w-full p-3 text-center tracking-[0.5em] font-mono text-lg font-bold border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none"
+                          className={inputCls}
+                        />
+                      </div>
+
+                      {/* Contact & Socials */}
+                      <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-100 pb-4">
+                        <div>
+                          <SectionLabel>Phone (Confidential)</SectionLabel>
+                          <input
+                            type="text"
+                            value={infoForm.phone}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, phone: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>Portfolio / Website</SectionLabel>
+                          <input
+                            type="text"
+                            placeholder="https://…"
+                            value={infoForm.portfolio}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, portfolio: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>LinkedIn URL</SectionLabel>
+                          <input
+                            type="text"
+                            placeholder="https://linkedin.com/in/…"
+                            value={infoForm.linkedin}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, linkedin: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <SectionLabel>GitHub URL</SectionLabel>
+                          <input
+                            type="text"
+                            placeholder="https://github.com/…"
+                            value={infoForm.github}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, github: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                        {/* LeetCode */}
+                        <div className="col-span-1 md:col-span-2">
+                          <SectionLabel>LeetCode URL</SectionLabel>
+                          <input
+                            type="text"
+                            placeholder="https://leetcode.com/…"
+                            value={infoForm.leetcode}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, leetcode: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Academic */}
+                      <div>
+                        <SectionLabel>College</SectionLabel>
+                        <input
+                          type="text"
+                          value={infoForm.college}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, college: e.target.value })
+                          }
+                          className={inputCls}
                         />
                       </div>
                       <div>
-                        <SectionLabel>New Password</SectionLabel>
+                        <SectionLabel>Department</SectionLabel>
                         <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Enter new password"
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-300 outline-none text-sm"
+                          type="text"
+                          value={infoForm.department}
+                          onChange={(e) =>
+                            setInfoForm({ ...infoForm, department: e.target.value })
+                          }
+                          className={inputCls}
                         />
                       </div>
-                      <div className="flex gap-2 pt-1">
+
+                      {/* Teacher */}
+                      {isTeacher && (
+                        <div>
+                          <SectionLabel>Designation</SectionLabel>
+                          <input
+                            type="text"
+                            value={infoForm.designation}
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, designation: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                      )}
+
+                      {/* Alumni */}
+                      {isAlumni && (
+                        <div className="col-span-1 md:col-span-2">
+                          <SectionLabel>Current Company</SectionLabel>
+                          <input
+                            type="text"
+                            value={infoForm.currentCompany}
+                            placeholder="Where are you working?"
+                            onChange={(e) =>
+                              setInfoForm({ ...infoForm, currentCompany: e.target.value })
+                            }
+                            className={inputCls}
+                          />
+                        </div>
+                      )}
+
+                      {/* Student + Alumni */}
+                      {(isStudent || isAlumni) && (
+                        <>
+                          <div>
+                            <SectionLabel>Degree</SectionLabel>
+                            <input
+                              type="text"
+                              value={infoForm.degree}
+                              onChange={(e) =>
+                                setInfoForm({ ...infoForm, degree: e.target.value })
+                              }
+                              className={inputCls}
+                            />
+                          </div>
+                          <div>
+                            <SectionLabel>Graduation Year</SectionLabel>
+                            <input
+                              type="number"
+                              value={infoForm.graduationYear}
+                              onChange={(e) =>
+                                setInfoForm({ ...infoForm, graduationYear: e.target.value })
+                              }
+                              className={inputCls}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Student only */}
+                      {isStudent && (
+                        <>
+                          <div>
+                            <SectionLabel>Current Year (1-4)</SectionLabel>
+                            <input
+                              type="number"
+                              value={infoForm.year}
+                              onChange={(e) =>
+                                setInfoForm({ ...infoForm, year: e.target.value })
+                              }
+                              className={inputCls}
+                            />
+                          </div>
+                          <div>
+                            <SectionLabel>Section</SectionLabel>
+                            <input
+                              type="text"
+                              value={infoForm.section}
+                              onChange={(e) =>
+                                setInfoForm({ ...infoForm, section: e.target.value })
+                              }
+                              className={inputCls}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-3 border-t border-gray-100">
                         <button
-                          onClick={() => {
-                            setPassStep(1);
-                            setPassOtp("");
-                            setNewPassword("");
-                          }}
-                          className="flex-1 py-2.5 text-gray-500 font-semibold hover:bg-gray-100 rounded-xl text-sm transition"
+                          onClick={() => setIsEditingInfo(false)}
+                          className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
                         >
                           Cancel
                         </button>
                         <motion.button
                           whileTap={{ scale: 0.97 }}
-                          onClick={handleUpdatePassword}
-                          disabled={passLoading}
-                          className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition disabled:opacity-50 text-sm"
+                          onClick={saveInfo}
+                          className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold flex items-center gap-2"
                         >
-                          {passLoading ? "Verifying…" : "Update"}
+                          <FaSave size={12} /> Save Info
                         </motion.button>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ════════════════════ MAIN CONTENT ════════════════════ */}
-          <div className="md:col-span-2 space-y-6">
-
-            {/* ── Personal & Academic Info ── */}
-            <Card delay={1}>
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
-                  <span className="p-1.5 bg-indigo-100 rounded-lg">
-                    <FaUniversity size={14} />
-                  </span>
-                  Personal &amp; Academic Info
-                </h3>
-                {!isEditingInfo && (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsEditingInfo(true)}
-                    className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
-                  >
-                    <FaPen size={10} /> Edit
-                  </motion.button>
-                )}
-              </div>
-
-              <AnimatePresence mode="wait">
-                {isEditingInfo ? (
-                  <motion.div
-                    key="edit"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    exit={{ opacity: 0, y: -8 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                  >
-                    {/* Full Name */}
-                    <div className="col-span-1 md:col-span-2">
-                      <SectionLabel>Full Name</SectionLabel>
-                      <input
-                        type="text"
-                        value={infoForm.name}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, name: e.target.value })
-                        }
-                        className={inputCls}
-                      />
-                    </div>
-
-                    {/* Contact & Socials */}
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-gray-100 pb-4">
-                      <div>
-                        <SectionLabel>Phone (Confidential)</SectionLabel>
-                        <input
-                          type="text"
-                          value={infoForm.phone}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, phone: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <SectionLabel>Portfolio / Website</SectionLabel>
-                        <input
-                          type="text"
-                          placeholder="https://…"
-                          value={infoForm.portfolio}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, portfolio: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <SectionLabel>LinkedIn URL</SectionLabel>
-                        <input
-                          type="text"
-                          placeholder="https://linkedin.com/in/…"
-                          value={infoForm.linkedin}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, linkedin: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <SectionLabel>GitHub URL</SectionLabel>
-                        <input
-                          type="text"
-                          placeholder="https://github.com/…"
-                          value={infoForm.github}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, github: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      {/* LeetCode */}
-                      <div className="col-span-1 md:col-span-2">
-                        <SectionLabel>LeetCode URL</SectionLabel>
-                        <input
-                          type="text"
-                          placeholder="https://leetcode.com/…"
-                          value={infoForm.leetcode}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, leetcode: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Academic */}
-                    <div>
-                      <SectionLabel>College</SectionLabel>
-                      <input
-                        type="text"
-                        value={infoForm.college}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, college: e.target.value })
-                        }
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <SectionLabel>Department</SectionLabel>
-                      <input
-                        type="text"
-                        value={infoForm.department}
-                        onChange={(e) =>
-                          setInfoForm({ ...infoForm, department: e.target.value })
-                        }
-                        className={inputCls}
-                      />
-                    </div>
-
-                    {/* Teacher */}
-                    {isTeacher && (
-                      <div>
-                        <SectionLabel>Designation</SectionLabel>
-                        <input
-                          type="text"
-                          value={infoForm.designation}
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, designation: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                    )}
-
-                    {/* Alumni */}
-                    {isAlumni && (
-                      <div className="col-span-1 md:col-span-2">
-                        <SectionLabel>Current Company</SectionLabel>
-                        <input
-                          type="text"
-                          value={infoForm.currentCompany}
-                          placeholder="Where are you working?"
-                          onChange={(e) =>
-                            setInfoForm({ ...infoForm, currentCompany: e.target.value })
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                    )}
-
-                    {/* Student + Alumni */}
-                    {(isStudent || isAlumni) && (
-                      <>
-                        <div>
-                          <SectionLabel>Degree</SectionLabel>
-                          <input
-                            type="text"
-                            value={infoForm.degree}
-                            onChange={(e) =>
-                              setInfoForm({ ...infoForm, degree: e.target.value })
-                            }
-                            className={inputCls}
-                          />
-                        </div>
-                        <div>
-                          <SectionLabel>Graduation Year</SectionLabel>
-                          <input
-                            type="number"
-                            value={infoForm.graduationYear}
-                            onChange={(e) =>
-                              setInfoForm({ ...infoForm, graduationYear: e.target.value })
-                            }
-                            className={inputCls}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {/* Student only */}
-                    {isStudent && (
-                      <>
-                        <div>
-                          <SectionLabel>Current Year (1-4)</SectionLabel>
-                          <input
-                            type="number"
-                            value={infoForm.year}
-                            onChange={(e) =>
-                              setInfoForm({ ...infoForm, year: e.target.value })
-                            }
-                            className={inputCls}
-                          />
-                        </div>
-                        <div>
-                          <SectionLabel>Section</SectionLabel>
-                          <input
-                            type="text"
-                            value={infoForm.section}
-                            onChange={(e) =>
-                              setInfoForm({ ...infoForm, section: e.target.value })
-                            }
-                            className={inputCls}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => setIsEditingInfo(false)}
-                        className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
-                      >
-                        Cancel
-                      </button>
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={saveInfo}
-                        className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold flex items-center gap-2"
-                      >
-                        <FaSave size={12} /> Save Info
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="view"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    className="flex flex-col gap-5"
-                  >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <InfoTile
-                        label="College"
-                        value={profile.college}
-                        icon={<FaUniversity size={10} />}
-                      />
-                      <InfoTile label="Department" value={profile.department} />
-
-                      {isTeacher && (
-                        <InfoTile label="Designation" value={profile.designation} />
-                      )}
-                      {(isStudent || isAlumni) && (
-                        <>
-                          <InfoTile
-                            label="Degree"
-                            value={profile.degree}
-                            icon={<FaGraduationCap size={10} />}
-                          />
-                          <InfoTile
-                            label="Graduation Year"
-                            value={profile.graduationYear}
-                          />
-                        </>
-                      )}
-                      {isStudent && (
-                        <>
-                          <InfoTile
-                            label="Current Year"
-                            value={profile.year ? `Year ${profile.year}` : null}
-                          />
-                          <InfoTile
-                            label="Section"
-                            value={profile.section || profile.Section}
-                          />
-                        </>
-                      )}
-                      {isAlumni && profile.currentCompany && (
-                        <InfoTile
-                          label="Current Company"
-                          value={profile.currentCompany}
-                          icon={<FaBuilding size={10} />}
-                        />
-                      )}
-                    </div>
-
-                    {/* Social links */}
-                    {(profile.github || profile.portfolio || profile.leetcode) && (
-                      <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-2">
-                        {profile.github && (
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            href={profile.github}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 bg-gray-100 text-gray-800 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
-                          >
-                            <FaGithub size={12} /> GitHub
-                          </motion.a>
-                        )}
-                        {profile.portfolio && (
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            href={profile.portfolio}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-indigo-100 transition"
-                          >
-                            <FaGlobe size={12} /> Portfolio
-                          </motion.a>
-                        )}
-                        {profile.leetcode && (
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            href={profile.leetcode}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
-                          >
-                            <FaCode size={12} /> LeetCode
-                          </motion.a>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-
-            {/* ── About / Bio ── */}
-            <Card delay={2}>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
-                  <span className="p-1.5 bg-purple-100 rounded-lg text-purple-600">
-                    <FaUser size={13} />
-                  </span>
-                  About
-                </h3>
-                {!editBio && (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setEditBio(true)}
-                    className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
-                  >
-                    <FaPen size={10} /> Edit
-                  </motion.button>
-                )}
-              </div>
-              <AnimatePresence mode="wait">
-                {editBio ? (
-                  <motion.div
-                    key="edit-bio"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col gap-3"
-                  >
-                    <div className="relative">
-                      <textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none min-h-[110px] text-sm resize-none"
-                        placeholder="Tell us about yourself…"
-                        maxLength={500}
-                      />
-                      <span className="absolute bottom-3 right-3 text-[10px] text-gray-400">
-                        {bio.length}/500
-                      </span>
-                    </div>
-                    <div className="flex gap-2 self-end">
-                      <button
-                        onClick={() => setEditBio(false)}
-                        className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
-                      >
-                        Cancel
-                      </button>
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={saveBio}
-                        className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold"
-                      >
-                        Save Bio
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.p
-                    key="view-bio"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    className="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm"
-                  >
-                    {bio || (
-                      <span className="italic text-gray-400">
-                        No about information yet.
-                      </span>
-                    )}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </Card>
-
-            {/* ── Dynamic Sections ── */}
-            {sections.map((section, sIdx) => (
-              <Card key={section.key} delay={sIdx + 3}>
-                <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2 mb-4">
-                  <span className="p-1.5 bg-indigo-100 rounded-lg">
-                    {section.icon}
-                  </span>
-                  {section.title}
-                </h3>
-
-                {/* Existing items */}
-                <div className="space-y-3 mb-4">
-                  {section.data?.length > 0 ? (
-                    section.data.map((item, i) => (
-                      <motion.div
-                        key={item._id || i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        className="group relative p-4 border border-gray-100 rounded-xl bg-white/70 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all"
-                        style={{ borderLeft: "3px solid #6366f1" }}
-                      >
-                        {/* Action buttons */}
-                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEditClick(section, item)}
-                            className="text-gray-400 hover:text-indigo-600 transition p-1 rounded"
-                            title="Edit"
-                          >
-                            <FaPen size={13} />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleDeleteItem(section.key, item._id)
-                            }
-                            className="text-gray-400 hover:text-red-500 transition p-1 rounded"
-                            title="Delete"
-                          >
-                            <FaTrash size={13} />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 pr-12">
-                          {Object.entries(item).map(([k, v]) => {
-                            if (k === "_id") return null;
-                            const isLink =
-                              k === "link" ||
-                              (typeof v === "string" &&
-                                (v.startsWith("http://") ||
-                                  v.startsWith("https://")));
-                            return (
-                              <div key={k} className="text-sm">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                  {k}:{" "}
-                                </span>
-                                {isLink ? (
-                                  <a
-                                    href={v}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-indigo-600 hover:underline break-all transition"
-                                  >
-                                    {v}
-                                  </a>
-                                ) : (
-                                  <span className="text-gray-800">{v}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    ))
+                    </motion.div>
                   ) : (
-                    <p className="text-sm text-gray-400 italic py-1">
-                      No {section.title.toLowerCase()} added yet.
-                    </p>
+                    <motion.div
+                      key="view"
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
+                      className="flex flex-col gap-5"
+                    >
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <InfoTile
+                          label="College"
+                          value={profile.college}
+                          icon={<FaUniversity size={10} />}
+                        />
+                        <InfoTile label="Department" value={profile.department} />
+
+                        {isTeacher && (
+                          <InfoTile label="Designation" value={profile.designation} />
+                        )}
+                        {(isStudent || isAlumni) && (
+                          <>
+                            <InfoTile
+                              label="Degree"
+                              value={profile.degree}
+                              icon={<FaGraduationCap size={10} />}
+                            />
+                            <InfoTile
+                              label="Graduation Year"
+                              value={profile.graduationYear}
+                            />
+                          </>
+                        )}
+                        {isStudent && (
+                          <>
+                            <InfoTile
+                              label="Current Year"
+                              value={profile.year ? `Year ${profile.year}` : null}
+                            />
+                            <InfoTile
+                              label="Section"
+                              value={profile.section || profile.Section}
+                            />
+                          </>
+                        )}
+                        {isAlumni && profile.currentCompany && (
+                          <InfoTile
+                            label="Current Company"
+                            value={profile.currentCompany}
+                            icon={<FaBuilding size={10} />}
+                          />
+                        )}
+                      </div>
+
+                      {/* Social links */}
+                      {(profile.github || profile.portfolio || profile.leetcode) && (
+                        <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                          {profile.github && (
+                            <motion.a
+                              whileHover={{ scale: 1.05 }}
+                              href={profile.github}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 bg-gray-100 text-gray-800 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-gray-200 transition"
+                            >
+                              <FaGithub size={12} /> GitHub
+                            </motion.a>
+                          )}
+                          {profile.portfolio && (
+                            <motion.a
+                              whileHover={{ scale: 1.05 }}
+                              href={profile.portfolio}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-indigo-100 transition"
+                            >
+                              <FaGlobe size={12} /> Portfolio
+                            </motion.a>
+                          )}
+                          {profile.leetcode && (
+                            <motion.a
+                              whileHover={{ scale: 1.05 }}
+                              href={profile.leetcode}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-100 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-yellow-100 transition"
+                            >
+                              <FaCode size={12} /> LeetCode
+                            </motion.a>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Card>
+
+              {/* ── About / Bio ── */}
+              <Card delay={2}>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2">
+                    <span className="p-1.5 bg-purple-100 rounded-lg text-purple-600">
+                      <FaUser size={13} />
+                    </span>
+                    About
+                  </h3>
+                  {!editBio && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setEditBio(true)}
+                      className="text-xs text-indigo-600 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition"
+                    >
+                      <FaPen size={10} /> Edit
+                    </motion.button>
                   )}
                 </div>
-
-                {/* Add new item form */}
-                <div className="bg-gray-50/70 p-4 rounded-xl border border-dashed border-gray-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    {section.fields.map((field) => (
-                      <input
-                        key={field.name}
-                        type="text"
-                        value={section.inputs[field.name]}
-                        onChange={(e) =>
-                          section.setInputs({
-                            ...section.inputs,
-                            [field.name]: e.target.value,
-                          })
-                        }
-                        placeholder={field.placeholder}
-                        className={`px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none transition ${
-                          field.name === "description" ? "sm:col-span-2" : ""
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() =>
-                      handleAddSection(
-                        section.key,
-                        section.inputs,
-                        section.setInputs,
-                        section.emptyState
-                      )
-                    }
-                    className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-md hover:shadow-indigo-200 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
-                  >
-                    <FaPlus size={11} /> Add {section.title}
-                  </motion.button>
-                </div>
+                <AnimatePresence mode="wait">
+                  {editBio ? (
+                    <motion.div
+                      key="edit-bio"
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col gap-3"
+                    >
+                      <div className="relative">
+                        <textarea
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none min-h-[110px] text-sm resize-none"
+                          placeholder="Tell us about yourself…"
+                          maxLength={500}
+                        />
+                        <span className="absolute bottom-3 right-3 text-[10px] text-gray-400">
+                          {bio.length}/500
+                        </span>
+                      </div>
+                      <div className="flex gap-2 self-end">
+                        <button
+                          onClick={() => setEditBio(false)}
+                          className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm transition"
+                        >
+                          Cancel
+                        </button>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={saveBio}
+                          className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:shadow-md hover:shadow-emerald-200 transition text-sm font-semibold"
+                        >
+                          Save Bio
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.p
+                      key="view-bio"
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
+                      className="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm"
+                    >
+                      {bio || (
+                        <span className="italic text-gray-400">
+                          No about information yet.
+                        </span>
+                      )}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </Card>
-            ))}
 
-            {/* ── AI Resume Builder ── */}
-            <motion.div
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              custom={8}
-              whileHover={{ y: -3 }}
-              className="relative overflow-hidden rounded-2xl shadow-xl p-6"
-              style={{
-                background:
-                  "linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #ec4899 100%)",
-              }}
-            >
-              <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
-              <h3 className="relative z-10 text-base font-bold text-white flex items-center gap-2">
-                <FaMagic /> AI Resume Builder
-              </h3>
-              <p className="relative z-10 text-white/65 text-xs mt-1 mb-4">
-                Auto-generate a resume snapshot from your profile data.
-              </p>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={generateResume}
-                className="relative z-10 px-5 py-2.5 bg-white text-indigo-700 font-bold rounded-xl shadow hover:bg-indigo-50 transition text-sm"
+              {/* ── Dynamic Sections ── */}
+              {sections.map((section, sIdx) => (
+                <Card key={section.key} delay={sIdx + 3}>
+                  <h3 className="text-base font-bold text-indigo-700 flex items-center gap-2 mb-4">
+                    <span className="p-1.5 bg-indigo-100 rounded-lg">
+                      {section.icon}
+                    </span>
+                    {section.title}
+                  </h3>
+
+                  {/* Existing items */}
+                  <div className="space-y-3 mb-4">
+                    {section.data?.length > 0 ? (
+                      section.data.map((item, i) => (
+                        <motion.div
+                          key={item._id || i}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.06 }}
+                          className="group relative p-4 border border-gray-100 rounded-xl bg-white/70 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all"
+                          style={{ borderLeft: "3px solid #6366f1" }}
+                        >
+                          {/* Action buttons */}
+                          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEditClick(section, item)}
+                              className="text-gray-400 hover:text-indigo-600 transition p-1 rounded"
+                              title="Edit"
+                            >
+                              <FaPen size={13} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteItem(section.key, item._id)
+                              }
+                              className="text-gray-400 hover:text-red-500 transition p-1 rounded"
+                              title="Delete"
+                            >
+                              <FaTrash size={13} />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 pr-12">
+                            {Object.entries(item).map(([k, v]) => {
+                              if (k === "_id") return null;
+                              const isLink =
+                                k === "link" ||
+                                (typeof v === "string" &&
+                                  (v.startsWith("http://") ||
+                                    v.startsWith("https://")));
+                              return (
+                                <div key={k} className="text-sm">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                    {k}:{" "}
+                                  </span>
+                                  {isLink ? (
+                                    <a
+                                      href={v}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-indigo-600 hover:underline break-all transition"
+                                    >
+                                      {v}
+                                    </a>
+                                  ) : (
+                                    <span className="text-gray-800">{v}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-400 italic py-1">
+                        No {section.title.toLowerCase()} added yet.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Add new item form */}
+                  <div className="bg-gray-50/70 p-4 rounded-xl border border-dashed border-gray-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      {section.fields.map((field) => (
+                        <input
+                          key={field.name}
+                          type="text"
+                          value={section.inputs[field.name]}
+                          onChange={(e) =>
+                            section.setInputs({
+                              ...section.inputs,
+                              [field.name]: e.target.value,
+                            })
+                          }
+                          placeholder={field.placeholder}
+                          className={`px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-300 outline-none transition ${field.name === "description" ? "sm:col-span-2" : ""
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() =>
+                        handleAddSection(
+                          section.key,
+                          section.inputs,
+                          section.setInputs,
+                          section.emptyState
+                        )
+                      }
+                      className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-md hover:shadow-indigo-200 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"
+                    >
+                      <FaPlus size={11} /> Add {section.title}
+                    </motion.button>
+                  </div>
+                </Card>
+              ))}
+
+              {/* ── AI Resume Builder ── */}
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={8}
+                whileHover={{ y: -3 }}
+                className="relative overflow-hidden rounded-2xl shadow-xl p-6"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #ec4899 100%)",
+                }}
               >
-                Generate Resume
-              </motion.button>
-              {resume && (
-                <div className="relative z-10 mt-4 bg-white/95 text-gray-800 rounded-xl p-4 max-h-64 overflow-y-auto shadow-inner font-mono text-xs sm:text-sm border-2 border-white/30">
-                  <pre className="whitespace-pre-wrap">{resume}</pre>
-                </div>
-              )}
-            </motion.div>
+                <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                <h3 className="relative z-10 text-base font-bold text-white flex items-center gap-2">
+                  <FaMagic /> AI Resume Workspace
+                </h3>
+                <p className="relative z-10 text-white/75 text-xs mt-1 mb-4 font-medium">
+                  Auto-generate a print-ready resume snapshot and enhance it with dynamic AI Polish.
+                </p>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={generateResume}
+                  className="relative z-10 px-5 py-2.5 bg-white text-indigo-700 font-bold rounded-xl shadow hover:bg-indigo-50 transition text-sm"
+                >
+                  {resumeData ? "Re-generate Snapshot" : "Generate Resume"}
+                </motion.button>
+
+                {resumeData && (
+                  <div className="relative z-10 mt-5 bg-white text-gray-800 rounded-2xl p-5 shadow-xl border border-white/30 space-y-5 text-left">
+
+                    {/* Template Selector */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Template Style</label>
+                      <div className="flex border rounded-xl overflow-hidden p-0.5 bg-slate-50">
+                        {["classic", "modern", "minimalist"].map(t => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setSelectedTemplate(t)}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize transition ${selectedTemplate === t ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500"}`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Contact Info tweak */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          value={resumeData.name}
+                          onChange={(e) => setResumeData({ ...resumeData, name: e.target.value })}
+                          className="w-full px-3 py-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Contact Email</label>
+                        <input
+                          type="text"
+                          value={resumeData.email}
+                          onChange={(e) => setResumeData({ ...resumeData, email: e.target.value })}
+                          className="w-full px-3 py-1.5 border rounded-lg text-xs bg-slate-50 focus:bg-white transition"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Skills List */}
+                    {resumeData.skills?.length > 0 && (
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Skills Snapshot</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {resumeData.skills.map((skill, i) => (
+                            <span key={i} className="px-2 py-1 bg-indigo-50 border border-indigo-100/50 text-indigo-600 rounded-lg text-[10px] font-semibold">{skill}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Experience list with AI Polish */}
+                    {resumeData.experience?.length > 0 && (
+                      <div className="space-y-3">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Experience Highlights</label>
+                        {resumeData.experience.map((exp, i) => (
+                          <div key={i} className="p-3 border rounded-xl bg-slate-50/50 space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold text-slate-700">{exp.role} at {exp.company}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleAIPolish("experience", i)}
+                                className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100/50 flex items-center gap-1 transition focus:outline-none"
+                              >
+                                <FaMagic size={9} /> AI Polish
+                              </button>
+                            </div>
+                            <textarea
+                              value={exp.description}
+                              onChange={(e) => {
+                                const newExp = [...resumeData.experience];
+                                newExp[i].description = e.target.value;
+                                setResumeData({ ...resumeData, experience: newExp });
+                              }}
+                              className="w-full border p-2 rounded-lg text-xs min-h-[50px] resize-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Projects list with AI Polish */}
+                    {resumeData.projects?.length > 0 && (
+                      <div className="space-y-3">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">Projects Highlights</label>
+                        {resumeData.projects.map((proj, i) => (
+                          <div key={i} className="p-3 border rounded-xl bg-slate-50/50 space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold text-slate-700">{proj.title}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleAIPolish("project", i)}
+                                className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100/50 flex items-center gap-1 transition focus:outline-none"
+                              >
+                                <FaMagic size={9} /> AI Polish
+                              </button>
+                            </div>
+                            <textarea
+                              value={proj.description}
+                              onChange={(e) => {
+                                const newProjects = [...resumeData.projects];
+                                newProjects[i].description = e.target.value;
+                                setResumeData({ ...resumeData, projects: newProjects });
+                              }}
+                              className="w-full border p-2 rounded-lg text-xs min-h-[50px] resize-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Export PDF */}
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg text-white font-bold text-xs rounded-xl shadow transition active:scale-98 flex items-center justify-center gap-1.5"
+                    >
+                      Export to PDF (Print)
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </div>
           </div>
         </div>
+
+        {/* ── Edit Modal Overlay ── */}
+        <AnimatePresence>
+          {isModalOpen && editingSection && (
+            <EditModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSaveEdit}
+              data={editingItemData}
+              setData={setEditingItemData}
+              fields={editingSection.fields}
+              title={editingSection.title}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Edit Modal Overlay ── */}
-      <AnimatePresence>
-        {isModalOpen && editingSection && (
-          <EditModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onSave={handleSaveEdit}
-            data={editingItemData}
-            setData={setEditingItemData}
-            fields={editingSection.fields}
-            title={editingSection.title}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+      {/* ── Print-only Resume Container ── */}
+      {resumeData && (
+        <div className="hidden print:block p-10 bg-white text-black min-h-screen font-sans">
+          <style dangerouslySetInnerHTML={{
+            __html: `
+          @media print {
+            body { background: white !important; color: black !important; }
+            .print\\:hidden { display: none !important; }
+            .print\\:block { display: block !important; }
+          }
+        ` }} />
+
+          {/* Template Styles */}
+          <div className={`${selectedTemplate === "classic"
+            ? "font-serif text-slate-900"
+            : selectedTemplate === "minimalist"
+              ? "font-mono text-slate-800 text-sm"
+              : "font-sans text-slate-900"
+            } space-y-6`}>
+            {/* Header */}
+            <div className={`border-b pb-4 ${selectedTemplate === "classic" ? "text-center" : "text-left"}`}>
+              <h1 className="text-3xl font-bold tracking-tight">{resumeData.name}</h1>
+              <div className={`flex flex-wrap gap-3 text-xs text-gray-500 mt-2 ${selectedTemplate === "classic" ? "justify-center" : "justify-start"}`}>
+                <span>{resumeData.email}</span>
+                {resumeData.phone && <span>· {resumeData.phone}</span>}
+                <span>· {resumeData.degree}</span>
+                <span>· {resumeData.college}</span>
+              </div>
+            </div>
+
+            {/* Bio */}
+            {resumeData.bio && (
+              <div className="space-y-1">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Professional Summary</h2>
+                <p className="text-xs leading-relaxed text-gray-700 text-left">{resumeData.bio}</p>
+              </div>
+            )}
+
+            {/* Skills */}
+            {resumeData.skills?.length > 0 && (
+              <div className="space-y-1">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Skills</h2>
+                <p className="text-xs text-gray-700 text-left">{resumeData.skills.join(", ")}</p>
+              </div>
+            )}
+
+            {/* Experience */}
+            {resumeData.experience?.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Experience</h2>
+                {resumeData.experience.map((exp, i) => (
+                  <div key={i} className="space-y-0.5 text-left">
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="text-xs font-bold text-slate-800">{exp.role} at {exp.company}</h3>
+                      <span className="text-[10px] text-gray-500 font-semibold">{exp.year}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-normal">{exp.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Projects */}
+            {resumeData.projects?.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600 border-b pb-0.5 text-left">Projects</h2>
+                {resumeData.projects.map((proj, i) => (
+                  <div key={i} className="space-y-0.5 text-left">
+                    <h3 className="text-xs font-bold text-slate-800">{proj.title}</h3>
+                    <p className="text-xs text-gray-600 leading-normal">{proj.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

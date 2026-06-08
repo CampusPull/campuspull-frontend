@@ -5,6 +5,7 @@ import ScrollToTop from "./components/ScrollToTop.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import AboutLinkMate from "./pages/about-link-mate";
+import OurMission from "./pages/about-link-mate/OurMission.jsx";
 import ResourcesHub from "./pages/resources-hub";
 import Homepage from "./pages/homepage";
 import Profile from "./pages/profile/Profile.jsx"; 
@@ -41,10 +42,11 @@ const Layout = ({ children }) => {
   return (
     <>
       <Header />
-      <div className="pt-16">{children}</div>
+      <div className="pt-10">{children}</div>
     </>
   );
 };
+
 
  
 import { FeedProvider } from "./context/feedContext.jsx";
@@ -69,12 +71,12 @@ import { Navigate } from "react-router-dom";
 
 
 const ProtectedLayout = ({ children }) => {
-  return (
-    <>
-      <Header />
-      <div className="pt-16">{children}</div>
-    </>
-  );
+  return (
+    <>
+      <Header />
+      <div className="pt-10">{children}</div>
+    </>
+  );
 };
 
 
@@ -131,13 +133,9 @@ const Routes = () => {
                 }
               /> */}
               <Route
-  path="/homepage"
-  element={
-    <Layout>
-      <Homepage />
-    </Layout>
-  }
-/>
+                path="/homepage"
+                element={<Homepage />}
+              />
 
 
               <Route 
@@ -162,13 +160,9 @@ const Routes = () => {
               />
 
               <Route
-  path="/"
-  element={
-    <Layout>
-      <Homepage />
-    </Layout>
-  }
-/>
+                path="/"
+                element={<Homepage />}
+              />
 
 
               <Route
@@ -181,16 +175,18 @@ const Routes = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/about-link-mate"
-                element={
-                  <ProtectedRoute>
-                    <ProtectedLayout>
-                      <AboutLinkMate />
-                    </ProtectedLayout>
-                  </ProtectedRoute>
-                }
-              />
+              <Route
+                path="/about-link-mate"
+                element={<AboutLinkMate />}
+              />
+              <Route
+                path="/our-mission"
+                element={
+                  <Layout>
+                    <OurMission />
+                  </Layout>
+                }
+              />
               <Route
                 path="/help"
                 element={
@@ -207,16 +203,6 @@ const Routes = () => {
                   <ProtectedRoute>
                     <ProtectedLayout>
                       <Contact />
-                    </ProtectedLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/feedback"
-                element={
-                  <ProtectedRoute>
-                    <ProtectedLayout>
-                      <Feedback />
                     </ProtectedLayout>
                   </ProtectedRoute>
                 }

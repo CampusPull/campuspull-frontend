@@ -3,7 +3,7 @@ import Icon from '../../../components/AppIcon';
 
 const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) => {
   return (
-    <div className="relative max-w-3xl mx-auto w-full mb-8 z-20">
+    <div className="relative max-w-3xl mx-auto w-full mb-8 z-20 text-left">
       <div className="relative group">
         
         {/* Left Icon (Search) */}
@@ -11,7 +11,7 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
           <Icon 
             name="Search" 
             size={20} 
-            className="text-gray-400 group-focus-within:text-indigo-500 transition-colors duration-300" 
+            className="text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" 
           />
         </div>
 
@@ -21,7 +21,7 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search notes, roadmaps, questions..."
-          className="w-full pl-12 sm:pl-14 pr-20 sm:pr-24 py-3 sm:py-4 bg-white/70 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm text-gray-700 placeholder-gray-400 text-sm sm:text-lg focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:bg-white focus:border-indigo-200 transition-all duration-300"
+          className="w-full pl-12 sm:pl-14 pr-20 sm:pr-24 py-3.5 sm:py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 placeholder-slate-400 text-sm sm:text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all duration-300 font-semibold shadow-sm"
         />
 
         {/* Right Actions (Clear & Filter) */}
@@ -31,7 +31,7 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
-              className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors transform hover:scale-110"
+              className="p-2 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors transform hover:scale-110 border-none bg-transparent cursor-pointer"
               title="Clear search"
             >
               <Icon name="X" size={16} />
@@ -39,19 +39,19 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
           )}
 
           {/* Vertical Divider */}
-          <div className="h-6 w-px bg-gray-200 mx-1"></div>
+          <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
           {/* Filter Button */}
           <button
             onClick={onFilterToggle}
-            className={`p-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 ${
+            className={`p-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 border bg-transparent cursor-pointer ${
                isMobile 
-               ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700' 
-               : 'bg-white/50 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-100'
+               ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md border-none font-bold' 
+               : 'bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200/60 font-bold'
             }`}
             title="Filters"
           >
-            <Icon name="Filter" size={20} />
+            <Icon name="Filter" size={18} />
             {isMobile && <span className="text-sm font-medium">Filters</span>}
           </button>
         </div>

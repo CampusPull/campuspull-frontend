@@ -29,12 +29,22 @@ const InternshipCard = ({ internship, isGuest, onRestrictedAction }) => {
               src={internship.companyLogo}
               alt={internship.companyName}
               className="w-14 h-14 rounded-md object-cover"
+              onError={(e) => {
+                e.target.style.display = "none";
+                if (e.target.nextSibling) {
+                  e.target.nextSibling.style.display = "flex";
+                }
+              }}
             />
-          ) : (
-            <div className="w-14 h-14 rounded-md bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
-              No Logo
-            </div>
-          )}
+          ) : null}
+          <div
+            className={`w-14 h-14 rounded-md bg-gray-200 items-center justify-center text-gray-400 text-xs ${internship.companyLogo ? "hidden" : "flex"}`}
+            style={{
+              display: internship.companyLogo ? "none" : "flex",
+            }}
+          >
+            No Logo
+          </div>
 
           <div>
             <h3 className="text-lg font-semibold text-gray-800">

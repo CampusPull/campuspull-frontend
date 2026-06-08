@@ -1,12 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useInternships } from "../../../context/internshipContext";
-import { useAuth } from "context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiUploadCloud, FiFile, FiCheck, FiBriefcase, FiAlertCircle } from "react-icons/fi";
+import { FiX, FiUploadCloud, FiCheck, FiBriefcase, FiAlertCircle } from "react-icons/fi";
 
-const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
+const EditInternshipModal = ({ isOpen, onClose, internship, onSuccess }) => {
   const { user } = useAuth();
-  const { createInternship } = useInternships();
+  const { updateInternship } = useInternships();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
@@ -21,6 +21,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
     applyLink: "",
     companyName: "",
     companyWebsite: "",
+    status: "open",
     type: "remote",
   });
 
@@ -29,6 +30,29 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (internship && isOpen) {
+      setForm({
+        title: internship.title || "",
+        description: internship.description || "",
+        stipend: internship.stipend !== undefined ? String(internship.stipend) : "",
+        durationValue: internship.durationValue !== undefined ? String(internship.durationValue) : "",
+        durationUnit: internship.durationUnit || "month",
+        location: internship.location || "",
+        eligibility: internship.eligibility || "",
+        skills: Array.isArray(internship.skills) ? internship.skills.join(", ") : internship.skills || "",
+        applyLink: internship.applyLink || "",
+        companyName: internship.companyName || "",
+        companyWebsite: internship.companyWebsite || "",
+        status: internship.status || "open",
+        type: internship.type || "remote",
+      });
+      setLogoPreview(internship.companyLogo || "");
+      setLogoFile(null);
+      setError(null);
+    }
+  }, [internship, isOpen]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -70,7 +94,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
 
     const createdBy = user?._id || user?.id;
     if (!createdBy) {
-      alert("You must be logged in to create an internship!");
+      alert("You must be logged in as admin to update an internship!");
       setSubmitting(false);
       return;
     }
@@ -94,7 +118,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
     formData.append("applyLink", form.applyLink);
     formData.append("companyName", form.companyName);
     formData.append("companyWebsite", form.companyWebsite);
-    formData.append("createdBy", createdBy);
+    formData.append("status", form.status);
     formData.append("type", form.type);
 
     if (logoFile) {
@@ -102,16 +126,16 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     try {
-      await createInternship(formData);
-      onSuccess?.();
+      const updated = await updateInternship(internship._id, formData);
+      onSuccess?.(updated);
       onClose();
     } catch (err) {
-      console.error("Create internship failed:", err);
+      console.error("Update internship failed:", err);
       setError(
         err.response?.data?.errors || 
         err.response?.data?.message || 
         err.response?.data || 
-        "Create internship failed. Please try again."
+        "Update internship failed. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -146,8 +170,8 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                 <FiBriefcase size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-slate-800 dark:text-white leading-tight">Create Internship</h2>
-                <p className="text-xs font-medium text-slate-400 mt-0.5">Post a new opportunity for students</p>
+                <h2 className="text-xl font-extrabold text-slate-800 dark:text-white leading-tight">Edit Internship</h2>
+                <p className="text-xs font-medium text-slate-400 mt-0.5">Modify internship listing details</p>
               </div>
             </div>
             <button
@@ -320,7 +344,8 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Company Name, Status, and Logo */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Company Name */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Company Name</label>
@@ -335,6 +360,20 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                 />
               </div>
 
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Listing Status</label>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
               {/* Upload Logo */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Company Logo</label>
@@ -347,7 +386,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                   className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center h-[90px] relative overflow-hidden ${
                     isDragActive
                       ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                      : logoFile
+                      : logoPreview
                       ? "border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10"
                       : "border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-slate-700 bg-white dark:bg-slate-950"
                   }`}
@@ -360,28 +399,28 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                     className="hidden"
                   />
 
-                  {logoFile ? (
+                  {logoPreview ? (
                     <div className="flex items-center gap-3">
-                      {logoPreview && (
-                        <img
-                          src={logoPreview}
-                          alt="Logo Preview"
-                          className="w-10 h-10 object-cover rounded-xl border border-gray-100"
-                        />
-                      )}
+                      <img
+                        src={logoPreview}
+                        alt="Logo Preview"
+                        className="w-10 h-10 object-cover rounded-xl border border-gray-100"
+                      />
                       <div className="text-left">
-                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 line-clamp-1">{logoFile.name}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 line-clamp-1">
+                          {logoFile ? logoFile.name : "Current Logo"}
+                        </p>
                         <p className="text-[10px] text-emerald-500 font-bold flex items-center gap-1">
-                          <FiCheck /> File selected
+                          <FiCheck /> {logoFile ? "File selected" : "Logo active"}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <FiUploadCloud size={20} className="text-slate-400 animate-pulse" />
+                      <FiUploadCloud size={20} className="text-slate-400" />
                       <div className="text-left">
-                        <p className="text-xs font-extrabold text-slate-600 dark:text-slate-300">Upload Company Logo</p>
-                        <p className="text-[10px] font-medium text-slate-400">Drag file or click to browse</p>
+                        <p className="text-xs font-extrabold text-slate-600 dark:text-slate-300">Upload Logo</p>
+                        <p className="text-[10px] font-medium text-slate-400">Drag or click</p>
                       </div>
                     </div>
                   )}
@@ -418,7 +457,7 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  "Create Listing"
+                  "Save Changes"
                 )}
               </button>
             </div>
@@ -429,4 +468,4 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-export default CreateInternshipModal;
+export default EditInternshipModal;

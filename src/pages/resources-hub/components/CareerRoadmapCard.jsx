@@ -5,7 +5,7 @@ import Button from "../../../components/ui/Button";
 import { ResourceContext } from "../../../context/resourceContext";
 
 const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteClick, isGuest, onRestrictedAction }) => {
-  const { toggleBookmark, toggleLessonProgress, deleteRoadmap, user } = useContext(ResourceContext);
+  const { toggleBookmark, toggleLessonProgress, incrementView, user } = useContext(ResourceContext);
 
   const [expandedModules, setExpandedModules] = useState({});
   const [isBookmarked, setIsBookmarked] = useState(roadmap?.isBookmarked || false);
@@ -13,7 +13,7 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
 
   const { _id, title, description, modules, uploadedBy, thumbnail } = roadmap;
 
-  // FIX: guests can never edit
+  // guests can never edit
   const isOwner = !isGuest && user?._id === uploadedBy?._id;
   const isAdmin = !isGuest && user?.role === "admin";
   const canEdit = isOwner || isAdmin;
@@ -39,13 +39,20 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
 
   const modulesCount = modules?.length || 0;
 
-  const toggleModule = (moduleId) => {
+  const toggleModule = async (moduleId) => {
+    const isExpanding = !expandedModules[moduleId];
     setExpandedModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }));
+    if (isExpanding) {
+      try {
+        await incrementView(_id, "roadmap");
+      } catch (err) {
+        console.error("Failed to increment roadmap view:", err);
+      }
+    }
   };
 
   const handleBookmark = async (e) => {
     e?.stopPropagation();
-    // FIX: guest triggers modal
     if (isGuest) { onRestrictedAction?.(); return; }
     try {
       setIsBookmarked(!isBookmarked);
@@ -56,20 +63,14 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = (e) => {
+    e.stopPropagation();
     if (isGuest) { onRestrictedAction?.(); return; }
-    const confirmed = window.confirm("Are you sure you want to delete this roadmap?");
-    if (!confirmed) return;
-    try {
-      await deleteRoadmap(_id);
-    } catch (err) {
-      console.error("Failed to delete roadmap:", err);
-    }
+    onDeleteClick?.(roadmap);
   };
 
   const handleToggleLesson = async (resourceId, e) => {
     e.stopPropagation();
-    // FIX: guest triggers modal
     if (isGuest) { onRestrictedAction?.(); return; }
     if (isTogglingLesson === resourceId) return;
     setIsTogglingLesson(resourceId);
@@ -87,69 +88,86 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
     return user?.completedLessons?.includes(resourceId);
   };
 
+  const accentColors = [
+    "from-indigo-500 to-blue-500",
+    "from-violet-500 to-purple-500",
+    "from-blue-500 to-cyan-500",
+    "from-emerald-500 to-teal-500",
+    "from-rose-500 to-pink-500",
+  ];
+  const accent = accentColors[(title?.charCodeAt(0) || 0) % accentColors.length];
+
   // LIST VIEW
   if (viewMode === "list") {
     return (
-      <div className="knowledge-card bg-white border border-slate-200 rounded-xl p-6 hover:shadow-brand-lg transition-all duration-300 mb-4">
-        <div className="flex flex-col md:flex-row items-start space-x-0 md:space-x-4 space-y-4 md:space-y-0">
-          <div className="flex-shrink-0 w-full md:w-48 h-32 bg-surface rounded-lg overflow-hidden relative">
+      <div className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 mb-4 relative text-left">
+        {/* Accent line top */}
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${accent} rounded-t-3xl`} />
+        
+        <div className="flex flex-col md:flex-row items-start space-x-0 md:space-x-4 space-y-4 md:space-y-0 pt-1">
+          <div className="flex-shrink-0 w-full md:w-48 h-32 bg-slate-50 rounded-2xl overflow-hidden relative border-2 border-slate-100 shadow-sm flex items-center justify-center">
             {thumbnail ? (
               <Image src={thumbnail} alt={title} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-academic-blue to-credibility-indigo">
-                <Icon name="Route" size={32} color="white" />
-              </div>
+              <Icon name="Route" size={32} className="text-indigo-400" />
             )}
           </div>
 
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h3 className="font-inter font-semibold text-wisdom-charcoal text-lg mb-1">{title}</h3>
-                <p className="text-insight-gray text-sm line-clamp-2 mb-3">{description}</p>
+                <h3 className="font-extrabold text-slate-800 text-lg mb-1 leading-snug hover:text-indigo-600 transition-colors">{title}</h3>
+                <p className="text-slate-400 text-sm line-clamp-2 mb-3 font-semibold">{description}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleBookmark} className="ml-2">
+              <button 
+                onClick={handleBookmark} 
+                className="ml-2 p-2.5 rounded-xl bg-white/95 hover:bg-white border border-slate-100 hover:shadow-md transition-all duration-300 text-slate-400 hover:text-indigo-600 focus:outline-none"
+              >
                 <Icon
                   name={isBookmarked && !isGuest ? "Bookmark" : "BookmarkPlus"}
-                  size={18}
-                  color={isBookmarked && !isGuest ? "var(--color-academic-blue)" : "var(--color-insight-gray)"}
+                  size={16}
+                  className={isBookmarked && !isGuest ? "fill-indigo-600 text-indigo-600" : ""}
                 />
-              </Button>
+              </button>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 mb-4">
-              <div className="flex items-center space-x-1">
-                <Icon name="BookOpen" size={14} color="var(--color-insight-gray)" />
-                <span className="text-xs text-insight-gray">{modulesCount} Modules</span>
+              <div className="flex items-center space-x-1 text-slate-400 font-bold">
+                <Icon name="BookOpen" size={14} />
+                <span className="text-xs">{modulesCount} Modules</span>
               </div>
-              <div className="flex items-center space-x-1">
-                <Icon name="FileText" size={14} color="var(--color-insight-gray)" />
-                <span className="text-xs text-insight-gray">{totalLessons} Lessons</span>
+              <div className="flex items-center space-x-1 text-slate-400 font-bold">
+                <Icon name="FileText" size={14} />
+                <span className="text-xs">{totalLessons} Lessons</span>
               </div>
-              {/* FIX: hide progress for guests — they have no completedLessons */}
               {!isGuest && (
                 <div className="flex-1 max-w-xs min-w-[150px]">
-                  <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
                     <span>Progress</span>
                     <span>{progressPercentage}%</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-1.5">
-                    <div className="bg-gradient-to-r from-blue-500 to-green-500 h-1.5 rounded-full" style={{ width: `${progressPercentage}%` }} />
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }} />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
               <div className="flex items-center space-x-2">
-                <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full" />
-                <span className="text-sm text-insight-gray">by {uploadedBy?.name}</span>
+                <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+                <span className="text-xs text-slate-500 font-extrabold">by {uploadedBy?.name}</span>
               </div>
               <div className="flex space-x-2">
                 {canEdit && (
-                  <Button variant="outline" size="sm" iconName="Edit" onClick={() => onEditClick(roadmap)}>Edit</Button>
+                  <button 
+                    onClick={() => onEditClick(roadmap)} 
+                    className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold text-xs py-2 px-3.5 rounded-xl bg-transparent cursor-pointer"
+                  >
+                    Edit
+                  </button>
                 )}
-                <Button variant="default" size="sm" className="bg-academic-blue hover:bg-blue-700">
+                <Button variant="default" size="sm" className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl border-none shadow-sm hover:shadow-lg text-xs cursor-pointer">
                   View Roadmap
                 </Button>
               </div>
@@ -162,105 +180,106 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
 
   // GRID VIEW
   return (
-    <div className="knowledge-card relative bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-brand-lg transition-all duration-300">
-      <div className="relative h-40 bg-slate-100 overflow-hidden">
+    <div className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 flex flex-col h-full relative text-left shadow-inner-sm">
+      {/* Top accent line */}
+      <div className={`h-1.5 bg-gradient-to-r ${accent} transition-transform duration-300 group-hover:scale-y-110 shrink-0`} />
+
+      <div className="relative h-40 bg-slate-50 overflow-hidden border-b border-slate-100 shrink-0">
         {thumbnail ? (
-          <Image src={thumbnail} alt={title} className="w-full h-full object-cover" />
+          <Image src={thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-academic-blue to-credibility-indigo">
-            <Icon name="Route" size={48} color="white" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-indigo-50/50 to-blue-50/50">
+            <Icon name="Route" size={48} className="text-indigo-400/80" />
           </div>
         )}
-        <div className="absolute inset-0 bg-black bg-opacity-30" />
-        <Button
-          variant="ghost" size="icon"
+        <div className="absolute inset-0 bg-black/10" />
+        <button
           onClick={handleBookmark}
-          className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white"
+          className="absolute top-3 right-3 bg-white/95 hover:bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 rounded-xl p-2.5 shadow-sm"
         >
           <Icon
             name={isBookmarked && !isGuest ? "Bookmark" : "BookmarkPlus"}
-            size={18}
-            color={isBookmarked && !isGuest ? "var(--color-academic-blue)" : "var(--color-insight-gray)"}
+            size={16}
+            className={isBookmarked && !isGuest ? "fill-indigo-600 text-indigo-600" : ""}
           />
-        </Button>
-        <div className="absolute bottom-4 left-4 p-4">
-          <h3 className="font-bold text-white text-2xl mb-1 line-clamp-2">{title}</h3>
-          <p className="text-white text-opacity-90 text-sm line-clamp-2">{description}</p>
+        </button>
+        <div className="absolute bottom-4 left-4 right-4 z-10 text-left">
+          <h3 className="font-extrabold text-white text-xl mb-1 line-clamp-1 drop-shadow-md">{title}</h3>
+          <p className="text-slate-100 text-xs line-clamp-2 leading-relaxed opacity-95 drop-shadow-sm">{description}</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="px-6 py-4 border-b border-slate-100 flex justify-around">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-around shrink-0">
         <div className="text-center">
-          <div className="font-bold text-academic-blue text-lg">{modulesCount}</div>
-          <div className="text-xs text-insight-gray">Modules</div>
+          <div className="font-extrabold text-indigo-600 text-base">{modulesCount}</div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Modules</div>
         </div>
         <div className="text-center">
-          <div className="font-bold text-academic-blue text-lg">{totalLessons}</div>
-          <div className="text-xs text-insight-gray">Lessons</div>
+          <div className="font-extrabold text-indigo-600 text-base">{totalLessons}</div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Lessons</div>
         </div>
         <div className="text-center">
-          <div className="font-bold text-academic-blue text-lg">{roadmap.bookmarks?.length || 0}</div>
-          <div className="text-xs text-insight-gray">Bookmarks</div>
+          <div className="font-extrabold text-indigo-600 text-base">{roadmap.bookmarks?.length || 0}</div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Bookmarks</div>
         </div>
       </div>
 
-      {/* FIX: only show progress bar for logged-in users */}
+      {/* Progress */}
       {!isGuest && (
-        <div className="px-6 py-4 border-b border-slate-100">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30 shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Progress: {progressPercentage}%</span>
-            <span className="text-xs text-gray-500">{completedLessons} of {totalLessons} completed</span>
+            <span className="text-xs font-bold text-slate-500">Progress: {progressPercentage}%</span>
+            <span className="text-[10px] text-slate-400 font-bold">{completedLessons} of {totalLessons} completed</span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
-            <div className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }} />
+          <div className="w-full bg-slate-100 rounded-full h-2">
+            <div className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }} />
           </div>
         </div>
       )}
 
-      {/* Modules */}
-      <div className="p-6 space-y-4 max-h-72 overflow-y-auto">
+      {/* Modules List */}
+      <div className="p-6 space-y-4 max-h-72 overflow-y-auto flex-1">
         {modules?.map((module, index) => (
-          <div key={module._id || index} className="relative">
+          <div key={module._id || index} className="relative text-left">
             {index < modules.length - 1 && (
-              <div className="absolute left-4 top-8 w-px h-full border-l-2 border-dashed border-slate-300" />
+              <div className="absolute left-4 top-8 w-px h-full border-l border-dashed border-slate-200" />
             )}
             <div className="flex items-start space-x-4 cursor-pointer" onClick={() => toggleModule(module._id || index)}>
-              <div className="w-8 h-8 rounded-full bg-academic-blue border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0 z-10">
-                <Icon name="BookOpen" size={14} color="white" />
+              <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-500 shadow-sm flex items-center justify-center flex-shrink-0 z-10">
+                <Icon name="BookOpen" size={14} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-800 text-sm">{module.moduleTitle}</h4>
-                  <Icon name={expandedModules[module._id || index] ? "ChevronUp" : "ChevronDown"} size={14} color="gray" />
+                  <h4 className="font-extrabold text-slate-700 text-sm">{module.moduleTitle}</h4>
+                  <Icon name={expandedModules[module._id || index] ? "ChevronUp" : "ChevronDown"} size={14} className="text-slate-400" />
                 </div>
                 {expandedModules[module._id || index] && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-2">{module.moduleDescription}</p>
-                    <ul className="space-y-1">
+                  <div className="mt-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                    <p className="text-xs text-slate-400 mb-3 leading-relaxed font-semibold">{module.moduleDescription}</p>
+                    <ul className="space-y-2">
                       {module.resources?.map((res, resIdx) => (
                         <li key={res._id || resIdx} className="flex items-center justify-between">
                           <a
                             href={res.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-xs text-blue-600 hover:underline"
+                            className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-500 font-extrabold"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Icon name="PlayCircle" size={12} />
                             {res.title}
                           </a>
-                          {/* FIX: lesson progress hidden for guests */}
                           {!isGuest && (
                             <button
                               onClick={(e) => handleToggleLesson(res._id, e)}
-                              className={`p-1 rounded-full hover:bg-slate-200 ${isTogglingLesson === res._id ? "animate-spin" : ""}`}
+                              className={`p-1 rounded-full hover:bg-slate-100 ${isTogglingLesson === res._id ? "animate-spin" : ""}`}
                               disabled={isTogglingLesson === res._id}
                             >
                               <Icon
                                 name={isTogglingLesson === res._id ? "Loader" : isLessonComplete(res._id) ? "CheckCircle" : "Circle"}
                                 size={20}
-                                color={isLessonComplete(res._id) ? "#10B981" : "#6B7280"}
+                                color={isLessonComplete(res._id) ? "#10B981" : "#9CA3AF"}
                               />
                             </button>
                           )}
@@ -276,23 +295,33 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+      <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 mt-auto shrink-0">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full" />
-            <span className="text-sm text-insight-gray">by {uploadedBy?.name}</span>
-            {uploadedBy?.verified && <Icon name="BadgeCheck" size={14} color="var(--color-academic-blue)" />}
+            <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+            <span className="text-xs font-extrabold text-slate-500">by {uploadedBy?.name}</span>
+            {uploadedBy?.verified && <Icon name="BadgeCheck" size={14} className="text-blue-500" />}
           </div>
           <div className="flex space-x-2">
             {canEdit && (
               <>
-                <Button variant="outline" size="sm" iconName="Edit" onClick={() => onEditClick(roadmap)}>Edit</Button>
-                <Button variant="outline" size="sm" iconName="Trash" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>Delete</Button>
+                <button 
+                  onClick={() => onEditClick(roadmap)} 
+                  className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold text-xs py-2 px-3.5 rounded-xl bg-transparent cursor-pointer"
+                >
+                  Edit
+                </button>
+                <button 
+                  onClick={handleDelete} 
+                  className="text-red-500 border border-red-200 hover:bg-red-50 hover:border-red-300 font-bold text-xs py-2 px-3 rounded-xl border bg-transparent cursor-pointer flex items-center justify-center"
+                >
+                  <Icon name="Trash2" size={14} />
+                </button>
               </>
             )}
-            <Button variant="default" size="sm" className="bg-academic-blue hover:bg-blue-700">
+            <button className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold text-xs py-2 px-4.5 rounded-xl border-none shadow-sm hover:shadow-lg cursor-pointer flex items-center justify-center">
               View Roadmap
-            </Button>
+            </button>
           </div>
         </div>
       </div>

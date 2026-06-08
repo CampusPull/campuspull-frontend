@@ -12,7 +12,7 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState({});
   const [activeChat, setActiveChat] = useState(null);
   const [chatList, setChatList] = useState([]);
-  
+
   // ✅ ADDED: State for unread counts
   const [unreadCounts, setUnreadCounts] = useState({});
 
@@ -53,11 +53,11 @@ export const ChatProvider = ({ children }) => {
 
         const updatedChatItem = {
           ...existingChat,
-          chatWith: { 
+          chatWith: {
             // ✅ CRITICAL FIX: Preserve existing details (like profileImage)
-            ...existingChat.chatWith, 
-            _id: chatId, 
-            name: message.sender._id === user._id ? message.recipient.name : message.sender.name 
+            ...existingChat.chatWith,
+            _id: chatId,
+            name: message.sender._id === user._id ? message.recipient.name : message.sender.name
           },
           lastMessage: message.file ? "📎 Attachment" : message.content, // Show attachment icon if file
           lastMessageTime: message.createdAt,
@@ -77,7 +77,7 @@ export const ChatProvider = ({ children }) => {
 
       setMessages((prevMessages) => {
         const newMessagesState = JSON.parse(JSON.stringify(prevMessages));
-        
+
         for (const chatId in newMessagesState) {
           const messageIndex = newMessagesState[chatId].findIndex(m => m._id === messageIdToUpdate);
           if (messageIndex !== -1) {
@@ -132,7 +132,7 @@ export const ChatProvider = ({ children }) => {
 
     try {
       let response;
-      
+
       // If there is a file, we MUST use FormData
       if (file) {
         const formData = new FormData();
@@ -142,17 +142,17 @@ export const ChatProvider = ({ children }) => {
         formData.append("file", file); // Backend must use Multer to catch this
 
         response = await api.post("/message", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
+          headers: { "Content-Type": "multipart/form-data" }
         });
       } else {
         // Text only (JSON)
         response = await api.post("/message", {
-            sender: user._id,
-            recipient: recipientId,
-            content: text.trim(),
+          sender: user._id,
+          recipient: recipientId,
+          content: text.trim(),
         });
       }
-      
+
       // We rely on the socket "newMessage" event to update state
       // to avoid duplicates.
     } catch (err) {
@@ -165,9 +165,9 @@ export const ChatProvider = ({ children }) => {
     if (!user?._id || messagesToMarkAsRead.length === 0) return;
 
     // Get Chat ID to clear unread counts locally
-    const chatId = messagesToMarkAsRead[0].sender._id === user._id 
-        ? messagesToMarkAsRead[0].recipient._id 
-        : messagesToMarkAsRead[0].sender._id;
+    const chatId = messagesToMarkAsRead[0].sender._id === user._id
+      ? messagesToMarkAsRead[0].recipient._id
+      : messagesToMarkAsRead[0].sender._id;
 
     // 1. Clear Unread Count in State immediately
     setUnreadCounts(prev => ({ ...prev, [chatId]: 0 }));
@@ -187,11 +187,11 @@ export const ChatProvider = ({ children }) => {
         console.error("Error marking message as read:", err);
       }
     }
-  }, [user?._id]); 
+  }, [user?._id]);
 
   // --- Helper to clear unread manually when clicking a chat ---
   const clearUnreadCount = (chatId) => {
-      setUnreadCounts(prev => ({ ...prev, [chatId]: 0 }));
+    setUnreadCounts(prev => ({ ...prev, [chatId]: 0 }));
   };
 
   const contextValue = useMemo(

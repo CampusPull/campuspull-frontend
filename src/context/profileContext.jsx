@@ -75,7 +75,7 @@ export const ProfileProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       // Backend returns updated array
-      setProfile((prev) => ({ ...prev, [section]: data.data || data })); 
+      setProfile((prev) => ({ ...prev, [section]: data.data || data }));
       return data;
     } catch (err) {
       console.error(`Error editing ${section}:`, err);
@@ -92,7 +92,7 @@ export const ProfileProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       // Backend returns updated array
-      setProfile((prev) => ({ ...prev, [section]: data.data || data })); 
+      setProfile((prev) => ({ ...prev, [section]: data.data || data }));
     } catch (err) {
       console.error(`Error deleting from ${section}:`, err);
       throw err;
@@ -105,7 +105,7 @@ export const ProfileProvider = ({ children }) => {
     try {
       // Send as array: { skills: ["Java"] }
       const { data } = await api.post("/profile/skills", { skills: [newSkill] }, {
-         headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       setProfile((prev) => ({ ...prev, skills: data }));
     } catch (err) {
@@ -118,7 +118,7 @@ export const ProfileProvider = ({ children }) => {
     if (!accessToken) return;
     try {
       const { data } = await api.delete(`/profile/skills/${skillName}`, {
-         headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       setProfile((prev) => ({ ...prev, skills: data }));
     } catch (err) {
@@ -136,16 +136,15 @@ export const ProfileProvider = ({ children }) => {
 
     try {
       const { data } = await api.post("/profile/upload-photo", formData, {
-        headers: { 
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${accessToken}` 
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         },
       });
 
       const photoUrl = data.photoUrl || data.url;
       // Manually update local state so UI updates instantly
       setProfile(prev => ({ ...prev, profileImage: photoUrl }));
-      
+
       return photoUrl;
     } catch (err) {
       console.error("Upload Logic Error:", err);
@@ -162,16 +161,52 @@ export const ProfileProvider = ({ children }) => {
       });
       setProfile((prev) => ({ ...prev, profileImage: "" }));
     } catch (err) {
-       console.error("Error deleting photo:", err);
-       throw err;
+      console.error("Error deleting photo:", err);
+      throw err;
+    }
+  }, [accessToken]);
+
+  // --- 9. 🚀 NEW: Upload/Delete Banner (Cover) ---
+  const uploadBanner = useCallback(async (file) => {
+    if (!accessToken) return;
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    try {
+      const { data } = await api.post("/profile/cover-image", formData, {
+        headers: { 
+          Authorization: `Bearer ${accessToken}` 
+        },
+      });
+
+      const photoUrl = data.photoUrl || data.url;
+      setProfile(prev => ({ ...prev, bannerImage: photoUrl }));
+      return photoUrl;
+    } catch (err) {
+      console.error("Banner Upload Logic Error:", err);
+      if (err.response) {
+        console.error("Server Response Error Data:", err.response.data);
+      }
+      throw err;
+    }
+  }, [accessToken]);
+
+  const deleteBanner = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      await api.delete("/profile/cover-image", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      setProfile((prev) => ({ ...prev, bannerImage: "" }));
+    } catch (err) {
+      console.error("Error deleting banner:", err);
+      throw err;
     }
   }, [accessToken]);
 
   const sendPasswordOTP = useCallback(async () => {
     if (!accessToken) return;
     try {
-      // Assuming your route is /api/users/change-password-otp
-      // Adjust the URL if your backend route prefix is different
       const { data } = await api.post("/profile/change-password-otp", {}, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -185,8 +220,8 @@ export const ProfileProvider = ({ children }) => {
   const verifyPasswordOTP = useCallback(async (otp, newPassword) => {
     if (!accessToken) return;
     try {
-      const { data } = await api.put("/profile/change-password-verify", 
-        { otp, newPassword }, 
+      const { data } = await api.put("/profile/change-password-verify",
+        { otp, newPassword },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       return data;
@@ -196,34 +231,35 @@ export const ProfileProvider = ({ children }) => {
     }
   }, [accessToken]);
 
-
   // Initial Load
   useEffect(() => {
     if (accessToken) fetchProfile();
     else {
-        setProfile(null);
-        setLoading(false);
+      setProfile(null);
+      setLoading(false);
     }
   }, [fetchProfile, accessToken]);
 
   const contextValue = useMemo(
-    () => ({ 
-        profile, 
-        loading, 
-        error, 
-        fetchProfile, 
-        updateProfile,
-        addItemToProfile, 
-        editArrayItem,
-        deleteArrayItem,
-        addSkill,
-        removeSkill,
-        sendPasswordOTP,
-        verifyPasswordOTP,
-        uploadPhoto,
-        deleteProfilePhoto
+    () => ({
+      profile,
+      loading,
+      error,
+      fetchProfile,
+      updateProfile,
+      addItemToProfile,
+      editArrayItem,
+      deleteArrayItem,
+      addSkill,
+      removeSkill,
+      sendPasswordOTP,
+      verifyPasswordOTP,
+      uploadPhoto,
+      deleteProfilePhoto,
+      uploadBanner,
+      deleteBanner
     }),
-    [profile, loading, error, fetchProfile, updateProfile, addItemToProfile, editArrayItem, deleteArrayItem, addSkill, removeSkill, uploadPhoto, deleteProfilePhoto, sendPasswordOTP, verifyPasswordOTP]
+    [profile, loading, error, fetchProfile, updateProfile, addItemToProfile, editArrayItem, deleteArrayItem, addSkill, removeSkill, uploadPhoto, deleteProfilePhoto, sendPasswordOTP, verifyPasswordOTP, uploadBanner, deleteBanner]
   );
 
   return <ProfileContext.Provider value={contextValue}>{children}</ProfileContext.Provider>;
