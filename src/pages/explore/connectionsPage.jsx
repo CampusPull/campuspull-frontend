@@ -11,7 +11,7 @@ export default function ConnectionsPage({ onBack }) { // ✅ Accepts onBack prop
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-pink-50 via-white to-blue-50">
+    <div className="min-h-screen p-4 md:p-10 pt-20 md:pt-24 bg-gradient-to-br from-pink-50 via-white to-blue-50">
       
       {/* BACK BUTTON */}
       <button

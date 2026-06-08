@@ -48,14 +48,16 @@ const MyRequests = () => {
 
   if (loading) {
     return (
-      <p className="text-gray-500 text-center mt-8">
-        Loading your requests…
-      </p>
+      <div className="min-h-screen bg-slate-50 pt-24 flex items-center justify-center">
+        <p className="text-gray-500 text-center font-medium">
+          Loading your requests…
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-4xl mx-auto px-4 pt-24 pb-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>

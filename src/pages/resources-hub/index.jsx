@@ -35,6 +35,9 @@ const ResourcesHub = () => {
     isGuest,
     showAuthModal,
     setShowAuthModal,
+    refreshResources,
+    refreshRoadmaps,
+    refreshPYQs,
   } = useContext(ResourceContext);
 
   const { user } = useAuth();
@@ -61,15 +64,44 @@ const ResourcesHub = () => {
     verifiedOnly: searchParams.get('verified') === 'true',
     branch: getParamArray('branch'),
     semester: getParamArray('semester'),
-    company: getParamArray('company'),
+    company: searchParams.get('company') || '',
     year: getParamArray('year'),
-    difficulty: getParamArray('difficulty'),
-    tags: getParamArray('tags')
+    difficulty: searchParams.get('difficulty') || '',
+    tags: getParamArray('tags'),
+    subName: searchParams.get('subName') || ''
   });
 
-  // Keep type filter and activeSection tab perfectly in sync
+  // Keep type filter and activeSection tab perfectly in sync, and clear irrelevant filters when switching tabs
   useEffect(() => {
-    setFilters(prev => ({ ...prev, type: activeSection }));
+    setFilters(prev => {
+      const base = {
+        type: activeSection,
+        verifiedOnly: false,
+        branch: [],
+        semester: [],
+        company: '',
+        difficulty: '',
+        tags: [],
+        subName: ''
+      };
+
+      if (activeSection === 'notes') {
+        const academicYears = (prev.year || []).filter(y => ['1', '2', '3', '4'].includes(y));
+        return { ...base, year: academicYears };
+      } else if (activeSection === 'roadmaps') {
+        const academicYears = (prev.year || []).filter(y => ['1', '2', '3', '4'].includes(y));
+        return { ...base, year: academicYears };
+      } else if (activeSection === 'pyqs') {
+        const calendarYears = (prev.year || []).filter(y => !['1', '2', '3', '4'].includes(y));
+        return { ...base, year: calendarYears };
+      } else {
+        return { ...base, year: [] };
+      }
+    });
+
+    if (activeSection === 'roadmaps' && sortBy === 'downloads') {
+      setSortBy('newest');
+    }
   }, [activeSection]);
 
   // Synchronize state with URL Query Parameters in real-time
@@ -79,15 +111,76 @@ const ResourcesHub = () => {
     if (sortBy && sortBy !== 'newest') params.sortBy = sortBy;
     if (activeSection && activeSection !== 'all') params.type = activeSection;
     if (filters.verifiedOnly) params.verified = 'true';
-    if (filters.branch && filters.branch.length > 0) params.branch = filters.branch.join(',');
-    if (filters.semester && filters.semester.length > 0) params.semester = filters.semester.join(',');
-    if (filters.company && filters.company.length > 0) params.company = filters.company.join(',');
-    if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
-    if (filters.difficulty && filters.difficulty.length > 0) params.difficulty = filters.difficulty.join(',');
-    if (filters.tags && filters.tags.length > 0) params.tags = filters.tags.join(',');
+
+    if (activeSection === 'notes') {
+      if (filters.subName) params.subName = filters.subName;
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    } else if (activeSection === 'roadmaps') {
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    } else if (activeSection === 'pyqs') {
+      if (filters.company) params.company = filters.company;
+      if (filters.difficulty) params.difficulty = filters.difficulty;
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    }
 
     setSearchParams(params, { replace: true });
   }, [searchQuery, sortBy, activeSection, filters, setSearchParams]);
+
+  // Unified Server-Side Filter Fetcher
+  useEffect(() => {
+    if (isGuest) return;
+    const triggerFetch = async () => {
+      // 1. Fetch Notes
+      if (activeSection === 'all' || activeSection === 'notes') {
+        const notesParams = { sortBy };
+        if (searchQuery) notesParams.search = searchQuery;
+        if (filters.subName) notesParams.subName = filters.subName;
+        if (filters.year && filters.year.length > 0) {
+          notesParams.year = filters.year.join(',');
+        }
+        await refreshResources(notesParams);
+      }
+
+      // 2. Fetch Roadmaps
+      if (activeSection === 'all' || activeSection === 'roadmaps') {
+        const roadmapsParams = { sortBy };
+        if (searchQuery) roadmapsParams.search = searchQuery;
+        if (filters.year && filters.year.length > 0) {
+          roadmapsParams.year = filters.year.join(',');
+        }
+        await refreshRoadmaps(roadmapsParams);
+      }
+
+      // 3. Fetch PYQs
+      if (activeSection === 'all' || activeSection === 'pyqs') {
+        const pyqsParams = { sortBy };
+        if (searchQuery) pyqsParams.search = searchQuery;
+        if (filters.company) pyqsParams.company = filters.company;
+        if (filters.difficulty) pyqsParams.difficulty = filters.difficulty;
+        if (filters.year && filters.year.length > 0) {
+          pyqsParams.year = filters.year.join(',');
+        }
+        await refreshPYQs(pyqsParams);
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      triggerFetch();
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [
+    searchQuery,
+    sortBy,
+    activeSection,
+    filters.subName,
+    filters.year,
+    filters.company,
+    filters.difficulty,
+    isGuest,
+    refreshResources,
+    refreshRoadmaps,
+    refreshPYQs
+  ]);
 
   const handleFilterChange = (section, values) => {
     if (section === 'type') {
@@ -103,6 +196,8 @@ const ResourcesHub = () => {
       setActiveSection('all');
     } else if (category === 'verifiedOnly') {
       setFilters(prev => ({ ...prev, verifiedOnly: false }));
+    } else if (category === 'subName' || category === 'company' || category === 'difficulty') {
+      setFilters(prev => ({ ...prev, [category]: '' }));
     } else {
       setFilters(prev => ({
         ...prev,
@@ -119,10 +214,11 @@ const ResourcesHub = () => {
       verifiedOnly: false,
       branch: [],
       semester: [],
-      company: [],
+      company: '',
       year: [],
-      difficulty: [],
-      tags: []
+      difficulty: '',
+      tags: [],
+      subName: ''
     });
   };
 
@@ -132,67 +228,56 @@ const ResourcesHub = () => {
   const canUpload = canUploadNotes || canUploadAll;
 
   // ─── Precision Search & Filter Logic ───
-  
+
   // 1. Study Notes
   const filteredResources = resources?.filter(res => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchTitle = res.title?.toLowerCase().includes(query);
       const matchDesc = res.description?.toLowerCase().includes(query);
       const matchTags = res.tags?.some(t => t.toLowerCase().includes(query));
       if (!matchTitle && !matchDesc && !matchTags) return false;
     }
-    if (filters.verifiedOnly && !res.verified) return false;
-    if (filters.branch && filters.branch.length > 0) {
-      if (!filters.branch.includes(res.branch)) return false;
+
+    if (activeSection === 'notes') {
+      if (filters.subName && !res.subName?.toLowerCase().includes(filters.subName.toLowerCase())) return false;
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(res.year))) return false;
     }
-    if (filters.semester && filters.semester.length > 0) {
-      if (!filters.semester.includes(String(res.semester))) return false;
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      if (!res.tags?.some(t => filters.tags.includes(t))) return false;
-    }
+
     return true;
   }) || [];
 
   // 2. Career Roadmaps
   const filteredRoadmaps = roadmaps?.filter(road => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchTitle = road.title?.toLowerCase().includes(query);
       const matchDesc = road.description?.toLowerCase().includes(query);
-      const matchTags = road.tags?.some(t => t.toLowerCase().includes(query));
-      if (!matchTitle && !matchDesc && !matchTags) return false;
+      if (!matchTitle && !matchDesc) return false;
     }
-    if (filters.verifiedOnly && !road.verified) return false;
-    if (filters.tags && filters.tags.length > 0) {
-      if (!road.tags?.some(t => filters.tags.includes(t))) return false;
+
+    if (activeSection === 'roadmaps') {
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(road.year))) return false;
     }
+
     return true;
   }) || [];
 
   // 3. Interview PYQs
   const filteredPyqs = pyqs?.filter(pyq => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchCompany = pyq.company?.toLowerCase().includes(query);
       const matchDesc = pyq.description?.toLowerCase().includes(query);
-      const matchTags = pyq.tags?.some(t => t.toLowerCase().includes(query));
-      if (!matchCompany && !matchDesc && !matchTags) return false;
+      if (!matchCompany && !matchDesc) return false;
     }
-    if (filters.verifiedOnly && !pyq.verified) return false;
-    if (filters.company && filters.company.length > 0) {
-      if (!filters.company.includes(pyq.company)) return false;
+
+    if (activeSection === 'pyqs') {
+      if (filters.company && !pyq.company?.toLowerCase().includes(filters.company.toLowerCase())) return false;
+      if (filters.difficulty && pyq.difficulty !== filters.difficulty) return false;
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(pyq.year))) return false;
     }
-    if (filters.year && filters.year.length > 0) {
-      if (!filters.year.includes(String(pyq.year))) return false;
-    }
-    if (filters.difficulty && filters.difficulty.length > 0) {
-      if (!filters.difficulty.includes(pyq.difficulty)) return false;
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      if (!pyq.tags?.some(t => filters.tags.includes(t))) return false;
-    }
+
     return true;
   }) || [];
 
@@ -224,17 +309,17 @@ const ResourcesHub = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 pb-20 select-none pt-10">
-        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-4 sm:px-8 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 pb-20 select-none">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-6 relative overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-[1800px] mx-auto relative z-10 w-full">
             <div className="h-8 bg-white/10 rounded-lg w-1/3 animate-pulse mb-3" />
             <div className="h-12 bg-white/10 rounded-lg w-1/2 animate-pulse" />
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 flex gap-8">
-          <div className="hidden lg:block w-72 bg-white/80 border border-slate-100 rounded-3xl p-6 flex-shrink-0 shadow-sm text-left">
+        <div className="max-w-[1800px] mx-auto w-full px-6 py-6 flex gap-6">
+          <div className="hidden lg:block w-[280px] shrink-0 bg-white/80 border border-slate-100 rounded-3xl p-6 shadow-sm text-left">
             <div className="h-8 bg-slate-100 rounded animate-pulse mb-4"></div>
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="h-12 bg-slate-100 rounded animate-pulse mb-2"></div>
@@ -254,15 +339,15 @@ const ResourcesHub = () => {
         <title>Resources Hub - CampusPull | Knowledge Without Boundaries</title>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 selection:bg-indigo-500/20 pb-20 pt-10">
-        
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 selection:bg-indigo-500/20 pb-20">
+
         {/* ── Hero Header ── */}
-        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-4 sm:px-8 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-6 relative overflow-hidden">
           {/* Ambient Glowing Blobs */}
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-[1800px] mx-auto relative z-10 w-full">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4 text-left">
                 <div className="flex items-center gap-2.5 font-sans">
@@ -291,7 +376,7 @@ const ResourcesHub = () => {
 
         {/* ── Guest Banner ── */}
         {isGuest && (
-          <div className="max-w-6xl mx-auto px-4 sm:px-8 -mt-6 mb-0 relative z-20">
+          <div className="max-w-[1800px] mx-auto px-6 -mt-6 mb-0 relative z-20 w-full">
             <div
               className="bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100 p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4 text-left"
               style={{ boxShadow: "0 10px 30px -10px rgba(79,70,229,0.15)" }}
@@ -310,34 +395,44 @@ const ResourcesHub = () => {
         )}
 
         {/* ── Main Content Area ── */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
-          
-          <div className="flex flex-col lg:flex-row gap-8">
-            
+        <div className="max-w-[1800px] mx-auto w-full px-6 py-6">
+
+          <div className="flex flex-col lg:flex-row gap-6">
+
             {/* Sticky Filter Sidebar (Desktop) */}
-            <aside className="hidden lg:block w-72 flex-shrink-0 text-left">
+            <aside className="hidden lg:block w-[280px] shrink-0 text-left">
               <FilterSidebar
+                activeType={activeSection}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearAllFilters}
                 isMobile={false}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
               />
             </aside>
 
             {/* Mobile Filter Drawer (Overlay drawer) */}
             {isMobileFilterOpen && (
               <FilterSidebar
+                activeType={activeSection}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearAllFilters}
                 isMobile={true}
                 onClose={() => setIsMobileFilterOpen(false)}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
               />
             )}
 
             {/* Main Content Pane */}
-            <div className="flex-1 min-w-0 space-y-6">
-              
+            <div className="flex-1 min-w-0 overflow-hidden space-y-6">
+
               <SearchBar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -357,8 +452,8 @@ const ResourcesHub = () => {
                     key={section.key}
                     onClick={() => setActiveSection(section.key)}
                     className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer border-none ${activeSection === section.key
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20'
-                        : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 bg-transparent'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20'
+                      : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 bg-transparent'
                       }`}
                   >
                     <Icon name={section.icon} size={15} />
@@ -424,7 +519,7 @@ const ResourcesHub = () => {
                           {resourcesInCategory.length}
                         </span>
                       </h4>
-                      <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
                         {resourcesInCategory.map(resource => (
                           <ResourceCard
                             key={resource._id}
@@ -449,7 +544,7 @@ const ResourcesHub = () => {
                   {activeSection === 'all' && (
                     <h3 className="text-xl sm:text-2xl font-black font-poppins text-slate-800 border-b border-slate-100 pb-3 pt-6">Career Roadmaps</h3>
                   )}
-                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
                     {sortedRoadmaps.map(roadmap => (
                       <CareerRoadmapCard
                         key={roadmap._id}

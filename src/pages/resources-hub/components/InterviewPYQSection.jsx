@@ -20,11 +20,6 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
       console.error("Failed to access PYQ:", err);
     }
   };
-  const [selectedCompany, setSelectedCompany] = useState("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
-  const [showAllCompanies, setShowAllCompanies] = useState(false);
-  const VISIBLE_COMPANY_COUNT = 8;
-
   // Check user roles and permissions
   const isGuest = !user;
   const isAdmin = !isGuest && user?.role === "admin";
@@ -33,17 +28,17 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
   const difficultyLevels = [
     { value: "all", label: "All Levels" },
     {
-      value: "beginner",
+      value: "Easy",
       label: "Easy",
       color: "text-emerald-600 bg-emerald-50 border-emerald-100",
     },
     {
-      value: "intermediate",
+      value: "Medium",
       label: "Medium",
       color: "text-amber-600 bg-amber-50 border-amber-100",
     },
     {
-      value: "advanced",
+      value: "Hard",
       label: "Hard",
       color: "text-rose-600 bg-rose-50 border-rose-100",
     },
@@ -51,56 +46,15 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
 
   const getDifficultyColor = (difficulty) => {
     const colors = {
-      beginner: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
-      intermediate: "text-amber-600 bg-amber-50 border-amber-100/50",
-      advanced: "text-rose-600 bg-rose-50 border-rose-100/50",
+      Easy: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
+      Medium: "text-amber-600 bg-amber-50 border-amber-100/50",
+      Hard: "text-rose-600 bg-rose-50 border-rose-100/50",
     };
-    return colors?.[difficulty] || colors?.intermediate;
+    return colors?.[difficulty] || colors?.Medium;
   };
 
   const getDifficultyLabel = (val) =>
     difficultyLevels.find((l) => l.value === val)?.label || val;
-
-  // --- Filter Logic ---
-  const companyFilters = useMemo(() => {
-    const counts = (pyqs || []).reduce((acc, pyq) => {
-      if (pyq.company) acc[pyq.company] = (acc[pyq.company] || 0) + 1;
-      return acc;
-    }, {});
-
-    const sortedCompanies = Object.entries(counts)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .map(([name, count]) => ({ value: name, label: name, count }));
-
-    return [
-      { value: "all", label: "All Companies", count: pyqs?.length || 0 },
-      ...sortedCompanies,
-    ];
-  }, [pyqs]);
-
-  const visibleCompanies = useMemo(() => {
-    if (showAllCompanies) return companyFilters;
-
-    const sliced = companyFilters.slice(0, VISIBLE_COMPANY_COUNT);
-
-    if (
-      selectedCompany !== "all" &&
-      !sliced.some((c) => c.value === selectedCompany)
-    ) {
-      const selected = companyFilters.find((c) => c.value === selectedCompany);
-      return selected ? [...sliced, selected] : sliced;
-    }
-
-    return sliced;
-  }, [showAllCompanies, companyFilters, selectedCompany]);
-
-  const filteredPYQs = (pyqs || []).filter((pyq) => {
-    const companyMatch =
-      selectedCompany === "all" || pyq?.company === selectedCompany;
-    const difficultyMatch =
-      selectedDifficulty === "all" || pyq?.difficulty === selectedDifficulty;
-    return companyMatch && difficultyMatch;
-  });
 
   const accentColors = [
     "from-indigo-500 to-blue-500",
@@ -112,82 +66,15 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
 
   return (
     <div className="space-y-6 text-left">
-      {/* --- Filters Section --- */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Company Filter */}
-          <div>
-            <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">
-              Filter by Company
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {visibleCompanies?.map((company) => (
-                <button
-                  key={company?.value}
-                  onClick={() => setSelectedCompany(company?.value)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer ${
-                    selectedCompany === company?.value
-                      ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-none shadow-sm"
-                      : "bg-slate-50 text-slate-500 border-slate-200/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50/50"
-                  }`}
-                >
-                  {company?.label}
-                  <span
-                    className={`ml-1.5 text-[10px] font-bold ${selectedCompany === company?.value ? "text-indigo-100" : "text-slate-400"}`}
-                  >
-                    {company?.count}
-                  </span>
-                </button>
-              ))}
-              {companyFilters.length > VISIBLE_COMPANY_COUNT && (
-                <button
-                  onClick={() => setShowAllCompanies((prev) => !prev)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-extrabold cursor-pointer
-               border border-dashed border-slate-300 bg-transparent
-               text-slate-400 hover:text-indigo-600
-               hover:border-indigo-400 transition"
-                >
-                  {showAllCompanies
-                    ? "Show less"
-                    : `Show all (${companyFilters.length - 1})`}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Difficulty Filter */}
-          <div>
-            <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">
-              Difficulty Level
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {difficultyLevels?.map((level) => (
-                <button
-                  key={level?.value}
-                  onClick={() => setSelectedDifficulty(level?.value)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 cursor-pointer ${
-                    selectedDifficulty === level?.value
-                      ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-none shadow-sm"
-                      : "bg-slate-50 text-slate-500 border-slate-200/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50/50"
-                  }`}
-                >
-                  {level?.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* --- PYQ Cards List --- */}
       <div
         className={
           viewMode === "grid"
-            ? "grid grid-cols-1 lg:grid-cols-2 gap-6"
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
             : "flex flex-col gap-4"
         }
       >
-        {filteredPYQs?.map((pyq) => {
+        {pyqs?.map((pyq) => {
           const ownerId = pyq?.uploadedBy?._id || pyq?.uploadedBy;
           const isOwner = !isGuest && user?._id === ownerId;
           const showActions = isOwner || isAdmin;
@@ -423,7 +310,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
       </div>
 
       {/* No Results Message */}
-      {filteredPYQs?.length === 0 && (
+      {pyqs?.length === 0 && (
         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200 shadow-sm">
           <Icon
             name="Search"

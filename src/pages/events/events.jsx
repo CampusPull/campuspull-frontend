@@ -57,7 +57,7 @@ const EventsPage = () => {
         <meta name="description" content="Discover and manage campus events." />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-b from-[#F3F4FD] via-white to-[#E0E7FF] py-6 px-4 sm:px-6 lg:px-8 text-[#1E293B]">
+      <div className="min-h-screen bg-gradient-to-b from-[#F3F4FD] via-white to-[#E0E7FF] pt-24 pb-6 px-4 sm:px-6 lg:px-8 text-[#1E293B]">
 
         {/* Header */}
         <motion.div

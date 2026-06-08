@@ -62,14 +62,16 @@ const triggerSessionRefresh = () => {
 
   if (loading) {
     return (
-      <p className="text-gray-500 text-center mt-8">
-        Loading your mentor profile…
-      </p>
+      <div className="min-h-screen bg-slate-50 pt-24 flex items-center justify-center">
+        <p className="text-gray-500 text-center font-medium">
+          Loading your mentor profile…
+        </p>
+      </div>
     );
   }
 
   return (
-  <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+  <div className="max-w-6xl mx-auto px-4 pt-24 pb-8 space-y-10">
     {/* Header */}
     <div>
       <h1 className="text-2xl font-semibold text-slate-900">
@@ -239,7 +241,7 @@ const triggerSessionRefresh = () => {
       </span>
     </div>
 
-    <MentorSessions refreshTrigger={refreshSessions} />
+    <MentorSessions refreshTrigger={refreshSessions} isNested={true} />
   </section>
 </div>
 

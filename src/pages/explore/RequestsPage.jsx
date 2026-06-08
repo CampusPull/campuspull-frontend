@@ -10,7 +10,7 @@ export default function RequestsPage({ onBack }) {
 
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div className="min-h-screen p-4 md:p-10 pt-20 md:pt-24 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
       
       <div className="max-w-7xl mx-auto">
         <button

@@ -9,7 +9,7 @@ const Help = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-20">
+    <div className="min-h-screen bg-gray-50 p-6 pt-20 md:p-20 md:pt-24">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Help Center</h1>
         <p className="text-gray-600 mb-8">Everything you need to know about using Campus-pull.</p>

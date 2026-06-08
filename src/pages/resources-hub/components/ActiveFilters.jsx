@@ -6,7 +6,7 @@ const ActiveFilters = ({ filters, onRemoveFilter, onClearAll }) => {
   // Helper to get labels
   const getBranchLabel = (val) => BRANCH_OPTIONS.find(o => o.value === val)?.label || val;
   const getSemesterLabel = (val) => SEMESTER_OPTIONS.find(o => o.value === val)?.label || `Semester ${val}`;
-  
+
   // Calculate total number of active filters
   const activeChips = [];
 
@@ -33,20 +33,20 @@ const ActiveFilters = ({ filters, onRemoveFilter, onClearAll }) => {
       activeChips.push({ category: 'semester', value: s, label: getSemesterLabel(s) });
     });
   }
-  if (filters.company && filters.company.length > 0) {
-    filters.company.forEach(c => {
-      activeChips.push({ category: 'company', value: c, label: `Company: ${c}` });
-    });
+  if (filters.subName) {
+    activeChips.push({ category: 'subName', value: filters.subName, label: `Subject: "${filters.subName}"` });
+  }
+  if (filters.company) {
+    activeChips.push({ category: 'company', value: filters.company, label: `Company: "${filters.company}"` });
   }
   if (filters.year && filters.year.length > 0) {
     filters.year.forEach(y => {
-      activeChips.push({ category: 'year', value: y, label: `Year: ${y}` });
+      const suffix = y === '1' ? '1st Year' : y === '2' ? '2nd Year' : y === '3' ? '3rd Year' : y === '4' ? '4th Year' : `Year ${y}`;
+      activeChips.push({ category: 'year', value: y, label: suffix });
     });
   }
-  if (filters.difficulty && filters.difficulty.length > 0) {
-    filters.difficulty.forEach(d => {
-      activeChips.push({ category: 'difficulty', value: d, label: `Difficulty: ${d}` });
-    });
+  if (filters.difficulty) {
+    activeChips.push({ category: 'difficulty', value: filters.difficulty, label: `Difficulty: ${filters.difficulty}` });
   }
   if (filters.tags && filters.tags.length > 0) {
     filters.tags.forEach(t => {

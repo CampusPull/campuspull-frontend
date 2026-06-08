@@ -19,8 +19,12 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
   const canModify = !isGuest && (isAdmin || isOwner);
 
   const isAdminUploader = resource?.uploadedBy?.role === 'admin';
-  const contributorName = isAdminUploader ? 'CampusPull' : resource?.uploadedBy?.name || 'CampusPull';
-  const contributorAvatar = isAdminUploader ? CAMPUSPULL_LOGO : resource?.uploadedBy?.avatar;
+  const genderSuffix = resource?.uploadedBy?.gender === 'male' ? ' Sir' : resource?.uploadedBy?.gender === 'female' ? ' Ma\'am' : '';
+  const contributorName = resource?.uploadedBy?.name
+    ? `${resource.uploadedBy.name}${genderSuffix}`
+    : 'CampusPull';
+  const contributorAvatar = resource?.uploadedBy?.avatar || null;
+  console.log("uploadedBy full object:", resource?.uploadedBy);
 
   const handleBookmark = async (e) => {
     e?.stopPropagation();
@@ -117,7 +121,13 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
             </div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-3 border-t border-slate-100">
               <div className="flex items-center gap-2">
-                <Image src={contributorAvatar} alt={contributorName} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+                 {contributorAvatar ? (
+                   <Image src={contributorAvatar} alt={contributorName} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
+                 ) : (
+                   <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
+                     {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
+                   </div>
+                 )}
                 <span className="text-xs text-slate-500 font-extrabold">by {contributorName}</span>
                 {(isAdminUploader || resource?.uploadedBy?.verified) && (
                   <Icon name="BadgeCheck" size={14} className="text-blue-500" />
@@ -192,7 +202,13 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
         </div>
         
         <div className="flex items-center gap-2 mb-5">
-          <Image src={contributorAvatar} alt={contributorName} className="w-7 h-7 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+           {contributorAvatar ? (
+             <Image src={contributorAvatar} alt={contributorName} className="w-7 h-7 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
+           ) : (
+             <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
+               {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
+             </div>
+           )}
           <div className="flex flex-col">
             <span className="text-xs font-extrabold text-slate-500 flex items-center gap-1">
               {contributorName}

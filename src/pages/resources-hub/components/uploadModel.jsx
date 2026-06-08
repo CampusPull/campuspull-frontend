@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { ResourceContext } from "../../../context/resourceContext";
 import { motion } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
 import { 
   FiX, 
   FiUploadCloud, 
@@ -16,7 +17,7 @@ import {
 } from "react-icons/fi";
 
 const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
-  const { uploadNotes, uploadRoadmap, uploadPYQ } = useContext(ResourceContext);
+  const { uploadNotes, uploadRoadmap, uploadPYQ, user, refreshResources } = useContext(ResourceContext);
 
   const [type, setType] = useState("notes");
   const [loading, setLoading] = useState(false);
@@ -25,10 +26,16 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
   // Notes Form State
   const [subjectName, setSubjectName] = useState("");
   const [subjectCode, setSubjectCode] = useState("");
-  const [teacherName, setTeacherName] = useState("");
+  const [noteDescription, setNoteDescription] = useState("");
+  const [noteYear, setNoteYear] = useState("1"); // Sends "1" | "2" | "3" | "4"
   const [noteFileType, setNoteFileType] = useState("file"); // "file" or "url"
   const [noteFile, setNoteFile] = useState(null);
   const [link, setLink] = useState("");
+
+  // Derived user display text
+  const uploadedByText = user 
+    ? (user.gender === "male" ? `${user.name} Sir` : user.gender === "female" ? `${user.name} Ma'am` : user.name) 
+    : "";
 
   // Roadmap & PYQ Common Form State
   const [commonData, setCommonData] = useState({ title: "", description: "", tags: "", thumbnail: null });
@@ -44,7 +51,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
   const resetForms = () => {
     setSubjectName("");
     setSubjectCode("");
-    setTeacherName("");
+    setNoteDescription("");
+    setNoteYear("1");
     setNoteFile(null);
     setLink("");
     setNoteFileType("file");
@@ -65,31 +73,35 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
     setIsDragging(false);
   };
 
+  const validateAndSetFile = (file) => {
+    const allowedExtensions = ["pdf", "doc", "docx"];
+    const fileExtension = file.name.split(".").pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+      setError("Invalid file type! Only .pdf, .doc, and .docx files are allowed.");
+      setNoteFile(null);
+      return false;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setError("File is too large! Maximum allowed size is 20MB.");
+      setNoteFile(null);
+      return false;
+    }
+    setError(null);
+    setNoteFile(file);
+    return true;
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (file.size > 20 * 1024 * 1024) {
-        setError("File is too large! Maximum allowed size is 20MB.");
-        setNoteFile(null);
-        return;
-      }
-      setError(null);
-      setNoteFile(file);
+      validateAndSetFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 20 * 1024 * 1024) {
-        setError("File is too large! Maximum allowed size is 20MB.");
-        setNoteFile(null);
-        return;
-      }
-      setError(null);
-      setNoteFile(file);
+      validateAndSetFile(e.target.files[0]);
     }
   };
 
@@ -145,29 +157,35 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
       const payload = new FormData();
 
       if (type === "notes") {
-        payload.append("title", subjectName);
+        if (!subjectName.trim()) {
+          throw new Error("Subject Name is required.");
+        }
+        if (noteFileType === "file" && !noteFile) {
+          throw new Error("Please select a document file to upload!");
+        }
+        if (noteFileType === "url" && !link.trim()) {
+          throw new Error("Please enter a drive link.");
+        }
+
+        payload.append("title", subjectName.trim());
+        payload.append("subName", subjectName.trim());
+        payload.append("subjectCode", subjectCode.trim());
+        payload.append("branch", subjectCode.trim());
+        payload.append("year", noteYear);
         
-        // If "Uploaded By" is filled, add it to description, otherwise keep it blank
-        const desc = teacherName ? `Uploaded by: ${teacherName}` : "";
-        payload.append("description", desc);
-        payload.append("tags", ""); // Keep empty tags
+        if (noteDescription.trim()) {
+          payload.append("description", noteDescription.trim());
+        }
 
         if (noteFileType === "file") {
-          if (!noteFile) {
-            throw new Error("Please select a document file to upload!");
-          }
-          if (noteFile.size > 20 * 1024 * 1024) {
-            throw new Error("File is too large! Maximum allowed size is 20MB.");
-          }
           payload.append("file", noteFile);
         } else {
-          payload.append("link", link || "");
+          payload.append("link", link.trim());
         }
         
-        payload.append("branch", subjectCode);
-        payload.append("semester", "1"); // Default semester 1 to satisfy backend validation
-        
         await uploadNotes(payload);
+        toast.success("Notes uploaded successfully!");
+        if (refreshResources) await refreshResources();
 
       } else if (type === "roadmap") {
         if (!commonData.title.trim()) {
@@ -218,6 +236,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+      <Toaster position="top-center" reverseOrder={false} />
       {/* Framer motion wrapper for entry */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 8 }}
@@ -349,22 +368,14 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                     </div>
                   </div>
 
-                  {/* Uploaded By Input */}
+                  {/* Uploaded By Display Badge */}
                   <div className="space-y-1">
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                       Uploaded By (Teacher)
                     </label>
-                    <div className="relative rounded-xl shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <FiUser size={14} />
-                      </div>
-                      <input
-                        type="text"
-                        value={teacherName}
-                        onChange={(e) => setTeacherName(e.target.value)}
-                        placeholder=""
-                        className={inputClass}
-                      />
+                    <div className="relative rounded-xl border border-slate-200 bg-slate-100/70 h-[38px] px-3.5 flex items-center text-slate-500 select-none">
+                      <FiUser size={14} className="mr-2 text-slate-400" />
+                      <span className="text-xs font-bold truncate">{uploadedByText}</span>
                     </div>
                   </div>
                 </div>
@@ -424,7 +435,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                       <input
                         type="file"
                         id="note-file-input"
-                        accept=".pdf,.docx,.pptx,.ppt,.doc,.zip,.rar"
+                        accept=".pdf,.doc,.docx"
                         onChange={handleFileChange}
                         className="hidden"
                       />
@@ -453,7 +464,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                             Drop your file here or <span className="underline">browse</span>
                           </p>
                           <p className="text-[9px] text-slate-400 font-semibold">
-                            PDF, DOCX, PPTX, PPT (Max 20MB)
+                            PDF, DOC, DOCX (Max 20MB)
                           </p>
                         </div>
                       )}
@@ -481,6 +492,38 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Description Textarea */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Description
+                  </label>
+                  <textarea
+                    value={noteDescription}
+                    onChange={(e) => setNoteDescription(e.target.value)}
+                    placeholder="Briefly describe what this resource covers..."
+                    className={textareaClass}
+                  />
+                </div>
+
+                {/* Year dropdown selector */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Year
+                  </label>
+                  <div className="relative rounded-xl shadow-sm">
+                    <select
+                      value={noteYear}
+                      onChange={(e) => setNoteYear(e.target.value)}
+                      className="block w-full px-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs font-semibold shadow-sm cursor-pointer"
+                    >
+                      <option value="1">1st Year</option>
+                      <option value="2">2nd Year</option>
+                      <option value="3">3rd Year</option>
+                      <option value="4">4th Year</option>
+                    </select>
+                  </div>
                 </div>
               </>
             )}

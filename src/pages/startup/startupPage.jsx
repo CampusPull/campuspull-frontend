@@ -23,7 +23,7 @@ const StartupPage = () => {
   const isAdmin = !isGuest && user?.role === "admin";
 
   return (
-    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div className="min-h-screen p-4 md:p-10 pt-20 md:pt-24 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
         <div>
           <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center gap-3">

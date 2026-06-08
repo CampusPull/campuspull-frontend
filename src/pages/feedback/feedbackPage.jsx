@@ -70,7 +70,7 @@ const FeedbackPage = () => {
     };
 
     return (
-       <div className="relative min-h-screen bg-slate-50/60 p-6 md:p-12 pb-24">
+       <div className="relative min-h-screen bg-slate-50/60 p-6 md:p-12 pt-24 md:pt-32 pb-24">
             <div className="max-w-6xl mx-auto">
                 <header className="mb-12 text-center max-w-2xl mx-auto">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight mb-3">

@@ -3,7 +3,7 @@ import { FaEnvelope, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 
 const Contact = () => {
   return (
-    <div className="min-h-screen bg-white p-6 md:p-20">
+    <div className="min-h-screen bg-white p-6 pt-20 md:p-20 md:pt-24">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Get in Touch</h1>
