@@ -7,7 +7,7 @@ import { ResourceContext } from '../../../context/resourceContext';
 const CAMPUSPULL_LOGO = '/assets/images/campuspullLogo.jpeg';
 
 // FIX: accept isGuest and onRestrictedAction
-const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick, isGuest, onRestrictedAction }) => {
+const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick, isGuest, onRestrictedAction, onBookmarkToggle }) => {
   const { toggleBookmark, incrementDownload, incrementView, user } = useContext(ResourceContext);
 
   const [isBookmarked, setIsBookmarked] = useState(resource?.isBookmarked || false);
@@ -18,12 +18,13 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
   // FIX: guests can never modify
   const canModify = !isGuest && (isAdmin || isOwner);
 
-  const isAdminUploader = resource?.uploadedBy?.role === 'admin';
-  const genderSuffix = resource?.uploadedBy?.gender === 'male' ? ' Sir' : resource?.uploadedBy?.gender === 'female' ? ' Ma\'am' : '';
-  const contributorName = resource?.uploadedBy?.name
-    ? `${resource.uploadedBy.name}${genderSuffix}`
-    : 'CampusPull';
-  const contributorAvatar = resource?.uploadedBy?.avatar || null;
+  let contributorName = resource?.uploadedBy?.name || "CampusPull";
+
+  const contributorAvatar = resource?.uploadedBy?.avatar || CAMPUSPULL_LOGO;
+
+  if (resource?.uploadedBy?.role === "alumni" && resource?.uploadedBy?.name) {
+    contributorName = `${resource.uploadedBy.name} (Alumni)`;
+  }
   console.log("uploadedBy full object:", resource?.uploadedBy);
 
   const handleBookmark = async (e) => {
@@ -31,11 +32,18 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
     // FIX: guest bookmark triggers modal
     if (isGuest) { onRestrictedAction?.(); return; }
     try {
-      setIsBookmarked(!isBookmarked);
+      const nextBookmarkedState = !isBookmarked;
+      setIsBookmarked(nextBookmarkedState);
+      if (onBookmarkToggle) {
+        onBookmarkToggle(resource._id, nextBookmarkedState);
+      }
       await toggleBookmark(resource._id, resource.type);
     } catch (err) {
       console.error('Bookmark toggle failed:', err);
       setIsBookmarked(isBookmarked);
+      if (onBookmarkToggle) {
+        onBookmarkToggle(resource._id, isBookmarked);
+      }
     }
   };
 
@@ -47,7 +55,22 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
     setDownloading(true);
     try {
       await incrementDownload(resource._id, resource.type);
-      if (resource?.link) window.open(resource.link, '_blank');
+      const url = resource?.fileUrl || resource?.link;
+      if (url) {
+        // Extract extension from url or fallback to "pdf"
+        const ext = resource.fileType || url.split('.').pop().split('?')[0].toLowerCase();
+        const allowedExtensions = ["pdf", "doc", "docx"];
+        const fileExtension = allowedExtensions.includes(ext) ? ext : "pdf";
+
+        // Force proper filename for Cloudinary raw files
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.download = `${resource.title || "download"}.${fileExtension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
@@ -90,13 +113,22 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
       <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 relative text-left">
         {/* Accent line top */}
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${accent} rounded-t-3xl`} />
-        
+
         <div className="flex items-start gap-3 sm:space-x-4 pt-1">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm flex items-center justify-center">
             {resource?.thumbnail ? (
               <Image src={resource?.thumbnail} alt={resource?.title} className="w-full h-full object-cover" />
             ) : (
-              <Icon name="FileText" size={28} className="text-indigo-400" />
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 p-4 text-center">
+                <p className="text-indigo-700 font-black text-sm leading-tight line-clamp-3">
+                  {resource.title}
+                </p>
+                {resource.subName && (
+                  <p className="text-indigo-400 font-bold text-xs mt-1">
+                    {resource.subName}
+                  </p>
+                )}
+              </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -105,8 +137,8 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
                 <h3 className="font-extrabold text-slate-800 text-base sm:text-lg line-clamp-1 transition-colors hover:text-indigo-600">{resource?.title}</h3>
                 <p className="text-sm text-slate-400 line-clamp-2 mt-1 font-semibold">{resource?.description}</p>
               </div>
-              <button 
-                onClick={handleBookmark} 
+              <button
+                onClick={handleBookmark}
                 className="p-2.5 rounded-xl bg-white/95 hover:bg-white border border-slate-100 hover:shadow-md transition-all duration-300 text-slate-400 hover:text-indigo-600 focus:outline-none"
               >
                 <Icon name={isBookmarked && !isGuest ? 'Bookmark' : 'BookmarkPlus'} size={16} className={isBookmarked && !isGuest ? 'fill-indigo-600 text-indigo-600' : ''} />
@@ -117,19 +149,18 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
                 {resource?.difficulty}
               </span>
               <span>{resource?.downloads} downloads</span>
-              <span>{resource?.views} views</span>
             </div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-3 border-t border-slate-100">
               <div className="flex items-center gap-2">
-                 {contributorAvatar ? (
-                   <Image src={contributorAvatar} alt={contributorName} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
-                 ) : (
-                   <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
-                     {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
-                   </div>
-                 )}
+                {contributorAvatar ? (
+                  <Image src={contributorAvatar} alt={contributorName} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
+                    {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                )}
                 <span className="text-xs text-slate-500 font-extrabold">by {contributorName}</span>
-                {(isAdminUploader || resource?.uploadedBy?.verified) && (
+                {resource?.uploadedBy?.role === "teacher" && (
                   <Icon name="BadgeCheck" size={14} className="text-blue-500" />
                 )}
               </div>
@@ -156,13 +187,20 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
         {resource?.thumbnail ? (
           <Image src={resource?.thumbnail} alt={resource?.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-indigo-50/50 to-blue-50/50">
-            <Icon name="FileText" size={48} className="text-indigo-400/80" />
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 p-4 text-center">
+            <p className="text-indigo-700 font-black text-sm leading-tight line-clamp-3">
+              {resource.title}
+            </p>
+            {resource.subName && (
+              <p className="text-indigo-400 font-bold text-xs mt-1">
+                {resource.subName}
+              </p>
+            )}
           </div>
         )}
         <div className="absolute top-3 right-3 z-10">
-          <button 
-            onClick={handleBookmark} 
+          <button
+            onClick={handleBookmark}
             className="p-2.5 rounded-xl bg-white/95 hover:bg-white border border-slate-100 hover:shadow-md transition-all duration-300 text-slate-400 hover:text-indigo-600 focus:outline-none"
           >
             <Icon name={isBookmarked && !isGuest ? 'Bookmark' : 'BookmarkPlus'} size={16} className={isBookmarked && !isGuest ? 'fill-indigo-600 text-indigo-600' : ''} />
@@ -189,30 +227,26 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
         <p className="text-sm text-slate-400 line-clamp-3 mb-4 flex-1 font-semibold leading-relaxed">
           {resource?.description}
         </p>
-        
+
         <div className="flex justify-between items-center mb-4 text-xs font-bold text-slate-400 border-b border-slate-100/50 pb-3">
           <div className="flex items-center gap-1.5">
             <Icon name="DownloadCloud" size={14} className="text-slate-400" />
             <span>{resource?.downloads || 0} downloads</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Icon name="Eye" size={14} className="text-slate-400" />
-            <span>{resource?.views || 0} views</span>
-          </div>
         </div>
-        
+
         <div className="flex items-center gap-2 mb-5">
-           {contributorAvatar ? (
-             <Image src={contributorAvatar} alt={contributorName} className="w-7 h-7 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
-           ) : (
-             <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
-               {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
-             </div>
-           )}
+          {contributorAvatar ? (
+            <Image src={contributorAvatar} alt={contributorName} className="w-7 h-7 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-600 ring-2 ring-indigo-500/10 shadow-sm">
+              {resource?.uploadedBy?.name?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-xs font-extrabold text-slate-500 flex items-center gap-1">
               {contributorName}
-              {(isAdminUploader || resource?.uploadedBy?.verified) && (
+              {resource?.uploadedBy?.role === "teacher" && (
                 <Icon name="BadgeCheck" size={12} className="text-blue-500" />
               )}
             </span>
@@ -222,8 +256,8 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
         <div className="flex gap-2 mt-auto shrink-0">
           {canModify && (
             <>
-              <button 
-                className="flex-1 border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold rounded-xl py-2.5 transition-all text-xs cursor-pointer bg-transparent" 
+              <button
+                className="flex-1 border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold rounded-xl py-2.5 transition-all text-xs cursor-pointer bg-transparent"
                 onClick={() => onEditClick(resource)}
               >
                 Edit
@@ -236,8 +270,8 @@ const ResourceCard = ({ resource, viewMode = 'grid', onEditClick, onDeleteClick,
               </button>
             </>
           )}
-          <button 
-            className="flex-1 bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-md hover:shadow-lg font-bold rounded-xl py-2.5 active:scale-95 transition-all border-none text-xs cursor-pointer flex items-center justify-center gap-1.5" 
+          <button
+            className="flex-1 bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-md hover:shadow-lg font-bold rounded-xl py-2.5 active:scale-95 transition-all border-none text-xs cursor-pointer flex items-center justify-center gap-1.5"
             onClick={handleDownload}
           >
             <Icon name="Download" size={13} />

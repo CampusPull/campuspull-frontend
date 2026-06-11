@@ -509,7 +509,10 @@ const FilterSidebar = ({
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center sm:justify-center animate-fade-in">
-        <div className="bg-white w-full sm:w-[400px] max-h-[85vh] sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-100 relative animate-slide-up">
+        <div 
+          onWheel={(e) => e.stopPropagation()}
+          className="bg-white w-full sm:w-[400px] max-h-[85vh] sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-y-auto flex flex-col border border-slate-100 relative animate-slide-up"
+        >
           {sidebarContent}
         </div>
       </div>

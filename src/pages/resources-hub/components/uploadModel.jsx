@@ -2,19 +2,21 @@ import React, { useState, useContext } from "react";
 import { ResourceContext } from "../../../context/resourceContext";
 import { motion } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
-import { 
-  FiX, 
-  FiUploadCloud, 
-  FiLink, 
-  FiBookOpen, 
-  FiHash, 
-  FiUser, 
-  FiTag, 
-  FiCompass, 
-  FiBriefcase, 
-  FiAward, 
-  FiPlus 
+import {
+  FiX,
+  FiUploadCloud,
+  FiLink,
+  FiBookOpen,
+  FiHash,
+  FiUser,
+  FiTag,
+  FiCompass,
+  FiBriefcase,
+  FiAward,
+  FiPlus
 } from "react-icons/fi";
+
+const CAMPUSPULL_LOGO = "/assets/images/campuspullLogo.jpeg";
 
 const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
   const { uploadNotes, uploadRoadmap, uploadPYQ, user, refreshResources } = useContext(ResourceContext);
@@ -31,11 +33,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
   const [noteFileType, setNoteFileType] = useState("file"); // "file" or "url"
   const [noteFile, setNoteFile] = useState(null);
   const [link, setLink] = useState("");
-
-  // Derived user display text
-  const uploadedByText = user 
-    ? (user.gender === "male" ? `${user.name} Sir` : user.gender === "female" ? `${user.name} Ma'am` : user.name) 
-    : "";
+  const [thumbnail, setThumbnail] = useState(null);
 
   // Roadmap & PYQ Common Form State
   const [commonData, setCommonData] = useState({ title: "", description: "", tags: "", thumbnail: null });
@@ -56,6 +54,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
     setNoteFile(null);
     setLink("");
     setNoteFileType("file");
+    setThumbnail(null);
 
     setCommonData({ title: "", description: "", tags: "", thumbnail: null });
     setPyqData({ company: "", year: "", difficulty: "Easy", link: "" });
@@ -127,7 +126,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
   };
 
   const addModule = () => setModules([...modules, { moduleTitle: "", moduleDescription: "", resources: [{ title: "", link: "" }] }]);
-  
+
   const removeModule = (modIdx) => {
     if (modules.length > 1) {
       setModules(modules.filter((_, idx) => idx !== modIdx));
@@ -172,7 +171,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
         payload.append("subjectCode", subjectCode.trim());
         payload.append("branch", subjectCode.trim());
         payload.append("year", noteYear);
-        
+
         if (noteDescription.trim()) {
           payload.append("description", noteDescription.trim());
         }
@@ -182,7 +181,11 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
         } else {
           payload.append("link", link.trim());
         }
-        
+
+        if (thumbnail) {
+          payload.append("thumbnail", thumbnail);
+        }
+
         await uploadNotes(payload);
         toast.success("Notes uploaded successfully!");
         if (refreshResources) await refreshResources();
@@ -274,7 +277,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
         {/* Scrollable Form Container */}
         <form onSubmit={handleSubmit} className="flex-grow flex flex-col overflow-hidden">
           <div className="flex-grow overflow-y-auto px-6 pb-4 space-y-4 scrollbar-thin">
-            
+
             {/* Resource Type Selector (Visible only if user has access to upload all types) */}
             {canUploadAll && (
               <div className="space-y-1 text-left">
@@ -292,9 +295,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                   <button
                     type="button"
                     onClick={() => setType("notes")}
-                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                      type === "notes" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${type === "notes" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     <FiBookOpen size={13} />
                     <span>Study Notes</span>
@@ -302,9 +304,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                   <button
                     type="button"
                     onClick={() => setType("roadmap")}
-                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                      type === "roadmap" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${type === "roadmap" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     <FiCompass size={13} />
                     <span>Roadmap</span>
@@ -312,9 +313,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                   <button
                     type="button"
                     onClick={() => setType("pyq")}
-                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                      type === "pyq" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${type === "pyq" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     <FiBriefcase size={13} />
                     <span>PYQ</span>
@@ -371,13 +371,53 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                   {/* Uploaded By Display Badge */}
                   <div className="space-y-1">
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      Uploaded By (Teacher)
+                      UPLOADED BY
                     </label>
-                    <div className="relative rounded-xl border border-slate-200 bg-slate-100/70 h-[38px] px-3.5 flex items-center text-slate-500 select-none">
-                      <FiUser size={14} className="mr-2 text-slate-400" />
-                      <span className="text-xs font-bold truncate">{uploadedByText}</span>
+                    <div className="relative rounded-xl border border-slate-200 bg-slate-100/70 h-[38px] px-3.5 flex items-center text-slate-500 select-none gap-2">
+                      <img
+                        src={user?.avatar || CAMPUSPULL_LOGO}
+                        alt={user?.name || "User"}
+                        className="w-5 h-5 rounded-full border border-slate-200 object-cover"
+                      />
+                      <span className="text-xs font-bold truncate">
+                        {user?.role === "admin"
+                          ? "CampusPull"
+                          : user?.role === "alumni"
+                          ? `${user.name} (Alumni)`
+                          : user?.name || ""}
+                      </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Thumbnail field */}
+                <div className="space-y-1 text-left">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    THUMBNAIL (OPTIONAL)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setThumbnail(e.target.files[0] || null)}
+                    className={fileInputClass}
+                  />
+                  {thumbnail && (
+                    <div className="mt-1.5 border border-slate-100 rounded-xl p-2 w-fit bg-slate-50 flex items-center gap-3 relative group">
+                      <img
+                        src={URL.createObjectURL(thumbnail)}
+                        alt="Notes thumbnail preview"
+                        className="max-h-[80px] rounded-lg object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setThumbnail(null)}
+                        className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-sm hover:scale-105 active:scale-95 transition-all border-none cursor-pointer flex items-center justify-center"
+                        title="Clear Thumbnail"
+                      >
+                        <FiX size={12} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Segmented Toggle for Notes Type */}
@@ -396,9 +436,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                     <button
                       type="button"
                       onClick={() => setNoteFileType("file")}
-                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                        noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                      }`}
+                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${noteFileType === "file" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                        }`}
                     >
                       <FiUploadCloud size={13} />
                       <span>Upload File</span>
@@ -406,9 +445,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                     <button
                       type="button"
                       onClick={() => setNoteFileType("url")}
-                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${
-                        noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
-                      }`}
+                      className={`relative z-10 flex-1 py-2 text-[11px] font-bold rounded-lg transition-colors duration-300 flex items-center justify-center gap-1.5 focus:outline-none border-none bg-transparent cursor-pointer ${noteFileType === "url" ? "text-indigo-600 font-extrabold" : "text-slate-400 hover:text-slate-600"
+                        }`}
                     >
                       <FiLink size={13} />
                       <span>Drive Link</span>
@@ -424,13 +462,12 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onClick={triggerFileSelect}
-                      className={`group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                        isDragging
+                      className={`group border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${isDragging
                           ? "border-indigo-500 bg-indigo-50"
                           : noteFile
-                          ? "border-emerald-500 bg-emerald-50/50"
-                          : "border-slate-200 hover:border-indigo-400 bg-white"
-                      }`}
+                            ? "border-emerald-500 bg-emerald-50/50"
+                            : "border-slate-200 hover:border-indigo-400 bg-white"
+                        }`}
                     >
                       <input
                         type="file"
@@ -439,15 +476,14 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                         onChange={handleFileChange}
                         className="hidden"
                       />
-                      
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                        noteFile 
-                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${noteFile
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                           : "bg-slate-50 text-slate-400 group-hover:scale-105 group-hover:bg-indigo-50 group-hover:text-indigo-500 border border-slate-200"
-                      }`}>
+                        }`}>
                         <FiUploadCloud size={15} />
                       </div>
-                      
+
                       {noteFile ? (
                         <div className="space-y-0.5">
                           <p className="text-[11px] font-bold text-slate-700 truncate max-w-[280px]">
@@ -644,7 +680,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                             className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-[11px] font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm min-h-[60px]"
                           />
                         </div>
-                        
+
                         <div className="space-y-2 pl-4 border-l-2 border-dashed border-slate-200">
                           <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Lessons / Resources</h4>
                           {mod.resources.map((res, resIdx) => (

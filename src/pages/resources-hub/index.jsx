@@ -16,6 +16,8 @@ import DeleteResourceModal from './components/DeleteResouceModal';
 import SignupModal from '../../components/ui/SignupModal';
 import { useAuth } from '../../context/AuthContext';
 import ActiveFilters from './components/ActiveFilters';
+import { FiUploadCloud } from 'react-icons/fi';
+import api from '../../utils/api';
 
 // ─── Stats pill ───────────────────────────────────────────────────────────────
 const StatPill = ({ value, label }) => (
@@ -30,6 +32,7 @@ const ResourcesHub = () => {
     resources,
     roadmaps,
     pyqs,
+    bookmarkedResources,
     loading,
     canEditResource,
     isGuest,
@@ -40,7 +43,11 @@ const ResourcesHub = () => {
     refreshPYQs,
   } = useContext(ResourceContext);
 
+  const context = useContext(ResourceContext);
+  const getBookmarkedResources = context.getBookmarkedResources || context.refreshBookmarks;
+
   const { user } = useAuth();
+  const [localBookmarks, setLocalBookmarks] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Helper to parse query arrays
@@ -182,6 +189,53 @@ const ResourcesHub = () => {
     refreshPYQs
   ]);
 
+  // Fetch bookmarks when tab is active
+  useEffect(() => {
+    if (activeSection === 'bookmarks' && !isGuest) {
+      if (typeof getBookmarkedResources === 'function') {
+        getBookmarkedResources();
+      } else {
+        const fetchBookmarksDirect = async () => {
+          try {
+            const res = await api.get("/resources/bookmarks", {
+              headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
+            });
+            setLocalBookmarks(res.data);
+          } catch (err) {
+            console.error("Direct bookmarks fetch failed:", err);
+          }
+        };
+        fetchBookmarksDirect();
+      }
+    }
+  }, [activeSection, isGuest, getBookmarkedResources, user?.token]);
+
+  // Synchronize localBookmarks with bookmarkedResources
+  useEffect(() => {
+    if (bookmarkedResources) {
+      setLocalBookmarks(bookmarkedResources.filter(r => r.isBookmarked !== false));
+    }
+  }, [bookmarkedResources]);
+
+  // Lock body scroll when mobile filter is open
+  useEffect(() => {
+    if (isMobileFilterOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileFilterOpen]);
+
+  // Handle optimistic bookmark removal
+  const handleBookmarkToggle = (resourceId, nextBookmarkedState) => {
+    if (activeSection === 'bookmarks' && !nextBookmarkedState) {
+      setLocalBookmarks(prev => prev.filter(r => r._id !== resourceId));
+    }
+  };
+
   const handleFilterChange = (section, values) => {
     if (section === 'type') {
       setActiveSection(values);
@@ -304,6 +358,7 @@ const ResourcesHub = () => {
   } else if (activeSection === 'notes') displayedCount = sortedResources.length;
   else if (activeSection === 'roadmaps') displayedCount = sortedRoadmaps.length;
   else if (activeSection === 'pyqs') displayedCount = sortedPyqs.length;
+  else if (activeSection === 'bookmarks') displayedCount = localBookmarks.length;
 
   const totalRawCount = (resources?.length || 0) + (roadmaps?.length || 0) + (pyqs?.length || 0);
 
@@ -318,16 +373,8 @@ const ResourcesHub = () => {
             <div className="h-12 bg-white/10 rounded-lg w-1/2 animate-pulse" />
           </div>
         </div>
-        <div className="max-w-[1800px] mx-auto w-full px-6 py-6 flex gap-6">
-          <div className="hidden lg:block w-[280px] shrink-0 bg-white/80 border border-slate-100 rounded-3xl p-6 shadow-sm text-left">
-            <div className="h-8 bg-slate-100 rounded animate-pulse mb-4"></div>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-12 bg-slate-100 rounded animate-pulse mb-2"></div>
-            ))}
-          </div>
-          <div className="flex-1 min-w-0">
-            <LoadingSkeleton viewMode={viewMode} />
-          </div>
+        <div className="max-w-[1800px] mx-auto w-full px-4 md:px-8 lg:px-12 py-6">
+          <LoadingSkeleton viewMode={viewMode} />
         </div>
       </div>
     );
@@ -361,7 +408,7 @@ const ResourcesHub = () => {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-blue-400">Hub</span>
                 </h1>
                 <p className="text-slate-300 text-sm sm:text-base font-semibold max-w-md leading-relaxed">
-                  Discover study notes, roadmaps, and verified company interview previous year questions.
+                  Discover study notes, Verified Teacher notes, roadmaps, and Interview PYQs.
                 </p>
               </div>
 
@@ -376,7 +423,7 @@ const ResourcesHub = () => {
 
         {/* ── Guest Banner ── */}
         {isGuest && (
-          <div className="max-w-[1800px] mx-auto px-6 -mt-6 mb-0 relative z-20 w-full">
+          <div className="max-w-[1800px] mx-auto px-4 md:px-8 lg:px-12 -mt-6 mb-0 relative z-20 w-full">
             <div
               className="bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100 p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4 text-left"
               style={{ boxShadow: "0 10px 30px -10px rgba(79,70,229,0.15)" }}
@@ -395,72 +442,68 @@ const ResourcesHub = () => {
         )}
 
         {/* ── Main Content Area ── */}
-        <div className="max-w-[1800px] mx-auto w-full px-6 py-6">
+        <div className="max-w-[1800px] mx-auto w-full px-4 md:px-8 lg:px-12 py-6">
 
-          <div className="flex flex-col lg:flex-row gap-6">
+          {/* Mobile Filter Drawer (Overlay drawer) */}
+          {isMobileFilterOpen && activeSection !== 'bookmarks' && (
+            <FilterSidebar
+              activeType={activeSection}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={handleClearAllFilters}
+              isMobile={true}
+              onClose={() => setIsMobileFilterOpen(false)}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+          )}
 
-            {/* Sticky Filter Sidebar (Desktop) */}
-            <aside className="hidden lg:block w-[280px] shrink-0 text-left">
-              <FilterSidebar
-                activeType={activeSection}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearAllFilters}
-                isMobile={false}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-              />
-            </aside>
+          {/* Main Content Pane */}
+          <div className="w-full space-y-6">
 
-            {/* Mobile Filter Drawer (Overlay drawer) */}
-            {isMobileFilterOpen && (
-              <FilterSidebar
-                activeType={activeSection}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearAllFilters}
-                isMobile={true}
-                onClose={() => setIsMobileFilterOpen(false)}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-              />
-            )}
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onFilterToggle={() => setIsMobileFilterOpen(true)}
+              isMobile={true}
+              hideFilterButton={activeSection === 'bookmarks'}
+            />
 
-            {/* Main Content Pane */}
-            <div className="flex-1 min-w-0 overflow-hidden space-y-6">
-
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onFilterToggle={() => setIsMobileFilterOpen(true)}
-                isMobile={true}
-              />
-
-              {/* Tabs Section */}
-              <div className="flex items-center space-x-1.5 bg-white/80 backdrop-blur-md border border-slate-100 rounded-2xl p-1.5 shadow-sm overflow-x-auto scrollbar-hide">
-                {[
-                  { key: 'all', label: `All Resources (${totalRawCount})`, icon: 'Grid3X3' },
-                  { key: 'notes', label: `Study Notes (${resources?.length || 0})`, icon: 'FileText' },
-                  { key: 'roadmaps', label: `Career Roadmaps (${roadmaps?.length || 0})`, icon: 'Route' },
-                  { key: 'pyqs', label: `Interview PYQs (${pyqs?.length || 0})`, icon: 'MessageCircle' },
-                ].map(section => (
+            {/* Tabs Section */}
+            <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none flex-nowrap px-4">
+              {[
+                { key: 'all', label: 'All Resources', count: totalRawCount, icon: 'Grid3X3' },
+                { key: 'notes', label: 'Study Notes', count: resources?.length || 0, icon: 'FileText' },
+                { key: 'roadmaps', label: 'Career Roadmaps', count: roadmaps?.length || 0, icon: 'Route' },
+                { key: 'pyqs', label: 'Interview PYQs', count: pyqs?.length || 0, icon: 'MessageCircle' },
+                ...(!isGuest ? [{ key: 'bookmarks', label: 'Bookmarks', count: localBookmarks.length, icon: 'Bookmark' }] : [])
+              ].map(section => {
+                const isActive = activeSection === section.key;
+                return (
                   <button
                     key={section.key}
                     onClick={() => setActiveSection(section.key)}
-                    className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer border-none ${activeSection === section.key
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20'
-                      : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 bg-transparent'
-                      }`}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer transition-all border ${
+                      isActive
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                    }`}
                   >
                     <Icon name={section.icon} size={15} />
                     <span>{section.label}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'
+                      }`}
+                    >
+                      {section.count}
+                    </span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
               {/* Active Filter Chips */}
               <ActiveFilters
@@ -480,20 +523,47 @@ const ResourcesHub = () => {
 
               {/* Empty State Banner */}
               {displayedCount === 0 && (
-                <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-dashed border-slate-200 text-center shadow-sm text-left">
+                <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-dashed border-slate-200 text-center shadow-sm">
                   <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 border border-indigo-100/50 shadow-inner">
-                    <Icon name="FolderOpen" size={28} className="text-indigo-500 opacity-80 animate-pulse" />
+                    <Icon name={activeSection === 'bookmarks' ? 'Bookmark' : 'FolderOpen'} size={28} className="text-indigo-500 opacity-80 animate-pulse" />
                   </div>
-                  <h4 className="text-xl font-extrabold text-slate-800 mb-2 font-poppins">No resources match your filters</h4>
+                  <h4 className="text-xl font-extrabold text-slate-800 mb-2 font-poppins">
+                    {activeSection === 'bookmarks' ? 'No bookmarks yet.' : 'No resources match your filters'}
+                  </h4>
                   <p className="text-sm text-slate-500 font-semibold max-w-sm leading-relaxed mb-6">
-                    We couldn't find any resources matching your search options. Try adjusting your checkboxes or reset them below.
+                    {activeSection === 'bookmarks'
+                      ? 'Save resources by clicking the bookmark icon on any card.'
+                      : "We couldn't find any resources matching your search options. Try adjusting your checkboxes or reset them below."}
                   </p>
-                  <button
-                    onClick={handleClearAllFilters}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-500/10 hover:scale-103 active:scale-98 transition-all duration-200 cursor-pointer border-none"
-                  >
-                    Reset All Filters
-                  </button>
+                  {activeSection !== 'bookmarks' && (
+                    <button
+                      onClick={handleClearAllFilters}
+                      className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-500/10 hover:scale-103 active:scale-98 transition-all duration-200 cursor-pointer border-none"
+                    >
+                      Reset All Filters
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* BOOKMARKS */}
+              {displayedCount > 0 && activeSection === 'bookmarks' && localBookmarks.length > 0 && (
+                <div className="space-y-4 text-left">
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
+                    {localBookmarks.map(resource => (
+                      <ResourceCard
+                        key={resource._id}
+                        resource={{ ...resource, isBookmarked: true }}
+                        viewMode={viewMode}
+                        canEdit={!isGuest && canEditResource(resource, resource.type || 'notes')}
+                        onEditClick={() => setEditingResource({ data: resource, type: resource.type || 'notes' })}
+                        onDeleteClick={() => setDeletingResource({ ...resource, type: resource.type || 'notes' })}
+                        isGuest={isGuest}
+                        onRestrictedAction={() => setShowAuthModal(true)}
+                        onBookmarkToggle={handleBookmarkToggle}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -519,7 +589,7 @@ const ResourcesHub = () => {
                           {resourcesInCategory.length}
                         </span>
                       </h4>
-                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
+                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
                         {resourcesInCategory.map(resource => (
                           <ResourceCard
                             key={resource._id}
@@ -530,6 +600,7 @@ const ResourcesHub = () => {
                             onDeleteClick={() => setDeletingResource({ ...resource, type: 'notes' })}
                             isGuest={isGuest}
                             onRestrictedAction={() => setShowAuthModal(true)}
+                            onBookmarkToggle={handleBookmarkToggle}
                           />
                         ))}
                       </div>
@@ -544,7 +615,7 @@ const ResourcesHub = () => {
                   {activeSection === 'all' && (
                     <h3 className="text-xl sm:text-2xl font-black font-poppins text-slate-800 border-b border-slate-100 pb-3 pt-6">Career Roadmaps</h3>
                   )}
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
                     {sortedRoadmaps.map(roadmap => (
                       <CareerRoadmapCard
                         key={roadmap._id}
@@ -577,18 +648,20 @@ const ResourcesHub = () => {
                 </div>
               )}
 
-            </div>
           </div>
         </div>
 
         {/* Floating bottom Upload button */}
         {canUpload && (
           <button
-            className="fixed bottom-6 right-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white p-4.5 rounded-full shadow-lg z-50 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-indigo-400/20"
             onClick={() => setIsUploadOpen(true)}
+            className="group fixed bottom-6 right-6 z-50 flex items-center gap-2 overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 md:hover:w-36 md:hover:px-5 justify-center md:hover:justify-start border border-indigo-400/20"
             title="Upload Resource"
           >
-            <Icon name="Plus" size={24} />
+            <FiUploadCloud size={22} className="shrink-0" />
+            <span className="opacity-0 md:group-hover:opacity-100 whitespace-nowrap text-sm font-bold transition-all duration-300 overflow-hidden max-w-0 md:group-hover:max-w-xs">
+              Upload
+            </span>
           </button>
         )}
 
