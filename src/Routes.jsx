@@ -42,7 +42,7 @@ const Layout = ({ children }) => {
   return (
     <>
       <Header />
-      <div className="pt-10">{children}</div>
+      <div>{children}</div>
     </>
   );
 };
@@ -74,7 +74,7 @@ const ProtectedLayout = ({ children }) => {
   return (
     <>
       <Header />
-      <div className="pt-10">{children}</div>
+      <div>{children}</div>
     </>
   );
 };

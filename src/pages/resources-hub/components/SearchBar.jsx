@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 
-const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) => {
+const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile, hideFilterButton }) => {
   return (
     <div className="relative max-w-3xl mx-auto w-full mb-8 z-20 text-left">
       <div className="relative group">
@@ -38,22 +38,26 @@ const SearchBar = ({ searchQuery, onSearchChange, onFilterToggle, isMobile }) =>
             </button>
           )}
 
-          {/* Vertical Divider */}
-          <div className="h-6 w-px bg-slate-200 mx-1"></div>
+          {!hideFilterButton && (
+            <>
+              {/* Vertical Divider */}
+              <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
-          {/* Filter Button */}
-          <button
-            onClick={onFilterToggle}
-            className={`p-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 border bg-transparent cursor-pointer ${
-               isMobile 
-               ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md border-none font-bold' 
-               : 'bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200/60 font-bold'
-            }`}
-            title="Filters"
-          >
-            <Icon name="Filter" size={18} />
-            {isMobile && <span className="text-sm font-medium">Filters</span>}
-          </button>
+              {/* Filter Button */}
+              <button
+                onClick={onFilterToggle}
+                className={`p-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 border bg-transparent cursor-pointer ${
+                   isMobile 
+                   ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md border-none font-bold' 
+                   : 'bg-slate-50 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border-slate-200/60 font-bold'
+                }`}
+                title="Filters"
+              >
+                <Icon name="Filter" size={18} />
+                {isMobile && <span className="text-sm font-medium">Filters</span>}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

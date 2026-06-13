@@ -108,7 +108,7 @@ const LoadingSkeleton = ({ viewMode = 'grid', count = 6 }) => {
       {/* Study Notes Section skeleton */}
       <div className="space-y-4 text-left">
         <div className="h-6 bg-slate-100 rounded animate-pulse w-48"></div>
-        <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
           {Array.from({ length: viewMode === 'grid' ? count : 3 }).map((_, i) => (
             <SkeletonCard key={i} isListView={viewMode === 'list'} />
           ))}
@@ -118,8 +118,8 @@ const LoadingSkeleton = ({ viewMode = 'grid', count = 6 }) => {
       {/* Roadmaps Section skeleton */}
       <div className="space-y-4 text-left">
         <div className="h-6 bg-slate-100 rounded animate-pulse w-40"></div>
-        <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-          {Array.from({ length: 2 }).map((_, i) => (
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
+          {Array.from({ length: 3 }).map((_, i) => (
             <RoadmapSkeleton key={i} />
           ))}
         </div>
@@ -128,8 +128,8 @@ const LoadingSkeleton = ({ viewMode = 'grid', count = 6 }) => {
       {/* PYQ Section skeleton */}
       <div className="space-y-4 text-left">
         <div className="h-6 bg-slate-100 rounded animate-pulse w-36"></div>
-        <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-          {Array.from({ length: 2 }).map((_, i) => (
+        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'flex flex-col gap-4'}>
+          {Array.from({ length: 3 }).map((_, i) => (
             <PYQSkeleton key={i} />
           ))}
         </div>

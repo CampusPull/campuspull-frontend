@@ -52,11 +52,11 @@ export const ResourceProvider = ({ children }) => {
 
   // ===== Fetch functions =====
   // FIX: guests call /public/resources, logged-in call protected endpoints
-  const fetchResources = useCallback(async () => {
+  const fetchResources = useCallback(async (params = {}) => {
     try {
       setError(null);
       if (isGuest) {
-        const res = await api.get("/public/resources");
+        const res = await api.get("/public/resources", { params });
 
         // Handle both possible backend shapes: Structured Object OR Flat Array
         if (res.data.notes || res.data.data?.notes) {
@@ -81,7 +81,7 @@ export const ResourceProvider = ({ children }) => {
           setPyqs(pyqsArray);
         }
       } else {
-        const res = await api.get("/resources/notes", getAuthHeaders());
+        const res = await api.get("/resources/notes", { ...getAuthHeaders(), params });
         setResources(res.data);
       }
     } catch (err) {
@@ -89,24 +89,24 @@ export const ResourceProvider = ({ children }) => {
     }
   }, [accessToken, isGuest]);
 
-  const fetchRoadmaps = useCallback(async () => {
+  const fetchRoadmaps = useCallback(async (params = {}) => {
     // FIX: skip for guests — /public/resources covers the public list
     if (isGuest) return;
     try {
       setError(null);
-      const res = await api.get("/resources/roadmaps", getAuthHeaders());
+      const res = await api.get("/resources/roadmaps", { ...getAuthHeaders(), params });
       setRoadmaps(res.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     }
   }, [accessToken, isGuest]);
 
-  const fetchPYQs = useCallback(async () => {
+  const fetchPYQs = useCallback(async (params = {}) => {
     // FIX: skip for guests
     if (isGuest) return;
     try {
       setError(null);
-      const res = await api.get("/resources/pyqs", getAuthHeaders());
+      const res = await api.get("/resources/pyqs", { ...getAuthHeaders(), params });
       setPyqs(res.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);

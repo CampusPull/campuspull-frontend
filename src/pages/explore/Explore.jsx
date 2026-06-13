@@ -46,7 +46,7 @@ export default function Explore() {
   const displayedUsers = suggestions;
 
   return (
-    <div className="min-h-screen p-4 md:p-10 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div className="min-h-screen p-4 md:p-10 pt-20 md:pt-24 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
 
       {/* --- HEADER --- */}
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">

@@ -16,6 +16,8 @@ import DeleteResourceModal from './components/DeleteResouceModal';
 import SignupModal from '../../components/ui/SignupModal';
 import { useAuth } from '../../context/AuthContext';
 import ActiveFilters from './components/ActiveFilters';
+import { FiUploadCloud } from 'react-icons/fi';
+import api from '../../utils/api';
 
 // ─── Stats pill ───────────────────────────────────────────────────────────────
 const StatPill = ({ value, label }) => (
@@ -30,14 +32,22 @@ const ResourcesHub = () => {
     resources,
     roadmaps,
     pyqs,
+    bookmarkedResources,
     loading,
     canEditResource,
     isGuest,
     showAuthModal,
     setShowAuthModal,
+    refreshResources,
+    refreshRoadmaps,
+    refreshPYQs,
   } = useContext(ResourceContext);
 
+  const context = useContext(ResourceContext);
+  const getBookmarkedResources = context.getBookmarkedResources || context.refreshBookmarks;
+
   const { user } = useAuth();
+  const [localBookmarks, setLocalBookmarks] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Helper to parse query arrays
@@ -61,15 +71,44 @@ const ResourcesHub = () => {
     verifiedOnly: searchParams.get('verified') === 'true',
     branch: getParamArray('branch'),
     semester: getParamArray('semester'),
-    company: getParamArray('company'),
+    company: searchParams.get('company') || '',
     year: getParamArray('year'),
-    difficulty: getParamArray('difficulty'),
-    tags: getParamArray('tags')
+    difficulty: searchParams.get('difficulty') || '',
+    tags: getParamArray('tags'),
+    subName: searchParams.get('subName') || ''
   });
 
-  // Keep type filter and activeSection tab perfectly in sync
+  // Keep type filter and activeSection tab perfectly in sync, and clear irrelevant filters when switching tabs
   useEffect(() => {
-    setFilters(prev => ({ ...prev, type: activeSection }));
+    setFilters(prev => {
+      const base = {
+        type: activeSection,
+        verifiedOnly: false,
+        branch: [],
+        semester: [],
+        company: '',
+        difficulty: '',
+        tags: [],
+        subName: ''
+      };
+
+      if (activeSection === 'notes') {
+        const academicYears = (prev.year || []).filter(y => ['1', '2', '3', '4'].includes(y));
+        return { ...base, year: academicYears };
+      } else if (activeSection === 'roadmaps') {
+        const academicYears = (prev.year || []).filter(y => ['1', '2', '3', '4'].includes(y));
+        return { ...base, year: academicYears };
+      } else if (activeSection === 'pyqs') {
+        const calendarYears = (prev.year || []).filter(y => !['1', '2', '3', '4'].includes(y));
+        return { ...base, year: calendarYears };
+      } else {
+        return { ...base, year: [] };
+      }
+    });
+
+    if (activeSection === 'roadmaps' && sortBy === 'downloads') {
+      setSortBy('newest');
+    }
   }, [activeSection]);
 
   // Synchronize state with URL Query Parameters in real-time
@@ -79,15 +118,123 @@ const ResourcesHub = () => {
     if (sortBy && sortBy !== 'newest') params.sortBy = sortBy;
     if (activeSection && activeSection !== 'all') params.type = activeSection;
     if (filters.verifiedOnly) params.verified = 'true';
-    if (filters.branch && filters.branch.length > 0) params.branch = filters.branch.join(',');
-    if (filters.semester && filters.semester.length > 0) params.semester = filters.semester.join(',');
-    if (filters.company && filters.company.length > 0) params.company = filters.company.join(',');
-    if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
-    if (filters.difficulty && filters.difficulty.length > 0) params.difficulty = filters.difficulty.join(',');
-    if (filters.tags && filters.tags.length > 0) params.tags = filters.tags.join(',');
+
+    if (activeSection === 'notes') {
+      if (filters.subName) params.subName = filters.subName;
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    } else if (activeSection === 'roadmaps') {
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    } else if (activeSection === 'pyqs') {
+      if (filters.company) params.company = filters.company;
+      if (filters.difficulty) params.difficulty = filters.difficulty;
+      if (filters.year && filters.year.length > 0) params.year = filters.year.join(',');
+    }
 
     setSearchParams(params, { replace: true });
   }, [searchQuery, sortBy, activeSection, filters, setSearchParams]);
+
+  // Unified Server-Side Filter Fetcher
+  useEffect(() => {
+    if (isGuest) return;
+    const triggerFetch = async () => {
+      // 1. Fetch Notes
+      if (activeSection === 'all' || activeSection === 'notes') {
+        const notesParams = { sortBy };
+        if (searchQuery) notesParams.search = searchQuery;
+        if (filters.subName) notesParams.subName = filters.subName;
+        if (filters.year && filters.year.length > 0) {
+          notesParams.year = filters.year.join(',');
+        }
+        await refreshResources(notesParams);
+      }
+
+      // 2. Fetch Roadmaps
+      if (activeSection === 'all' || activeSection === 'roadmaps') {
+        const roadmapsParams = { sortBy };
+        if (searchQuery) roadmapsParams.search = searchQuery;
+        if (filters.year && filters.year.length > 0) {
+          roadmapsParams.year = filters.year.join(',');
+        }
+        await refreshRoadmaps(roadmapsParams);
+      }
+
+      // 3. Fetch PYQs
+      if (activeSection === 'all' || activeSection === 'pyqs') {
+        const pyqsParams = { sortBy };
+        if (searchQuery) pyqsParams.search = searchQuery;
+        if (filters.company) pyqsParams.company = filters.company;
+        if (filters.difficulty) pyqsParams.difficulty = filters.difficulty;
+        if (filters.year && filters.year.length > 0) {
+          pyqsParams.year = filters.year.join(',');
+        }
+        await refreshPYQs(pyqsParams);
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      triggerFetch();
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [
+    searchQuery,
+    sortBy,
+    activeSection,
+    filters.subName,
+    filters.year,
+    filters.company,
+    filters.difficulty,
+    isGuest,
+    refreshResources,
+    refreshRoadmaps,
+    refreshPYQs
+  ]);
+
+  // Fetch bookmarks when tab is active
+  useEffect(() => {
+    if (activeSection === 'bookmarks' && !isGuest) {
+      if (typeof getBookmarkedResources === 'function') {
+        getBookmarkedResources();
+      } else {
+        const fetchBookmarksDirect = async () => {
+          try {
+            const res = await api.get("/resources/bookmarks", {
+              headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
+            });
+            setLocalBookmarks(res.data);
+          } catch (err) {
+            console.error("Direct bookmarks fetch failed:", err);
+          }
+        };
+        fetchBookmarksDirect();
+      }
+    }
+  }, [activeSection, isGuest, getBookmarkedResources, user?.token]);
+
+  // Synchronize localBookmarks with bookmarkedResources
+  useEffect(() => {
+    if (bookmarkedResources) {
+      setLocalBookmarks(bookmarkedResources.filter(r => r.isBookmarked !== false));
+    }
+  }, [bookmarkedResources]);
+
+  // Lock body scroll when mobile filter is open
+  useEffect(() => {
+    if (isMobileFilterOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileFilterOpen]);
+
+  // Handle optimistic bookmark removal
+  const handleBookmarkToggle = (resourceId, nextBookmarkedState) => {
+    if (activeSection === 'bookmarks' && !nextBookmarkedState) {
+      setLocalBookmarks(prev => prev.filter(r => r._id !== resourceId));
+    }
+  };
 
   const handleFilterChange = (section, values) => {
     if (section === 'type') {
@@ -103,6 +250,8 @@ const ResourcesHub = () => {
       setActiveSection('all');
     } else if (category === 'verifiedOnly') {
       setFilters(prev => ({ ...prev, verifiedOnly: false }));
+    } else if (category === 'subName' || category === 'company' || category === 'difficulty') {
+      setFilters(prev => ({ ...prev, [category]: '' }));
     } else {
       setFilters(prev => ({
         ...prev,
@@ -119,10 +268,11 @@ const ResourcesHub = () => {
       verifiedOnly: false,
       branch: [],
       semester: [],
-      company: [],
+      company: '',
       year: [],
-      difficulty: [],
-      tags: []
+      difficulty: '',
+      tags: [],
+      subName: ''
     });
   };
 
@@ -132,67 +282,56 @@ const ResourcesHub = () => {
   const canUpload = canUploadNotes || canUploadAll;
 
   // ─── Precision Search & Filter Logic ───
-  
+
   // 1. Study Notes
   const filteredResources = resources?.filter(res => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchTitle = res.title?.toLowerCase().includes(query);
       const matchDesc = res.description?.toLowerCase().includes(query);
       const matchTags = res.tags?.some(t => t.toLowerCase().includes(query));
       if (!matchTitle && !matchDesc && !matchTags) return false;
     }
-    if (filters.verifiedOnly && !res.verified) return false;
-    if (filters.branch && filters.branch.length > 0) {
-      if (!filters.branch.includes(res.branch)) return false;
+
+    if (activeSection === 'notes') {
+      if (filters.subName && !res.subName?.toLowerCase().includes(filters.subName.toLowerCase())) return false;
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(res.year))) return false;
     }
-    if (filters.semester && filters.semester.length > 0) {
-      if (!filters.semester.includes(String(res.semester))) return false;
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      if (!res.tags?.some(t => filters.tags.includes(t))) return false;
-    }
+
     return true;
   }) || [];
 
   // 2. Career Roadmaps
   const filteredRoadmaps = roadmaps?.filter(road => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchTitle = road.title?.toLowerCase().includes(query);
       const matchDesc = road.description?.toLowerCase().includes(query);
-      const matchTags = road.tags?.some(t => t.toLowerCase().includes(query));
-      if (!matchTitle && !matchDesc && !matchTags) return false;
+      if (!matchTitle && !matchDesc) return false;
     }
-    if (filters.verifiedOnly && !road.verified) return false;
-    if (filters.tags && filters.tags.length > 0) {
-      if (!road.tags?.some(t => filters.tags.includes(t))) return false;
+
+    if (activeSection === 'roadmaps') {
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(road.year))) return false;
     }
+
     return true;
   }) || [];
 
   // 3. Interview PYQs
   const filteredPyqs = pyqs?.filter(pyq => {
-    if (searchQuery) {
+    if (isGuest && searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchCompany = pyq.company?.toLowerCase().includes(query);
       const matchDesc = pyq.description?.toLowerCase().includes(query);
-      const matchTags = pyq.tags?.some(t => t.toLowerCase().includes(query));
-      if (!matchCompany && !matchDesc && !matchTags) return false;
+      if (!matchCompany && !matchDesc) return false;
     }
-    if (filters.verifiedOnly && !pyq.verified) return false;
-    if (filters.company && filters.company.length > 0) {
-      if (!filters.company.includes(pyq.company)) return false;
+
+    if (activeSection === 'pyqs') {
+      if (filters.company && !pyq.company?.toLowerCase().includes(filters.company.toLowerCase())) return false;
+      if (filters.difficulty && pyq.difficulty !== filters.difficulty) return false;
+      if (filters.year && filters.year.length > 0 && !filters.year.includes(String(pyq.year))) return false;
     }
-    if (filters.year && filters.year.length > 0) {
-      if (!filters.year.includes(String(pyq.year))) return false;
-    }
-    if (filters.difficulty && filters.difficulty.length > 0) {
-      if (!filters.difficulty.includes(pyq.difficulty)) return false;
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      if (!pyq.tags?.some(t => filters.tags.includes(t))) return false;
-    }
+
     return true;
   }) || [];
 
@@ -219,30 +358,23 @@ const ResourcesHub = () => {
   } else if (activeSection === 'notes') displayedCount = sortedResources.length;
   else if (activeSection === 'roadmaps') displayedCount = sortedRoadmaps.length;
   else if (activeSection === 'pyqs') displayedCount = sortedPyqs.length;
+  else if (activeSection === 'bookmarks') displayedCount = localBookmarks.length;
 
   const totalRawCount = (resources?.length || 0) + (roadmaps?.length || 0) + (pyqs?.length || 0);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 pb-20 select-none pt-10">
-        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-4 sm:px-8 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 pb-20 select-none">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-6 relative overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-[1800px] mx-auto relative z-10 w-full">
             <div className="h-8 bg-white/10 rounded-lg w-1/3 animate-pulse mb-3" />
             <div className="h-12 bg-white/10 rounded-lg w-1/2 animate-pulse" />
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 flex gap-8">
-          <div className="hidden lg:block w-72 bg-white/80 border border-slate-100 rounded-3xl p-6 flex-shrink-0 shadow-sm text-left">
-            <div className="h-8 bg-slate-100 rounded animate-pulse mb-4"></div>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-12 bg-slate-100 rounded animate-pulse mb-2"></div>
-            ))}
-          </div>
-          <div className="flex-1 min-w-0">
-            <LoadingSkeleton viewMode={viewMode} />
-          </div>
+        <div className="max-w-[1800px] mx-auto w-full px-4 md:px-8 lg:px-12 py-6">
+          <LoadingSkeleton viewMode={viewMode} />
         </div>
       </div>
     );
@@ -254,15 +386,15 @@ const ResourcesHub = () => {
         <title>Resources Hub - CampusPull | Knowledge Without Boundaries</title>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 selection:bg-indigo-500/20 pb-20 pt-10">
-        
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 text-slate-800 selection:bg-indigo-500/20 pb-20">
+
         {/* ── Hero Header ── */}
-        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-4 sm:px-8 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 pt-24 pb-16 px-6 relative overflow-hidden">
           {/* Ambient Glowing Blobs */}
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-[1800px] mx-auto relative z-10 w-full">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4 text-left">
                 <div className="flex items-center gap-2.5 font-sans">
@@ -276,7 +408,7 @@ const ResourcesHub = () => {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-blue-400">Hub</span>
                 </h1>
                 <p className="text-slate-300 text-sm sm:text-base font-semibold max-w-md leading-relaxed">
-                  Discover study notes, roadmaps, and verified company interview previous year questions.
+                  Discover study notes, Verified Teacher notes, roadmaps, and Interview PYQs.
                 </p>
               </div>
 
@@ -291,7 +423,7 @@ const ResourcesHub = () => {
 
         {/* ── Guest Banner ── */}
         {isGuest && (
-          <div className="max-w-6xl mx-auto px-4 sm:px-8 -mt-6 mb-0 relative z-20">
+          <div className="max-w-[1800px] mx-auto px-4 md:px-8 lg:px-12 -mt-6 mb-0 relative z-20 w-full">
             <div
               className="bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100 p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4 text-left"
               style={{ boxShadow: "0 10px 30px -10px rgba(79,70,229,0.15)" }}
@@ -310,62 +442,68 @@ const ResourcesHub = () => {
         )}
 
         {/* ── Main Content Area ── */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
-          
-          <div className="flex flex-col lg:flex-row gap-8">
-            
-            {/* Sticky Filter Sidebar (Desktop) */}
-            <aside className="hidden lg:block w-72 flex-shrink-0 text-left">
-              <FilterSidebar
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearAllFilters}
-                isMobile={false}
-              />
-            </aside>
+        <div className="max-w-[1800px] mx-auto w-full px-4 md:px-8 lg:px-12 py-6">
 
-            {/* Mobile Filter Drawer (Overlay drawer) */}
-            {isMobileFilterOpen && (
-              <FilterSidebar
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearAllFilters}
-                isMobile={true}
-                onClose={() => setIsMobileFilterOpen(false)}
-              />
-            )}
+          {/* Mobile Filter Drawer (Overlay drawer) */}
+          {isMobileFilterOpen && activeSection !== 'bookmarks' && (
+            <FilterSidebar
+              activeType={activeSection}
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={handleClearAllFilters}
+              isMobile={true}
+              onClose={() => setIsMobileFilterOpen(false)}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+          )}
 
-            {/* Main Content Pane */}
-            <div className="flex-1 min-w-0 space-y-6">
-              
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onFilterToggle={() => setIsMobileFilterOpen(true)}
-                isMobile={true}
-              />
+          {/* Main Content Pane */}
+          <div className="w-full space-y-6">
 
-              {/* Tabs Section */}
-              <div className="flex items-center space-x-1.5 bg-white/80 backdrop-blur-md border border-slate-100 rounded-2xl p-1.5 shadow-sm overflow-x-auto scrollbar-hide">
-                {[
-                  { key: 'all', label: `All Resources (${totalRawCount})`, icon: 'Grid3X3' },
-                  { key: 'notes', label: `Study Notes (${resources?.length || 0})`, icon: 'FileText' },
-                  { key: 'roadmaps', label: `Career Roadmaps (${roadmaps?.length || 0})`, icon: 'Route' },
-                  { key: 'pyqs', label: `Interview PYQs (${pyqs?.length || 0})`, icon: 'MessageCircle' },
-                ].map(section => (
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onFilterToggle={() => setIsMobileFilterOpen(true)}
+              isMobile={true}
+              hideFilterButton={activeSection === 'bookmarks'}
+            />
+
+            {/* Tabs Section */}
+            <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none flex-nowrap px-4">
+              {[
+                { key: 'all', label: 'All Resources', count: totalRawCount, icon: 'Grid3X3' },
+                { key: 'notes', label: 'Study Notes', count: resources?.length || 0, icon: 'FileText' },
+                { key: 'roadmaps', label: 'Career Roadmaps', count: roadmaps?.length || 0, icon: 'Route' },
+                { key: 'pyqs', label: 'Interview PYQs', count: pyqs?.length || 0, icon: 'MessageCircle' },
+                ...(!isGuest ? [{ key: 'bookmarks', label: 'Bookmarks', count: localBookmarks.length, icon: 'Bookmark' }] : [])
+              ].map(section => {
+                const isActive = activeSection === section.key;
+                return (
                   <button
                     key={section.key}
                     onClick={() => setActiveSection(section.key)}
-                    className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer border-none ${activeSection === section.key
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20'
-                        : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 bg-transparent'
-                      }`}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap cursor-pointer transition-all border ${
+                      isActive
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                    }`}
                   >
                     <Icon name={section.icon} size={15} />
                     <span>{section.label}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'
+                      }`}
+                    >
+                      {section.count}
+                    </span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
               {/* Active Filter Chips */}
               <ActiveFilters
@@ -385,20 +523,47 @@ const ResourcesHub = () => {
 
               {/* Empty State Banner */}
               {displayedCount === 0 && (
-                <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-dashed border-slate-200 text-center shadow-sm text-left">
+                <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-dashed border-slate-200 text-center shadow-sm">
                   <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 border border-indigo-100/50 shadow-inner">
-                    <Icon name="FolderOpen" size={28} className="text-indigo-500 opacity-80 animate-pulse" />
+                    <Icon name={activeSection === 'bookmarks' ? 'Bookmark' : 'FolderOpen'} size={28} className="text-indigo-500 opacity-80 animate-pulse" />
                   </div>
-                  <h4 className="text-xl font-extrabold text-slate-800 mb-2 font-poppins">No resources match your filters</h4>
+                  <h4 className="text-xl font-extrabold text-slate-800 mb-2 font-poppins">
+                    {activeSection === 'bookmarks' ? 'No bookmarks yet.' : 'No resources match your filters'}
+                  </h4>
                   <p className="text-sm text-slate-500 font-semibold max-w-sm leading-relaxed mb-6">
-                    We couldn't find any resources matching your search options. Try adjusting your checkboxes or reset them below.
+                    {activeSection === 'bookmarks'
+                      ? 'Save resources by clicking the bookmark icon on any card.'
+                      : "We couldn't find any resources matching your search options. Try adjusting your checkboxes or reset them below."}
                   </p>
-                  <button
-                    onClick={handleClearAllFilters}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-500/10 hover:scale-103 active:scale-98 transition-all duration-200 cursor-pointer border-none"
-                  >
-                    Reset All Filters
-                  </button>
+                  {activeSection !== 'bookmarks' && (
+                    <button
+                      onClick={handleClearAllFilters}
+                      className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-500/10 hover:scale-103 active:scale-98 transition-all duration-200 cursor-pointer border-none"
+                    >
+                      Reset All Filters
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* BOOKMARKS */}
+              {displayedCount > 0 && activeSection === 'bookmarks' && localBookmarks.length > 0 && (
+                <div className="space-y-4 text-left">
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
+                    {localBookmarks.map(resource => (
+                      <ResourceCard
+                        key={resource._id}
+                        resource={{ ...resource, isBookmarked: true }}
+                        viewMode={viewMode}
+                        canEdit={!isGuest && canEditResource(resource, resource.type || 'notes')}
+                        onEditClick={() => setEditingResource({ data: resource, type: resource.type || 'notes' })}
+                        onDeleteClick={() => setDeletingResource({ ...resource, type: resource.type || 'notes' })}
+                        isGuest={isGuest}
+                        onRestrictedAction={() => setShowAuthModal(true)}
+                        onBookmarkToggle={handleBookmarkToggle}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -424,7 +589,7 @@ const ResourcesHub = () => {
                           {resourcesInCategory.length}
                         </span>
                       </h4>
-                      <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
                         {resourcesInCategory.map(resource => (
                           <ResourceCard
                             key={resource._id}
@@ -435,6 +600,7 @@ const ResourcesHub = () => {
                             onDeleteClick={() => setDeletingResource({ ...resource, type: 'notes' })}
                             isGuest={isGuest}
                             onRestrictedAction={() => setShowAuthModal(true)}
+                            onBookmarkToggle={handleBookmarkToggle}
                           />
                         ))}
                       </div>
@@ -449,7 +615,7 @@ const ResourcesHub = () => {
                   {activeSection === 'all' && (
                     <h3 className="text-xl sm:text-2xl font-black font-poppins text-slate-800 border-b border-slate-100 pb-3 pt-6">Career Roadmaps</h3>
                   )}
-                  <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5' : 'flex flex-col gap-4'}>
                     {sortedRoadmaps.map(roadmap => (
                       <CareerRoadmapCard
                         key={roadmap._id}
@@ -482,18 +648,20 @@ const ResourcesHub = () => {
                 </div>
               )}
 
-            </div>
           </div>
         </div>
 
         {/* Floating bottom Upload button */}
         {canUpload && (
           <button
-            className="fixed bottom-6 right-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white p-4.5 rounded-full shadow-lg z-50 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border border-indigo-400/20"
             onClick={() => setIsUploadOpen(true)}
+            className="group fixed bottom-6 right-6 z-50 flex items-center gap-2 overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 md:hover:w-36 md:hover:px-5 justify-center md:hover:justify-start border border-indigo-400/20"
             title="Upload Resource"
           >
-            <Icon name="Plus" size={24} />
+            <FiUploadCloud size={22} className="shrink-0" />
+            <span className="opacity-0 md:group-hover:opacity-100 whitespace-nowrap text-sm font-bold transition-all duration-300 overflow-hidden max-w-0 md:group-hover:max-w-xs">
+              Upload
+            </span>
           </button>
         )}
 

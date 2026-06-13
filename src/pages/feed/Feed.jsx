@@ -149,7 +149,7 @@ const FeedPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row px-4 md:px-12 py-8 gap-8">
+    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row px-4 md:px-12 pt-24 pb-8 gap-8">
       {/* Feed Section */}
       <motion.div className="flex-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-semibold text-gray-800 mb-6">Campus Feed</h1>
