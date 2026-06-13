@@ -155,7 +155,7 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100">
               <div className="flex items-center space-x-2">
-                <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+                <Image src={uploadedBy?.profileImage} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
                 <span className="text-xs text-slate-500 font-extrabold">by {uploadedBy?.name}</span>
               </div>
               <div className="flex space-x-2">
@@ -298,7 +298,7 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
       <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 mt-auto shrink-0">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <Image src={uploadedBy?.avatar} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
+            <Image src={uploadedBy?.profileImage} alt={uploadedBy?.name} className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10" />
             <span className="text-xs font-extrabold text-slate-500">by {uploadedBy?.name}</span>
             {uploadedBy?.verified && <Icon name="BadgeCheck" size={14} className="text-blue-500" />}
           </div>

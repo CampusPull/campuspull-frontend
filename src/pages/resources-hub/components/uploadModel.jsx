@@ -80,8 +80,8 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
       setNoteFile(null);
       return false;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      setError("File is too large! Maximum allowed size is 20MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File is too large! Maximum allowed size is 10MB.");
       setNoteFile(null);
       return false;
     }
@@ -500,7 +500,7 @@ const UploadModal = ({ isOpen, onClose, canUploadNotes, canUploadAll }) => {
                             Drop your file here or <span className="underline">browse</span>
                           </p>
                           <p className="text-[9px] text-slate-400 font-semibold">
-                            PDF, DOC, DOCX (Max 20MB)
+                            PDF, DOC, DOCX (Max 10MB)
                           </p>
                         </div>
                       )}
