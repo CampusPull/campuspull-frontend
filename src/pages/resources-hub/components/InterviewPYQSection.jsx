@@ -146,7 +146,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-2">
                         <Image
-                          src={pyq?.uploadedBy?.avatar}
+                          src={pyq?.uploadedBy?.profileImage}
                           className="w-5 h-5 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10"
                         />
                         <span className="text-xs text-slate-500 font-extrabold">
@@ -267,7 +267,7 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto pb-4">
                   <div className="flex items-center space-x-2">
                     <Image
-                      src={pyq?.uploadedBy?.avatar}
+                      src={pyq?.uploadedBy?.profileImage}
                       alt={pyq?.uploadedBy?.name}
                       className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10"
                     />
