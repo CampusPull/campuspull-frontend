@@ -99,7 +99,7 @@ const SessionCard = ({ session, user, onUpdated }) => {
 
     try {
       await api.patch(`/mentorship/session/${session._id}`, {
-        scheduledAt,
+        scheduledAt: new Date(scheduledAt).toISOString(),
         connectionType,
         connectionLink,
       });
