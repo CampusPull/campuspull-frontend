@@ -97,12 +97,9 @@ const SessionCard = ({ session, user, onUpdated }) => {
 
     setIsScheduling(true);
 
-    console.log("scheduledAt state:", scheduledAt);
-console.log("ISO:", new Date(scheduledAt).toISOString());
-
     try {
       await api.patch(`/mentorship/session/${session._id}`, {
-        scheduledAt,
+        scheduledAt: new Date(scheduledAt).toISOString(),
         connectionType,
         connectionLink,
       });
