@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
+import api from "../../../utils/api";
 
 const API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const CHANNEL_ID = import.meta.env.VITE_YOUTUBE_CHANNEL_ID;
@@ -13,51 +14,71 @@ const PodcastSection = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  const fetchEpisodes = async () => {
-    try {
-      setIsLoading(true);
+    const fetchEpisodes = async () => {
+      try {
+        setIsLoading(true);
 
-      const res = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlistItems?` +
-        new URLSearchParams({
-          key: API_KEY,
-          playlistId: import.meta.env.VITE_YOUTUBE_PODCAST_PLAYLIST_ID,
-          part: "snippet,contentDetails",
-          maxResults: "10",
-        })
-      );
+        // Try backend API first
+        const { data } = await api.get("/podcasts");
+        if (data && data.success && data.data && data.data.length > 0) {
+          if (cancelled) return;
+          const formatted = data.data.map(item => ({
+            id: item._id,
+            youtubeId: item.youtubeId,
+            title: item.title,
+            guest: item.guest || "Alumni Talk",
+            date: new Date(item.date || item.createdAt).toLocaleDateString(),
+            thumbnail: item.thumbnail || "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&q=80&w=600",
+            description: item.description || "CampusPull Placement and Career Talk with inspiring alumni.",
+          }));
+          setEpisodes(formatted);
+          return;
+        }
 
-      const data = await res.json();
-      if (!data.items || cancelled) return;
+        // Failsafe Fallback: YouTube API
+        if (API_KEY && import.meta.env.VITE_YOUTUBE_PODCAST_PLAYLIST_ID) {
+          const res = await fetch(
+            `https://www.googleapis.com/youtube/v3/playlistItems?` +
+            new URLSearchParams({
+              key: API_KEY,
+              playlistId: import.meta.env.VITE_YOUTUBE_PODCAST_PLAYLIST_ID,
+              part: "snippet,contentDetails",
+              maxResults: "10",
+            })
+          );
 
-      const formatted = data.items.map(item => ({
-        id: item.contentDetails.videoId,
-        youtubeId: item.contentDetails.videoId,
-        title: item.snippet.title,
-        guest: item.snippet.title.split("|")[2]?.trim() || "Alumni Talk",
-        date: new Date(item.snippet.publishedAt).toLocaleDateString(),
-        thumbnail:
-          item.snippet.thumbnails.maxres?.url ||
-          item.snippet.thumbnails.high.url,
-        description: item.snippet.description,
-      }));
+          const ytData = await res.json();
+          if (!ytData.items || cancelled) return;
 
-      setEpisodes(formatted.slice(0, 5));
-    } catch (err) {
-      console.error("Failed to fetch podcast playlist", err);
-    } finally {
-      if (!cancelled) setIsLoading(false);
-    }
-  };
+          const formatted = ytData.items.map(item => ({
+            id: item.contentDetails.videoId,
+            youtubeId: item.contentDetails.videoId,
+            title: item.snippet.title,
+            guest: item.snippet.title.split("|")[2]?.trim() || "Alumni Talk",
+            date: new Date(item.snippet.publishedAt).toLocaleDateString(),
+            thumbnail:
+              item.snippet.thumbnails.maxres?.url ||
+              item.snippet.thumbnails.high.url,
+            description: item.snippet.description,
+          }));
 
-  fetchEpisodes();
+          setEpisodes(formatted.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to fetch podcast playlist", err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
 
-  return () => {
-    cancelled = true;
-  };
-}, []);
+    fetchEpisodes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
 
   const handleEpisodeClick = (index) => {

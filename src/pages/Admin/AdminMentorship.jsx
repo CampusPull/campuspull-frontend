@@ -145,7 +145,7 @@ const AdminMentorship = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex flex-col items-center justify-center">
+      <div className="p-6 pt-28 md:pt-32 bg-gray-50 min-h-screen flex flex-col items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
         <p className="text-gray-500 font-medium tracking-wide">
           Loading Dashboard...
@@ -205,7 +205,7 @@ const AdminMentorship = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 pt-28 md:pt-32 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">

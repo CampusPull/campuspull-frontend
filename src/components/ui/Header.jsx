@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const roleFeatures = {
   admin: [
     "Home",
-    "Feed", 
+    "Feed",
     "Resources Hub",
     "About CampusPull",
     "Community",
@@ -73,14 +73,12 @@ const roleFeatures = {
     "Startup",
   ],
 };
+
 const Header = () => {
   const { user, logout } = useAuth();
-  // 2. GET UNREAD COUNT
   const { unreadCount } = useNotification();
-  // 3. GET PROFILE IMAGE (from profileContext)
   const { profile } = useContext(ProfileContext);
   const profileImage = profile?.profileImage || null;
-  // Initials fallback from user name
   const initials = user?.name
     ? user.name.trim().split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
@@ -107,10 +105,9 @@ const Header = () => {
     { name: "Internships", path: "/internships", icon: "Briefcase" },
   ];
 
-  // const allowedFeatures = roleFeatures[user?.role] || [];
   const isGuest = !user;
 
-    const guestFeatures = [ 
+  const guestFeatures = [
     "Resources Hub",
     "Explore",
     "Mentorship",
@@ -126,7 +123,7 @@ const Header = () => {
     : roleFeatures[user?.role] || [];
 
   const authorizedItems = allNavigationItems.filter((item) =>
-    allowedFeatures.includes(item.name),
+    allowedFeatures.includes(item.name) && item.name !== "Alumni Stories"
   );
 
   const hamburgerItemNames = [
@@ -138,7 +135,7 @@ const Header = () => {
     "Community",
     "Announcement",
     "Events",
-  ]; // These will go in the hamburger menu
+  ];
   const mainNavItems = authorizedItems.filter(
     (item) => !hamburgerItemNames.includes(item.name),
   );
@@ -153,6 +150,65 @@ const Header = () => {
     return location.pathname === path;
   };
 
+  // Determine if this is a dark theme landing page (Homepage)
+  const isDarkPage = location.pathname === "/homepage" || location.pathname === "/";
+
+  // Centralized GPU Scroll Visibility & Liquid States
+  const [isVisible, setIsVisible] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check prefers-reduced-motion media query
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    const listener = (e) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
+
+  // Throttled Scroll Listener using requestAnimationFrame
+  useEffect(() => {
+    let ticked = false;
+
+    const handleScroll = () => {
+      if (!ticked) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          // Throttled states
+          setScrolled(currentScrollY > 15);
+
+          // Normalized progress capped at 150px scroll
+          const progress = Math.min(currentScrollY / 150, 1);
+          setScrollProgress(progress);
+
+          // Visibility toggle
+          if (prefersReducedMotion) {
+            setIsVisible(true);
+          } else {
+            if (currentScrollY < 10) {
+              setIsVisible(true);
+            } else if (currentScrollY > lastScrollY && currentScrollY > 80) {
+              setIsVisible(false); // Scrolling down
+            } else {
+              setIsVisible(true); // Scrolling up
+            }
+          }
+
+          setLastScrollY(currentScrollY);
+          ticked = false;
+        });
+        ticked = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY, prefersReducedMotion]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -164,208 +220,320 @@ const Header = () => {
   }, []);
 
   return (
-    <motion.header 
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-sm supports-[backdrop-filter]:bg-white/10"
-    >
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo Section */}
-          <div className="flex items-center">
-            <Link to="/homepage" className="flex items-center group">
-              <motion.img 
-                whileHover={{ scale: 1.05, rotate: -2 }}
-                whileTap={{ scale: 0.95 }}
-                src="/assets/images/logocampus.png" 
-                alt="CampusPull Logo" 
-                className="h-10 w-auto object-contain transition-all duration-300"
+    <div className="w-full flex justify-center fixed top-0 left-0 right-0 z-50 px-6 pointer-events-none">
+      <motion.div
+        initial={{ y: -100 }}
+        animate={{ y: isVisible ? 0 : -110 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 280, damping: 28 }}
+        className="w-full max-w-[1100px] mt-4 flex items-center justify-between gap-4 relative"
+      >
+        {/* 1. Logo Pill (Left Side) */}
+        <div
+          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center flex-nowrap shrink-0 relative overflow-hidden ${scrolled
+              ? isDarkPage
+                ? "h-10 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white"
+                : "h-10 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+              : isDarkPage
+                ? "h-12 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white"
+                : "h-12 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+            }`}
+          style={{
+            boxShadow: isDarkPage
+              ? `0 8px 32px rgba(0,0,0,0.3), 0 0 ${scrollProgress * 6}px rgba(99, 102, 241, ${scrollProgress * 0.08})`
+              : "0 4px 20px rgba(0,0,0,0.03)"
+          }}
+        >
+          {isDarkPage && (
+            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40 bg-gradient-to-r from-transparent via-white/15 to-transparent bg-[length:200%_100%] transition-all duration-500"
+                style={{
+                  backgroundPosition: `${(1 - scrollProgress) * 200}% 0`
+                }}
               />
-            </Link> 
-          </div>
+            </div>
+          )}
+          <Link to="/homepage" className="flex items-center group">
+            <motion.img
+              whileHover={prefersReducedMotion ? {} : { scale: 1.05, rotate: -2 }}
+              whileTap={{ scale: 0.95 }}
+              src="/assets/images/logocampus.png"
+              alt="CampusPull Logo"
+              className={`transition-all duration-300 w-auto object-contain ${scrolled ? "h-7" : "h-8"} ${isDarkPage ? "brightness-110" : "brightness-100"}`}
+            />
+          </Link>
+        </div>
 
-          {/* Desktop Navigation */}
-          {/* <nav className="hidden lg:flex items-center space-x-1"> */}
-          {/* <nav className="flex items-center space-x-1"> */}
-          <nav className="hidden xl:flex items-center space-x-1">
-            {mainNavItems.map((item) => (
-              <motion.div key={item.path} whileHover={{ y: -2 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to={item.path}
-                  className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-inter font-semibold transition-all duration-300 overflow-hidden group ${
-                    isActivePath(item.path)
-                      ? "bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600 border border-transparent"
+        {/* 2. Navigation Pill (Exact Center, Hidden on Mobile/Tablet) */}
+        <nav
+          className={`pointer-events-auto hidden xl:flex items-center flex-nowrap shrink-0 gap-1.5 rounded-full border transition-all duration-300 relative overflow-hidden ${scrolled
+              ? isDarkPage
+                ? "h-10 px-5 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white"
+                : "h-10 px-5 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+              : isDarkPage
+                ? "h-12 px-6 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white"
+                : "h-12 px-6 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+            }`}
+          style={{
+            boxShadow: isDarkPage
+              ? `0 8px 32px rgba(0,0,0,0.3), 0 0 ${scrollProgress * 6}px rgba(99, 102, 241, ${scrollProgress * 0.08})`
+              : "0 4px 20px rgba(0,0,0,0.03)"
+          }}
+        >
+          {isDarkPage && (
+            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40 bg-gradient-to-r from-transparent via-white/15 to-transparent bg-[length:200%_100%] transition-all duration-500"
+                style={{
+                  backgroundPosition: `${(1 - scrollProgress) * 200}% 0`
+                }}
+              />
+            </div>
+          )}
+          {mainNavItems.map((item) => (
+            <motion.div key={item.path} whileHover={prefersReducedMotion ? {} : { y: -1.5 }} whileTap={{ scale: 0.96 }}>
+              <Link
+                to={item.path}
+                className={`relative flex items-center space-x-2 px-3.5 py-1.5 rounded-full text-xs font-bold font-inter transition-all duration-300 border ${isActivePath(item.path)
+                    ? isDarkPage
+                      ? "bg-white/15 border-white/20 text-white shadow-sm"
+                      : "bg-slate-900/10 border-slate-900/15 text-slate-950 font-bold shadow-sm"
+                    : isDarkPage
+                      ? "border-transparent text-slate-300 hover:text-white hover:bg-white/5"
+                      : "border-transparent text-slate-600 hover:text-slate-950 hover:bg-slate-100/50"
                   }`}
-                >
-                  <Icon
-                    name={item.icon}
-                    size={18}
-                    color={isActivePath(item.path) ? "#4338ca" : "currentColor"}
-                     className="transition-transform group-hover:scale-110"
-                  />
-                  <span>{item.name}</span>
-                </Link>
-              </motion.div>
-            ))}
-          </nav>
-
-          {/* Right Side Actions (Notifications + Hamburger) */}
-          <div className="flex items-center gap-2" ref={menuRef}>
-            {/* Guest Auth Buttons (Desktop only) */}
-            {isGuest && (
-              <div className="hidden lg:flex items-center gap-2 mr-2">
-                <Link
-                  to="/auth"
-                  className="px-4 py-2 text-sm font-medium text-academic-blue bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
-                >
-                  Log In
-                </Link>
-                <Link
-                  to="/auth?signup=true"
-                  className="px-4 py-2 text-sm font-medium text-white bg-academic-blue hover:bg-blue-700 shadow-md rounded-full transition-colors"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-
-            {/* NOTIFICATION BELL ICON (Only for authenticated users) */}
-            {!isGuest && (
-              <Link
-                to="/notifications"
-                className="relative p-2 rounded-full text-wisdom-charcoal hover:bg-slate-100 transition-colors mr-1"
               >
-                <Icon name="Bell" size={24} />
-
-                {/* The Red Badge Logic */}
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
+                <Icon
+                  name={item.icon}
+                  size={15}
+                  color={isActivePath(item.path) ? (isDarkPage ? "#ffffff" : "#0f172a") : (isDarkPage ? "#cbd5e1" : "#475569")}
+                  className="transition-transform group-hover:scale-105"
+                />
+                <span>{item.name}</span>
               </Link>
-            )}
+            </motion.div>
+          ))}
+        </nav>
 
-            {/* PROFILE AVATAR (Only for authenticated users) */}
-            {!isGuest && (
+        {/* 3. Actions & Hamburger Pill (Right Side) */}
+        <div
+          className={`pointer-events-auto rounded-full border transition-all duration-300 flex items-center flex-nowrap shrink-0 gap-2.5 relative ${scrolled
+              ? isDarkPage
+                ? "h-10 px-4 bg-slate-950/80 border-indigo-500/20 backdrop-blur-2xl shadow-lg text-white"
+                : "h-10 px-4 bg-white/85 border-slate-200/80 backdrop-blur-2xl shadow-sm text-slate-800"
+              : isDarkPage
+                ? "h-12 px-5 bg-slate-950/45 border-white/10 backdrop-blur-xl text-white"
+                : "h-12 px-5 bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-sm text-slate-800"
+            }`}
+          style={{
+            boxShadow: isDarkPage
+              ? `0 8px 32px rgba(0,0,0,0.3), 0 0 ${scrollProgress * 6}px rgba(99, 102, 241, ${scrollProgress * 0.08})`
+              : "0 4px 20px rgba(0,0,0,0.03)"
+          }}
+          ref={menuRef}
+        >
+          {isDarkPage && (
+            <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div
+                className="absolute inset-0 pointer-events-none opacity-40 bg-gradient-to-r from-transparent via-white/15 to-transparent bg-[length:200%_100%] transition-all duration-500"
+                style={{
+                  backgroundPosition: `${(1 - scrollProgress) * 200}% 0`
+                }}
+              />
+            </div>
+          )}
+
+          {/* Guest Auth Buttons (Desktop only) */}
+          {isGuest && (
+            <div className="hidden lg:flex items-center gap-2 mr-1 relative z-10 flex-nowrap whitespace-nowrap shrink-0">
               <Link
-                to="/profile"
-                title="My Profile"
-                className={`relative flex-shrink-0 w-9 h-9 rounded-full ring-2 transition-all duration-200 overflow-hidden ${
-                  location.pathname === "/profile"
-                    ? "ring-academic-blue shadow-brand-sm"
-                    : "ring-white/60 hover:ring-academic-blue hover:shadow-brand-sm"
-                }`}
+                to="/auth"
+                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors whitespace-nowrap shrink-0 ${isDarkPage
+                    ? "text-slate-300 bg-white/5 hover:bg-white/15"
+                    : "text-slate-600 bg-slate-100 hover:bg-slate-200"
+                  }`}
               >
-                {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt={user?.name || "Profile"}
-                    className="w-full h-full object-cover"
-                  />
+                Log In
+              </Link>
+              <Link
+                to="/auth?signup=true"
+                className="px-4 py-1.5 text-xs font-bold shadow-sm rounded-full transition-colors text-white bg-indigo-600 hover:bg-indigo-700 whitespace-nowrap shrink-0"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+
+          {/* NOTIFICATION BELL ICON (Only for authenticated users) */}
+          {!isGuest && (
+            <Link
+              to="/notifications"
+              className={`relative p-2 rounded-full transition-colors duration-200 mr-0.5 z-10 ${isDarkPage
+                  ? "text-slate-300 hover:text-white hover:bg-white/5"
+                  : "text-slate-600 hover:text-slate-950 hover:bg-slate-100"
+                }`}
+            >
+              <Icon name="Bell" size={20} />
+
+              {/* The Red Badge Logic */}
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {/* AIRBNB STYLE HAMBURGER & PROFILE PILL TRIGGER */}
+          <div className="relative z-10">
+            <div
+              className={`flex items-center border rounded-full shadow-sm transition-all duration-200 ${isDarkPage && !scrolled
+                  ? "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+                  : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:bg-slate-100/80 hover:text-slate-900"
+                }`}
+            >
+              {/* Hamburger Button (Toggles menu) */}
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsMenuOpen((prev) => !prev);
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                className="pl-3.5 pr-2 py-1.5 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="Toggle navigation menu"
+              >
+                <Icon name="Menu" size={17} />
+              </button>
+
+              {/* Separator line */}
+              <div className={`w-[1px] h-4 ${isDarkPage && !scrolled ? "bg-white/10" : "bg-slate-200"}`} />
+
+              {/* Profile Avatar Link (Redirects directly to profile) */}
+              <Link
+                to={isGuest ? "/auth" : "/profile"}
+                className="pl-2 pr-2 py-1.5 flex items-center justify-center relative z-20"
+                aria-label="View profile"
+              >
+                {!isGuest ? (
+                  <div className={`w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[9px] shadow-sm hover:scale-105 transition-transform ${profileImage ? "" : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white"
+                    }`}>
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={user?.name || "Profile"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{initials}</span>
+                    )}
+                  </div>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                    {initials}
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${isDarkPage && !scrolled ? "bg-white/10 hover:bg-white/20 text-zinc-400" : "bg-slate-200/80 hover:bg-slate-300/80 text-slate-500"
+                    }`}>
+                    <Icon name="User" size={14} />
                   </div>
                 )}
               </Link>
-            )}
+            </div>
 
-            {/* Hamburger Button */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-wisdom-charcoal hover:text-academic-blue"
-              >
-                <Icon name={isMenuOpen ? "X" : "Menu"} size={24} />
-              </Button>
-
-              {/* Dropdown Menu */}
-              <AnimatePresence>
-                {isMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-12 right-0 w-64 sm:w-72 bg-white/80 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-2xl overflow-y-auto max-h-[85vh] py-2"
-                  >
-                    {/* Mobile/Tablet: Main items list (hidden on xl when desktop nav shows) */}
-                    <div className="xl:hidden border-b border-slate-200/50 pb-2 mb-2 px-2">
-                      {mainNavItems.map((item) => (
-                        <Link
-                          key={item.path}
-                          to={item.path}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-inter font-medium transition-colors ${
-                            isActivePath(item.path)
-                              ? "bg-indigo-50/80 text-indigo-700"
-                              : "text-slate-700 hover:bg-white/60"
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className={`absolute top-12 right-0 w-64 sm:w-72 border backdrop-blur-2xl rounded-2xl shadow-2xl overflow-y-auto max-h-[85vh] py-2 z-50 ${isDarkPage
+                      ? "bg-slate-950/95 border-slate-800/80 text-slate-300"
+                      : "bg-white/95 border-slate-200/90 text-slate-700 shadow-2xl"
+                    }`}
+                >
+                  {/* Mobile/Tablet: Main items list (hidden on xl when desktop nav shows) */}
+                  <div className={`xl:hidden border-b pb-2 mb-2 px-2 ${isDarkPage ? "border-slate-900" : "border-slate-100"}`}>
+                    {mainNavItems.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isActivePath(item.path)
+                            ? isDarkPage ? "bg-white/10 text-white" : "bg-slate-100 text-slate-950 font-bold"
+                            : isDarkPage ? "hover:bg-white/5 hover:text-white" : "hover:bg-slate-50 hover:text-slate-950"
                           }`}
-                        >
-                          <Icon name={item.icon} size={18} />
-                          <span>{item.name}</span>
-                        </Link>
-                      ))}
-                    </div>
+                      >
+                        <Icon name={item.icon} size={18} />
+                        <span>{item.name}</span>
+                      </Link>
+                    ))}
+                  </div>
 
-                    {/* Hamburger Only Items */}
-                    <div className="px-2">
-                      {menuNavItems.map((item) => (
-                        <Link
-                          key={item.path}
-                          to={item.path}
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-inter font-medium transition-colors ${
-                            isActivePath(item.path)
-                              ? "bg-indigo-50/80 text-indigo-700"
-                              : "text-slate-700 hover:bg-white/60"
+                  {/* Hamburger Only Items */}
+                  <div className="px-2">
+                    {menuNavItems.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isActivePath(item.path)
+                            ? isDarkPage ? "bg-white/10 text-white" : "bg-slate-100 text-slate-950 font-bold"
+                            : isDarkPage ? "hover:bg-white/5 hover:text-white" : "hover:bg-slate-50 hover:text-slate-950"
                           }`}
-                        >
-                          <Icon name={item.icon} size={18} />
-                          <span>{item.name}</span>
-                        </Link>
-                      ))}
-                    </div>
+                      >
+                        <Icon name={item.icon} size={18} />
+                        <span>{item.name}</span>
+                      </Link>
+                    ))}
+                  </div>
 
-                    <div className="h-px bg-slate-200/50 my-1 mx-4"></div>
+                  <div className={`h-px my-1 mx-4 ${isDarkPage ? "bg-slate-900" : "bg-slate-100"}`}></div>
 
-                    <div className="px-2">
-                      {isGuest ? (
+                  <div className="px-2">
+                    {isGuest ? (
+                      <>
                         <Link
                           to="/auth"
                           onClick={() => setIsMenuOpen(false)}
-                          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-inter font-medium text-academic-blue hover:bg-blue-50/80 transition-colors"
+                          className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isDarkPage ? "text-indigo-400 hover:bg-white/5" : "text-indigo-600 hover:bg-slate-50"
+                            }`}
                         >
                           <Icon name="LogIn" size={18} />
                           <span>Login</span>
                         </Link>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            logout();
-                            setIsMenuOpen(false);
-                          }}
-                          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-inter font-medium text-red-600 hover:bg-red-50/80 transition-colors"
+                        <Link
+                          to="/auth?signup=true"
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isDarkPage ? "text-indigo-400 hover:bg-white/5" : "text-indigo-600 hover:bg-slate-50"
+                            }`}
                         >
-                          <Icon name="LogOut" size={18} />
-                          <span>Logout</span>
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                          <Icon name="UserPlus" size={18} />
+                          <span>Sign Up</span>
+                        </Link>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          logout();
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${isDarkPage ? "text-red-400 hover:bg-white/5" : "text-red-600 hover:bg-slate-50"
+                          }`}
+                      >
+                        <Icon name="LogOut" size={18} />
+                        <span>Logout</span>
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
-    </motion.header>
-  );
+      </motion.div>
+    </div>);
 };
 
 export default Header;

@@ -52,12 +52,12 @@ export const ResourceProvider = ({ children }) => {
 
   // ===== Fetch functions =====
   // FIX: guests call /public/resources, logged-in call protected endpoints
-  const fetchResources = useCallback(async () => {
+  const fetchResources = useCallback(async (params = {}) => {
     try {
       setError(null);
       if (isGuest) {
-        const res = await api.get("/public/resources");
-        
+        const res = await api.get("/public/resources", { params });
+
         // Handle both possible backend shapes: Structured Object OR Flat Array
         if (res.data.notes || res.data.data?.notes) {
           const payload = res.data.data?.notes ? res.data.data : res.data;
@@ -67,21 +67,21 @@ export const ResourceProvider = ({ children }) => {
         } else {
           // Flat array fallback (paginated discriminator models)
           const allResources = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
-          
+
           const roadmapsArray = allResources.filter(r => r.modules !== undefined || r.type === 'roadmap' || r.resourceType === 'roadmap');
           const pyqsArray = allResources.filter(r => r.company !== undefined || r.type === 'pyq' || r.resourceType === 'pyq');
-          const notesArray = allResources.filter(r => 
-            r.modules === undefined && r.company === undefined && 
+          const notesArray = allResources.filter(r =>
+            r.modules === undefined && r.company === undefined &&
             r.type !== 'roadmap' && r.type !== 'pyq' &&
             r.resourceType !== 'roadmap' && r.resourceType !== 'pyq'
           );
-          
+
           setResources(notesArray);
           setRoadmaps(roadmapsArray);
           setPyqs(pyqsArray);
         }
       } else {
-        const res = await api.get("/resources/notes", getAuthHeaders());
+        const res = await api.get("/resources/notes", { ...getAuthHeaders(), params });
         setResources(res.data);
       }
     } catch (err) {
@@ -89,24 +89,24 @@ export const ResourceProvider = ({ children }) => {
     }
   }, [accessToken, isGuest]);
 
-  const fetchRoadmaps = useCallback(async () => {
+  const fetchRoadmaps = useCallback(async (params = {}) => {
     // FIX: skip for guests — /public/resources covers the public list
     if (isGuest) return;
     try {
       setError(null);
-      const res = await api.get("/resources/roadmaps", getAuthHeaders());
+      const res = await api.get("/resources/roadmaps", { ...getAuthHeaders(), params });
       setRoadmaps(res.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     }
   }, [accessToken, isGuest]);
 
-  const fetchPYQs = useCallback(async () => {
+  const fetchPYQs = useCallback(async (params = {}) => {
     // FIX: skip for guests
     if (isGuest) return;
     try {
       setError(null);
-      const res = await api.get("/resources/pyqs", getAuthHeaders());
+      const res = await api.get("/resources/pyqs", { ...getAuthHeaders(), params });
       setPyqs(res.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -239,19 +239,41 @@ export const ResourceProvider = ({ children }) => {
     }
   };
 
+  // Helper to normalize resource types to backend-expected strings: notes, roadmap, pyq
+  const getEndpointType = (type) => {
+    if (!type) return "notes";
+    const t = type.toLowerCase();
+    if (t.includes("note")) return "notes";
+    if (t.includes("roadmap")) return "roadmap";
+    if (t.includes("pyq") || t.includes("interview")) return "pyq";
+    return t;
+  };
+
+  // Helper to map resource types to frontend state keys: notes, roadmaps, pyqs
+  const getStateKeyType = (type) => {
+    if (!type) return "notes";
+    const t = type.toLowerCase();
+    if (t.includes("note")) return "notes";
+    if (t.includes("roadmap")) return "roadmaps";
+    if (t.includes("pyq") || t.includes("interview")) return "pyqs";
+    return t;
+  };
+
   const updateState = (type, updatedItem) => {
     const merge = (prev) =>
       prev.map((r) => (r._id === updatedItem._id ? { ...r, ...updatedItem } : r));
-    if (type === "notes") setResources(merge);
-    if (type === "pyqs") setPyqs(merge);
-    if (type === "roadmaps") setRoadmaps(merge);
+    const stateKey = getStateKeyType(type);
+    if (stateKey === "notes") setResources(merge);
+    if (stateKey === "pyqs") setPyqs(merge);
+    if (stateKey === "roadmaps") setRoadmaps(merge);
     setBookmarkedResources(merge);
   };
 
   // ===== Interactions =====
   const incrementView = async (id, type) => {
     try {
-      const res = await api.patch(`/resources/${type}/${id}/view`);
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/view`);
       updateState(type, res.data);
     } catch (err) {
       console.error("View increment error:", err);
@@ -262,7 +284,8 @@ export const ResourceProvider = ({ children }) => {
     // FIX: guest download triggers modal (spec: "Download triggers modal")
     if (isGuest) { setShowAuthModal(true); return; }
     try {
-      const res = await api.patch(`/resources/${type}/${id}/download`);
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/download`);
       updateState(type, res.data);
     } catch (err) {
       console.error("Download increment error:", err);
@@ -273,7 +296,8 @@ export const ResourceProvider = ({ children }) => {
     // FIX: guest bookmark triggers modal
     if (isGuest) { setShowAuthModal(true); return; }
     try {
-      const res = await api.patch(`/resources/${type}/${id}/bookmark`, {}, getAuthHeaders());
+      const endpointType = getEndpointType(type);
+      const res = await api.patch(`/resources/${endpointType}/${id}/bookmark`, {}, getAuthHeaders());
       updateState(type, res.data);
     } catch (err) {
       console.error("Bookmark toggle error:", err);

@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import SessionCard from "../components/sessionCard";
 import ErrorBanner from "../components/errorBanner";
 
-const SessionDetails = ({refreshTrigger}) => {
+const SessionDetails = ({ refreshTrigger, isNested = false }) => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,11 @@ const SessionDetails = ({refreshTrigger}) => {
 }, [refreshTrigger]); // 🔥 THIS IS THE FIX
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading sessions…</p>;
+    return (
+      <div className={`max-w-3xl mx-auto px-4 py-6 ${isNested ? "" : "pt-24"} flex items-center justify-center`}>
+        <p className="text-sm text-slate-500 font-medium">Loading sessions…</p>
+      </div>
+    );
   }
 
   // ✅ Correct status-based grouping
@@ -48,7 +52,7 @@ const SessionDetails = ({refreshTrigger}) => {
     : completedSessions.slice(0, 5);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className={`max-w-3xl mx-auto px-4 py-6 space-y-6 ${isNested ? "" : "pt-24"}`}>
       <h1 className="text-2xl font-semibold">
         My Mentorship Sessions
       </h1>
@@ -78,6 +82,7 @@ const SessionDetails = ({refreshTrigger}) => {
           </div>
         )}
       </section>
+      
 
       {/* 🟢 Scheduled Sessions */}
       <section>

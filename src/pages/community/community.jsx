@@ -1,40 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Search, PlusCircle, X, Loader } from 'lucide-react';
+import { Users, Search, PlusCircle, Loader, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCommunity } from '../../context/communityContext';
 import { CreateQuestionModal } from './components/createQuestionModal';
 import { QuestionFeed } from './components/questionFeed';
 import SignupModal from '../../components/ui/SignupModal';
 
-// Button Component
-const Button = ({ children, onClick, disabled, className, type = 'button', size = 'md' }) => (
-    <button
-        type={type}
-        onClick={onClick}
-        disabled={disabled}
-        className={`transition-all duration-200 inline-flex items-center justify-center font-semibold rounded-lg ${className || ''}
-                    ${size === 'md' ? 'px-4 py-2 text-sm' : size === 'sm' ? 'px-3 py-1.5 text-xs' : 'p-2 text-xs'} ${disabled ? 'bg-slate-300 cursor-not-allowed' : 'hover:opacity-90'}`}
-    >
-        {children}
-    </button>
-);
-
 const CommunityPage = () => {
     const {
         questions,
         loading,
         error,
-        isGuest,           // FIX: from communityContext
-        showAuthModal,     // FIX: from communityContext
-        setShowAuthModal,  // FIX: from communityContext
+        isGuest,           
+        showAuthModal,     
+        setShowAuthModal,  
     } = useCommunity();
 
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    // FIX: guests cannot post — only logged-in students/alumni/admin can
     const canPost = user && ['student', 'alumni', 'admin'].includes(user.role);
 
     const filteredQuestions = useMemo(() => {
@@ -49,83 +35,103 @@ const CommunityPage = () => {
     }, [questions, searchTerm]);
 
     return (
-        <div className="min-h-screen bg-[#F3F4FD] text-[#1E293B] py-10 px-6 pt-16">
+        <div className="min-h-screen bg-slate-50/50 text-slate-800 py-10 px-4 sm:px-6 lg:px-8 pt-20">
+            <div className="max-w-6xl mx-auto">
+                {/* --- DISCUSSION FORUM HERO --- */}
+                <section className="relative text-center py-16 md:py-20 bg-gradient-to-tr from-slate-950 via-indigo-950 to-slate-900 overflow-hidden text-white rounded-3xl mb-10 shadow-xl border border-slate-900">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_45%)]"></div>
+                    <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[140px] pointer-events-none"></div>
+                    
+                    <div className="relative z-10 max-w-4xl mx-auto px-6">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-widest rounded-full border border-indigo-500/25 mb-6 animate-pulse">
+                            <MessageSquare size={12} /> Knowledge Sharing
+                        </span>
+                        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                            Global Discussion <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Forum</span>
+                        </h1>
+                        <p className="text-slate-300 text-sm md:text-base max-w-2xl mx-auto leading-relaxed font-medium">
+                            Connect with ABESIT peers, request placement tips from successful alumni, and resolve technical doubts instantly.
+                        </p>
+                    </div>
+                </section>
 
-            {/* HEADER */}
-            <div className="max-w-7xl mx-auto text-center mb-10">
-                <h1 className="text-4xl font-extrabold text-[#3B82F6]">🎓 Global Discussion Forum</h1>
-                <p className="text-[#475569] mt-2 text-lg">Ask questions, get help, and share knowledge.</p>
-            </div>
+                {/* Guest banner */}
+                {isGuest && (
+                    <div className="mb-8 p-5 bg-white border border-indigo-50/80 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <span className="text-xl">👋</span>
+                            <p className="text-slate-600 font-semibold text-xs md:text-sm text-center sm:text-left leading-relaxed">
+                                You are currently browsing as a guest. Create an account to ask questions, join discussion channels, and book mentors.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowAuthModal(true)}
+                            className="shrink-0 px-5 py-2.5 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md hover:shadow-indigo-500/10 active:scale-98 transition-all duration-200"
+                        >
+                            Join Now
+                        </button>
+                    </div>
+                )}
 
-            {/* FIX: Guest banner */}
-            {isGuest && (
-                <div className="w-full md:w-4/5 mx-auto mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-4">
-                    <p className="text-blue-700 font-medium text-sm">
-                        👋 You're browsing as a guest. Create an account to ask questions and join discussions.
-                    </p>
-                    <button
-                        onClick={() => setShowAuthModal(true)}
-                        className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition"
-                    >
-                        Join Now
-                    </button>
-                </div>
-            )}
-
-            <div className="sticky top-16 z-30 bg-[#F3F4FD] py-4 mb-8">
-                <div className="w-full md:w-4/5 mx-auto">
+                {/* Filters / Actions */}
+                <div className="mb-10">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="relative w-full sm:max-w-xl">
                             <input
                                 type="text"
-                                placeholder="🔍 Search questions, answers, or tags..."
+                                placeholder="Search questions, answers, tags..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-6 py-3 pl-10 rounded-full border border-[#CBD5E1] shadow-sm focus:ring-2 focus:ring-[#6366F1] focus:outline-none bg-white"
+                                className="w-full px-5 py-3 pl-11 rounded-2xl border border-indigo-50/70 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none bg-white text-xs md:text-sm transition-all duration-300 placeholder:text-slate-400 font-medium"
                             />
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                         </div>
 
-                        {/* FIX: guests see "Ask Question" but it triggers modal instead */}
                         {canPost ? (
-                            <Button
+                            <button
                                 onClick={() => setShowCreateModal(true)}
-                                className="w-auto bg-gradient-to-r from-[#3B82F6] to-[#6366F1] text-white shadow-md rounded-xl flex items-center"
+                                className="w-full sm:w-auto bg-gradient-to-tr from-indigo-600 via-purple-600 to-indigo-600 text-white shadow-md rounded-2xl px-5 py-3 font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 hover:shadow-lg hover:shadow-indigo-500/10 active:scale-98 transition-all duration-200"
                             >
-                                <PlusCircle size={18} className="mr-1" /> Ask Question
-                            </Button>
+                                <PlusCircle size={16} /> Ask Question
+                            </button>
                         ) : isGuest ? (
-                            <Button
+                            <button
                                 onClick={() => setShowAuthModal(true)}
-                                className="w-auto bg-gradient-to-r from-[#3B82F6] to-[#6366F1] text-white shadow-md rounded-xl flex items-center"
+                                className="w-full sm:w-auto bg-gradient-to-tr from-indigo-600 via-purple-600 to-indigo-600 text-white shadow-md rounded-2xl px-5 py-3 font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 hover:shadow-lg hover:shadow-indigo-500/10 active:scale-98 transition-all duration-200"
                             >
-                                <PlusCircle size={18} className="mr-1" /> Ask Question
-                            </Button>
+                                <PlusCircle size={16} /> Ask Question
+                            </button>
                         ) : null}
                     </div>
                 </div>
-            </div>
 
-            <div className="w-full md:w-4/5 mx-auto space-y-8">
-                <h2 className="text-2xl font-semibold text-[#3B82F6]">
-                    {searchTerm ? `Results (${filteredQuestions.length})` : "Latest Discussions"}
-                </h2>
+                {/* Discussions Feed */}
+                <div className="space-y-6">
+                    <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+                        {searchTerm ? `Results (${filteredQuestions.length})` : "Latest Discussions"}
+                    </h2>
 
-                {loading && (
-                    <div className="flex justify-center py-10">
-                        <Loader size={32} className="animate-spin text-blue-500" />
-                    </div>
-                )}
-                {error && <p className="text-center text-red-600">Error: {error}</p>}
+                    {loading && (
+                        <div className="flex justify-center py-12">
+                            <Loader size={28} className="animate-spin text-indigo-600" />
+                        </div>
+                    )}
+                    
+                    {error && (
+                        <div className="text-center py-6 text-rose-500 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-semibold">
+                            Error: {error}
+                        </div>
+                    )}
 
-                {!loading && !error && (
-                    <QuestionFeed
-                        questions={filteredQuestions}
-                        searchTerm={searchTerm}
-                        isGuest={isGuest}
-                        onRestrictedAction={() => setShowAuthModal(true)}
-                    />
-                )}
+                    {!loading && !error && (
+                        <QuestionFeed
+                            questions={filteredQuestions}
+                            searchTerm={searchTerm}
+                            isGuest={isGuest}
+                            onRestrictedAction={() => setShowAuthModal(true)}
+                        />
+                    )}
+                </div>
             </div>
 
             {/* Create Question Modal - only for logged-in users */}
@@ -138,7 +144,7 @@ const CommunityPage = () => {
                 )}
             </AnimatePresence>
 
-            {/* FIX: Signup modal for guest restricted actions */}
+            {/* Signup modal for guest restricted actions */}
             {showAuthModal && (
                 <SignupModal
                     isOpen={showAuthModal}

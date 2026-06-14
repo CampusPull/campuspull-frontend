@@ -7,14 +7,14 @@ import React, {
   useCallback,
 } from "react";
 // Import the hook, not the context itself
-import { useAuth } from "./AuthContext"; 
+import { useAuth } from "./AuthContext";
 import api from "../utils/api";
 
 export const FeedContext = createContext();
 
 export const FeedProvider = ({ children }) => {
   // Use the hook to get auth data
-  const { accessToken, user, loading: authLoading } = useAuth(); 
+  const { accessToken, user, loading: authLoading } = useAuth();
   const isGuest = !user;
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -77,55 +77,55 @@ export const FeedProvider = ({ children }) => {
   // --- UPDATE POST ---
   // (This function remains the same as your file)
   const updatePost = useCallback(
-    async (postId, content, file = null) => {
-      if (!accessToken) return;
-      try {
-        const formData = new FormData();
-        formData.append("content", content?.trim() || "");
-        if (file) formData.append("media", file);
+    async (postId, content, file = null) => {
+      if (!accessToken) return;
+      try {
+        const formData = new FormData();
+        formData.append("content", content?.trim() || "");
+        if (file) formData.append("media", file);
 
-        const { data } = await api.put(`/feed/post/${postId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "multipart/form-data",
-          },
-          withCredentials: true,
-        });
+        const { data } = await api.put(`/feed/post/${postId}`, formData, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        });
 
         // SAFER UPDATE: This merges new data with old, populated data
-        setFeed((prev) => 
-          prev.map((p) => 
+        setFeed((prev) =>
+          prev.map((p) =>
             p._id === postId ? { ...p, content: data.content, media: data.media } : p
           )
         );
 
-      } catch (err) {
-        console.error(err);
-        setError("Failed to update post");
-        throw err; // <-- ADD THIS LINE
-      }
-    },
-    [accessToken]
-  );
+      } catch (err) {
+        console.error(err);
+        setError("Failed to update post");
+        throw err; // <-- ADD THIS LINE
+      }
+    },
+    [accessToken]
+  );
 
   // --- DELETE POST ---
   // (This function remains the same as your file)
   const deletePost = useCallback(
-    async (postId) => {
-      if (!accessToken) return;
-      try {
-        await api.delete(`/feed/post/${postId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          withCredentials: true,
-        });
-        setFeed((prev) => prev.filter((p) => p._id !== postId));
-      } catch (err) {
-        console.error(err);
-        setError("Failed to delete post");
-      }
-    },
-    [accessToken]
-  );
+    async (postId) => {
+      if (!accessToken) return;
+      try {
+        await api.delete(`/feed/post/${postId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          withCredentials: true,
+        });
+        setFeed((prev) => prev.filter((p) => p._id !== postId));
+      } catch (err) {
+        console.error(err);
+        setError("Failed to delete post");
+      }
+    },
+    [accessToken]
+  );
 
   // --- LIKE POST (UPDATED) ---
   const likePost = useCallback(
@@ -142,7 +142,7 @@ export const FeedProvider = ({ children }) => {
               ? p.likes.filter((id) => id !== userId)
               : [...p.likes, userId];
             // Update both the array and the count
-            return { ...p, likes: newLikes, likesCount: newLikes.length }; 
+            return { ...p, likes: newLikes, likesCount: newLikes.length };
           }
           return p;
         })
@@ -158,7 +158,7 @@ export const FeedProvider = ({ children }) => {
         console.error(err);
         setError("Failed to like/unlike post");
         // Rollback on error
-        fetchFeed(); 
+        fetchFeed();
       }
     },
     [accessToken, user?._id, fetchFeed] // Added dependencies
@@ -214,9 +214,9 @@ export const FeedProvider = ({ children }) => {
     async (postId, commentId, replyId = null) => {
       if (!accessToken || !user?._id) return;
       const userId = user._id;
-      
+
       // Optimistic update for comment/reply likes
-      setFeed(prev => 
+      setFeed(prev =>
         prev.map(p => {
           if (p._id !== postId) return p;
 
@@ -254,7 +254,7 @@ export const FeedProvider = ({ children }) => {
         const url = replyId
           ? `/feed/comment/${postId}/like/${commentId}/${replyId}`
           : `/feed/comment/${postId}/like/${commentId}`;
-        
+
         // We only call the API, optimistic update handles the UI
         await api.put(url, {}, {
           headers: { Authorization: `Bearer ${accessToken}` },
