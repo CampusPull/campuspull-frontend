@@ -82,6 +82,7 @@ const SessionDetails = ({ refreshTrigger, isNested = false }) => {
           </div>
         )}
       </section>
+      
 
       {/* 🟢 Scheduled Sessions */}
       <section>
