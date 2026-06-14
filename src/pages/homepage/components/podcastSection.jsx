@@ -20,23 +20,6 @@ const PodcastSection = () => {
       try {
         setIsLoading(true);
 
-        // Try backend API first
-        const { data } = await api.get("/podcasts");
-        if (data && data.success && data.data && data.data.length > 0) {
-          if (cancelled) return;
-          const formatted = data.data.map(item => ({
-            id: item._id,
-            youtubeId: item.youtubeId,
-            title: item.title,
-            guest: item.guest || "Alumni Talk",
-            date: new Date(item.date || item.createdAt).toLocaleDateString(),
-            thumbnail: item.thumbnail || "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&q=80&w=600",
-            description: item.description || "CampusPull Placement and Career Talk with inspiring alumni.",
-          }));
-          setEpisodes(formatted);
-          return;
-        }
-
         // Failsafe Fallback: YouTube API
         if (API_KEY && import.meta.env.VITE_YOUTUBE_PODCAST_PLAYLIST_ID) {
           const res = await fetch(
