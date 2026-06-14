@@ -64,7 +64,10 @@ const SessionCard = ({ session, user, onUpdated }) => {
       const parsed = new Date(rawDate);
 
       if (!isNaN(parsed.getTime())) {
-        formattedDate = parsed.toISOString().slice(0, 16);
+        const offset = parsed.getTimezoneOffset();
+        const localDate = new Date(parsed.getTime() - offset * 60000);
+
+        formattedDate = localDate.toISOString().slice(0, 16);
       }
     }
 
@@ -167,6 +170,18 @@ const SessionCard = ({ session, user, onUpdated }) => {
   };
 
   /* ---------------- Render ---------------- */
+  let scheduledAtText = "Not scheduled yet";
+  if (isPending) {
+    scheduledAtText = "Waiting for mentor to schedule";
+  } else if (session.scheduledAt) {
+    scheduledAtText = `📅 ${new Date(session.scheduledAt).toLocaleString(
+      "en-IN",
+      {
+        timeZone: "Asia/Kolkata",
+      },
+    )}`;
+  }
+
   return (
     <>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
@@ -220,17 +235,14 @@ const SessionCard = ({ session, user, onUpdated }) => {
               </span>
             </div>
 
-            <p className="mt-2 text-xs text-slate-500">
-              {isPending
-                ? "Waiting for mentor to schedule"
-                : session.scheduledAt
-                  ? `📅 ${session.scheduledAt}`
-                  : "Not scheduled yet"}
-            </p>
+            <p className="mt-2 text-xs text-slate-500">{scheduledAtText}</p>
 
             {isCompleted && session.completedAt && (
               <p className="mt-1 text-xs text-green-700">
-                ✅ Completed on {session.completedAt}
+                ✅ Completed on{" "}
+                {new Date(session.completedAt).toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                })}
               </p>
             )}
 
