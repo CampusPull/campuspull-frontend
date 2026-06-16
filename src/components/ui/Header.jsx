@@ -42,6 +42,7 @@ const roleFeatures = {
     "Mentorship",
     "Startup",
     "Internships",
+    "My Applications",
   ],
   alumni: [
     "Home",
@@ -58,6 +59,7 @@ const roleFeatures = {
     "Mentorship",
     "Startup",
     "Internships",
+    "My Applications",
   ],
   teacher: [
     "Home",
@@ -71,6 +73,7 @@ const roleFeatures = {
     "Chat",
     "Alumni Stories",
     "Startup",
+    "My Applications",
   ],
 };
 
@@ -103,6 +106,7 @@ const Header = () => {
     { name: "Profile", path: "/profile", icon: "User" },
     { name: "About CampusPull", path: "/about-link-mate", icon: "Info" },
     { name: "Internships", path: "/internships", icon: "Briefcase" },
+    { name: "My Applications", path: "/applications", icon: "ClipboardList" },
   ];
 
   const isGuest = !user;
