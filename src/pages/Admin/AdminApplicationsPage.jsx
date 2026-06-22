@@ -38,7 +38,7 @@ export default function AdminApplicationsPage() {
         })
       ]);
 
-      const appsList = appRes?.data || appRes || [];
+      const appsList = appRes?.data || [];
       const internshipData = intRes?.data || intRes || null;
 
       setApplications(appsList);

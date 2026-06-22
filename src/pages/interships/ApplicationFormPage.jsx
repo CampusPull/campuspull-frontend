@@ -48,8 +48,8 @@ export default function ApplicationFormPage() {
   });
 
   const [resumeUrl, setResumeUrl] = useState("");
+  const [selectedResumeFile, setSelectedResumeFile] = useState(null);
   const [isReplacingResume, setIsReplacingResume] = useState(false);
-  const [uploadingResume, setUploadingResume] = useState(false);
 
   const [internship, setInternship] = useState(null);
   const [loadingInternship, setLoadingInternship] = useState(true);
@@ -155,8 +155,7 @@ export default function ApplicationFormPage() {
         if (Array.isArray(list)) {
           const hasApplied = list.some(
             (app) =>
-              app.internshipId === id ||
-              app.internship?._id === id
+              app.internshipTitle === internship?.title
           );
           setAlreadyApplied(hasApplied);
         }
@@ -167,13 +166,13 @@ export default function ApplicationFormPage() {
       }
     };
 
-    if (id) {
+    if (id && internship) {
       checkAlreadyApplied();
     }
-  }, [id]);
+  }, [id, internship]);
 
-  // 4. Handle Inline Resume Upload
-  const handleResumeFileChange = async (e) => {
+  // 4. Handle Inline Resume File Selection
+  const handleResumeFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -187,25 +186,10 @@ export default function ApplicationFormPage() {
       return;
     }
 
-    setUploadingResume(true);
-    try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("resume", file);
-      uploadFormData.append("file", file);
-
-      const res = await api.post("/profile/upload-resume", uploadFormData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const url = res.data.resumeUrl || res.data.url;
-      setResumeUrl(url);
-      setIsReplacingResume(false);
-      toast.success("Resume uploaded successfully!");
-    } catch (err) {
-      console.error("Upload resume failed:", err);
-      toast.error(err.response?.data?.message || err.message || "Failed to upload resume. Please try again.");
-    } finally {
-      setUploadingResume(false);
-    }
+    setSelectedResumeFile(file);
+    setResumeUrl(URL.createObjectURL(file));
+    setIsReplacingResume(false);
+    toast.success("Resume file selected successfully!");
   };
 
   const handleInputChange = (e) => {
@@ -233,8 +217,8 @@ export default function ApplicationFormPage() {
     }
 
     // Validations: Resume PDF
-    if (!resumeUrl) {
-      toast.error("Resume upload is mandatory to submit!");
+    if (!selectedResumeFile && !resumeUrl) {
+      toast.error("Resume is required. Please upload a PDF.");
       return;
     }
 
@@ -262,14 +246,17 @@ export default function ApplicationFormPage() {
       const payload = {
         internshipId: id,
         ...formData,
-        resumeUrl,
         additionalResponses: Object.entries(additionalResponses).map(([question, answer]) => ({
           question,
           answer: String(answer),
         })),
       };
 
-      await createApplication(payload);
+      // TODO: Sakshi to handle resumeUrl field in backend as fallback when req.file is not present
+      const fileObject = selectedResumeFile;
+      const existingResumeUrl = selectedResumeFile ? null : resumeUrl;
+
+      await createApplication(payload, fileObject, existingResumeUrl);
       toast.success("Application submitted successfully!");
       navigate(`/internships/${id}/apply/success`);
     } catch (err) {
@@ -504,7 +491,9 @@ export default function ApplicationFormPage() {
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Selected Resume</p>
                       <p className="text-sm font-semibold text-gray-800 truncate max-w-[200px] sm:max-w-md">
-                        {decodeURIComponent(resumeUrl.split("/").pop() || "Uploaded Resume")}
+                        {selectedResumeFile
+                          ? selectedResumeFile.name
+                          : decodeURIComponent(resumeUrl.split("/").pop() || "Uploaded Resume")}
                       </p>
                     </div>
                   </div>
@@ -528,28 +517,19 @@ export default function ApplicationFormPage() {
               ) : (
                 <div className="space-y-3">
                   <label
-                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 ${
-                      uploadingResume
-                        ? "border-indigo-500 bg-indigo-50"
-                        : "border-slate-200 hover:border-indigo-400 bg-white"
-                    }`}
+                    className="flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 border-slate-200 hover:border-indigo-400 bg-white"
                   >
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={handleResumeFileChange}
                       className="hidden"
-                      disabled={uploadingResume}
                     />
                     <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center mb-2 shadow-sm border border-slate-200">
-                      {uploadingResume ? (
-                        <FiLoader className="animate-spin text-indigo-500" size={18} />
-                      ) : (
-                        <FiUploadCloud size={18} />
-                      )}
+                      <FiUploadCloud size={18} />
                     </div>
                     <p className="text-sm font-bold text-gray-700">
-                      {uploadingResume ? "Uploading your resume..." : "Click to select or drop resume file"}
+                      Click to select or drop resume file
                     </p>
                     <p className="text-[10px] text-gray-400 font-semibold mt-1">
                       PDF format only (Max 5MB)

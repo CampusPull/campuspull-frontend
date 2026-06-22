@@ -252,9 +252,9 @@ const InternshipDetails = () => {
     ? Array.isArray(internship.skills)
       ? internship.skills
       : internship.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 
   if (loading) return <DetailSkeleton />;
@@ -396,11 +396,10 @@ const InternshipDetails = () => {
 
                       <button
                         onClick={handleToggleStatus}
-                        className={`px-3 py-2 text-xs font-bold rounded-xl hover:scale-105 active:scale-95 transition-all duration-200 ${
-                          isClosed
+                        className={`px-3 py-2 text-xs font-bold rounded-xl hover:scale-105 active:scale-95 transition-all duration-200 ${isClosed
                             ? "bg-green-500 text-white"
                             : "bg-red-500 text-white"
-                        }`}
+                          }`}
                       >
                         {isClosed ? "Open" : "Close"}
                       </button>
@@ -409,11 +408,10 @@ const InternshipDetails = () => {
                   <button
                     onClick={handleSave}
                     title="Save internship"
-                    className={`p-2.5 rounded-xl border transition-all duration-200 ${
-                      saved
+                    className={`p-2.5 rounded-xl border transition-all duration-200 ${saved
                         ? "bg-indigo-50 border-indigo-200 text-indigo-600"
                         : "bg-gray-50 border-gray-200 text-gray-400 hover:text-indigo-500 hover:border-indigo-200"
-                    }`}
+                      }`}
                   >
                     <FiBookmark
                       size={16}
@@ -561,9 +559,9 @@ const InternshipDetails = () => {
                 <span className="font-semibold text-gray-800 mt-1">
                   {internship.applicationDeadline
                     ? new Date(internship.applicationDeadline).toLocaleDateString(
-                        "en-IN",
-                        { day: "numeric", month: "long", year: "numeric" }
-                      )
+                      "en-IN",
+                      { day: "numeric", month: "long", year: "numeric" }
+                    )
                     : "No Deadline"}
                 </span>
               </div>
@@ -585,11 +583,10 @@ const InternshipDetails = () => {
                 </span>
                 <div className="mt-1">
                   <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                      hiringStatus === "OPEN"
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${hiringStatus === "OPEN"
                         ? "bg-green-100 text-green-700 border border-green-200"
                         : "bg-red-100 text-red-700 border border-red-200"
-                    }`}
+                      }`}
                   >
                     {hiringStatus}
                   </span>
@@ -688,11 +685,10 @@ const InternshipDetails = () => {
             <button
               onClick={handleApply}
               disabled={isApplicationsClosed}
-              className={`flex items-center gap-2 px-6 py-3 text-white font-bold text-sm rounded-xl transition-all duration-200 ${
-                isApplicationsClosed
+              className={`flex items-center gap-2 px-6 py-3 text-white font-bold text-sm rounded-xl transition-all duration-200 ${isApplicationsClosed
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5"
-              }`}
+                }`}
             >
               {isApplicationsClosed
                 ? "Applications Closed"

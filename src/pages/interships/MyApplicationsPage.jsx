@@ -15,43 +15,32 @@ export default function MyApplicationsPage() {
     setError(null);
     try {
       const res = await getApplications();
-      setApplications(res.data || res);
+      // res is response.data from axios (JSON object: { success: true, data: [...] })
+      // res.data is response.data.data (the applications array)
+      setApplications(res.data || []);
     } catch (err) {
       console.warn("Failed to fetch applications, using mock applications list:", err);
-      // TODO: replace mock with real API call so it is easy to swap later
       setApplications([
         {
-          _id: "app_mock_1",
-          createdAt: "2026-06-12T10:00:00Z",
+          id: "app_mock_1",
+          appliedAt: "2026-06-12T10:00:00Z",
           status: "APPLIED",
-          internshipId: "mock-id-1",
-          internship: {
-            _id: "mock-id-1",
-            title: "Frontend Developer",
-            companyName: "CampusPull Tech",
-          }
+          internshipTitle: "Frontend Developer",
+          companyName: "CampusPull Tech",
         },
         {
-          _id: "app_mock_2",
-          createdAt: "2026-06-13T12:00:00Z",
+          id: "app_mock_2",
+          appliedAt: "2026-06-13T12:00:00Z",
           status: "UNDER_REVIEW",
-          internshipId: "mock-id-2",
-          internship: {
-            _id: "mock-id-2",
-            title: "Software Engineer",
-            companyName: "Innovate Labs",
-          }
+          internshipTitle: "Software Engineer",
+          companyName: "Innovate Labs",
         },
         {
-          _id: "app_mock_3",
-          createdAt: "2026-06-14T08:30:00Z",
+          id: "app_mock_3",
+          appliedAt: "2026-06-14T08:30:00Z",
           status: "SELECTED",
-          internshipId: "mock-id-3",
-          internship: {
-            _id: "mock-id-3",
-            title: "Fullstack Intern",
-            companyName: "Startup Hub",
-          }
+          internshipTitle: "Fullstack Intern",
+          companyName: "Startup Hub",
         }
       ]);
     } finally {
@@ -193,34 +182,26 @@ export default function MyApplicationsPage() {
                     <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      Actions
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {applications.map((app) => {
-                    const internshipId = app.internshipId || app.internship?._id;
                     return (
                       <tr
-                        key={app._id}
-                        onClick={() => internshipId && navigate(`/internships/${internshipId}`)}
-                        className="hover:bg-gray-50/55 cursor-pointer transition-colors"
+                        key={app.id}
+                        className="hover:bg-gray-50/55 transition-colors"
                       >
                         <td className="px-6 py-4 font-bold text-gray-800 text-sm">
-                          {app.internship?.title || "Internship Role"}
+                          {app.internshipTitle || "Internship Role"}
                         </td>
                         <td className="px-6 py-4 text-gray-600 text-sm">
-                          {app.internship?.companyName || "Company Name"}
+                          {app.companyName || "Company Name"}
                         </td>
                         <td className="px-6 py-4 text-gray-500 text-sm">
-                          {formatAppliedDate(app.createdAt)}
+                          {formatAppliedDate(app.appliedAt)}
                         </td>
                         <td className="px-6 py-4">
                           {getStatusBadge(app.status)}
-                        </td>
-                        <td className="px-6 py-4 text-indigo-600 hover:text-indigo-800">
-                          <FiChevronRight size={18} />
                         </td>
                       </tr>
                     );
@@ -232,29 +213,26 @@ export default function MyApplicationsPage() {
             {/* Mobile Stacked Cards View */}
             <div className="md:hidden divide-y divide-gray-100">
               {applications.map((app) => {
-                const internshipId = app.internshipId || app.internship?._id;
                 return (
                   <div
-                    key={app._id}
-                    onClick={() => internshipId && navigate(`/internships/${internshipId}`)}
-                    className="p-5 active:bg-gray-50 flex items-center justify-between gap-4 cursor-pointer transition-colors"
+                    key={app.id}
+                    className="p-5 flex items-center justify-between gap-4 transition-colors"
                   >
                     <div className="min-w-0 space-y-1.5">
                       <h3 className="font-bold text-gray-800 text-sm truncate">
-                        {app.internship?.title || "Internship Role"}
+                        {app.internshipTitle || "Internship Role"}
                       </h3>
                       <p className="text-gray-500 text-xs font-medium">
-                        {app.internship?.companyName || "Company Name"}
+                        {app.companyName || "Company Name"}
                       </p>
                       <div className="flex items-center gap-2 pt-0.5">
                         <span className="text-[10px] text-gray-400 font-bold uppercase">
-                          Applied: {formatAppliedDate(app.createdAt)}
+                          Applied: {formatAppliedDate(app.appliedAt)}
                         </span>
                         <span>·</span>
                         {getStatusBadge(app.status)}
                       </div>
                     </div>
-                    <FiChevronRight className="text-gray-300 shrink-0" size={18} />
                   </div>
                 );
               })}

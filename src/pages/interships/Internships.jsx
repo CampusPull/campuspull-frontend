@@ -8,7 +8,8 @@ import EditInternshipModal from "./components/editInternshipModal";
 import { useAuth } from "../../context/AuthContext";
 import SignupModal from "../../components/ui/SignupModal";
 import { motion } from "framer-motion";
-import { FiBriefcase, FiSearch, FiSliders, FiX, FiPlus, FiArrowRight } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { FiBriefcase, FiSearch, FiSliders, FiX, FiPlus, FiArrowRight, FiFileText } from "react-icons/fi";
 
 // ─── Skeleton Card ─────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
@@ -184,6 +185,15 @@ const Internships = () => {
             <div className="flex items-center gap-4 flex-wrap">
               <StatPill value={internships.length || "—"} label="Listings" />
               <StatPill value="100%" label="Verified" />
+              {!isGuest && (user?.role === "student" || user?.role === "alumni" || user?.role === "teacher") && (
+                <Link
+                  to="/applications"
+                  className="flex items-center gap-2 px-5 py-4 bg-white/10 backdrop-blur-md text-white font-extrabold text-sm rounded-2xl hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:scale-98 cursor-pointer border border-white/10 shadow-sm"
+                >
+                  <FiFileText size={16} />
+                  My Applications
+                </Link>
+              )}
               {!isGuest && user?.role === "admin" && (
                 <button
                   onClick={() => setIsModalOpen(true)}

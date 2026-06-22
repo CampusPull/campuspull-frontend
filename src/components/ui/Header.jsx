@@ -42,7 +42,6 @@ const roleFeatures = {
     "Mentorship",
     "Startup",
     "Internships",
-    "My Applications",
   ],
   alumni: [
     "Home",
@@ -59,7 +58,6 @@ const roleFeatures = {
     "Mentorship",
     "Startup",
     "Internships",
-    "My Applications",
   ],
   teacher: [
     "Home",
@@ -73,7 +71,6 @@ const roleFeatures = {
     "Chat",
     "Alumni Stories",
     "Startup",
-    "My Applications",
   ],
 };
 

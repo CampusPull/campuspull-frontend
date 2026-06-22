@@ -31,8 +31,31 @@ export const getApplicationById = async (applicationId) => {
  * Submit a new internship application.
  * Route: POST /applications
  */
-export const createApplication = async (applicationData) => {
-  const res = await api.post("/applications", applicationData);
+export const createApplication = async (applicationData, resumeFile, resumeUrl) => {
+  const formData = new FormData();
+  formData.append("internshipId", applicationData.internshipId);
+  formData.append("fullName", applicationData.fullName);
+  formData.append("email", applicationData.email);
+  formData.append("phone", applicationData.phone);
+  formData.append("college", applicationData.college);
+  formData.append("branch", applicationData.branch);
+  formData.append("year", applicationData.year);
+  
+  if (applicationData.linkedin) formData.append("linkedin", applicationData.linkedin);
+  if (applicationData.github) formData.append("github", applicationData.github);
+  if (applicationData.portfolio) formData.append("portfolio", applicationData.portfolio);
+
+  if (applicationData.additionalResponses) {
+    formData.append("additionalResponses", JSON.stringify(applicationData.additionalResponses));
+  }
+
+  if (resumeFile) {
+    formData.append("resume", resumeFile);
+  } else if (resumeUrl) {
+    formData.append("resumeUrl", resumeUrl);
+  }
+
+  const res = await api.post("/applications", formData);
   return res.data;
 };
 
