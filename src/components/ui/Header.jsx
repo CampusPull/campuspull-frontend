@@ -25,6 +25,7 @@ const roleFeatures = {
     "Mentorship",
     "Startup",
     "Admin Dashboard",
+    "Candidates",
     "Internships",
   ],
   student: [
@@ -98,6 +99,7 @@ const Header = () => {
     { name: "Events", path: "/events", icon: "Calendar" },
     { name: "Startup", path: "/startups", icon: "Rocket" },
     { name: "Admin Dashboard", path: "/admin", icon: "ShieldCheck" },
+    { name: "Candidates", path: "/admin/applications", icon: "Users" },
     { name: "Chat", path: "/chatPage", icon: "MessageSquare" },
     { name: "Alumni Stories", path: "/feedback", icon: "Quote" },
     { name: "Profile", path: "/profile", icon: "User" },
@@ -132,6 +134,7 @@ const Header = () => {
     "About CampusPull",
     "Alumni Stories",
     "Admin Dashboard",
+    "Candidates",
     "Chat",
     "Community",
     "Announcement",

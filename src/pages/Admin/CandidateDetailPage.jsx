@@ -24,37 +24,14 @@ export default function CandidateDetailPage() {
     setError(null);
     try {
       const res = await getApplicationById(applicationId);
-      const data = res.data || res;
+      // Week 2: response key is "application" not "data"
+      const data = res?.application || res?.data || res;
       setApplication(data);
       setStatus(data.status || "APPLIED");
       setAdminNotes(data.adminNotes || "");
     } catch (err) {
-      console.warn("API call failed, loading mock application for details panel:", err);
-      // TODO: replace mock with real API call so it is easy to swap later
-      const mockApp = {
-        _id: applicationId,
-        fullName: "Aman Gupta",
-        email: "aman.gupta@college.edu",
-        phone: "+91 9876543210",
-        college: "IIT Bombay",
-        branch: "Computer Science",
-        year: 3,
-        linkedin: "https://linkedin.com/in/amangupta",
-        github: "https://github.com/amangupta",
-        portfolio: "https://amangupta.dev",
-        resumeUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-        additionalResponses: [
-          { question: "Why do you want to join us?", answer: "I love building frontends and CampusPull is an amazing platform!" },
-          { question: "Years of experience with React", answer: "2" },
-          { question: "Earliest start date", answer: "1st July 2026" }
-        ],
-        createdAt: "2026-06-12T10:00:00Z",
-        status: "APPLIED",
-        adminNotes: "Good profile, strong React projects. Need to verify branch year details."
-      };
-      setApplication(mockApp);
-      setStatus(mockApp.status);
-      setAdminNotes(mockApp.adminNotes);
+      console.error("Failed to fetch candidate details:", err);
+      setError(err.response?.data?.message || err.message || "Failed to load candidate details");
     } finally {
       setLoading(false);
     }

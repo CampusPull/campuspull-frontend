@@ -70,6 +70,7 @@ import ApplicationFormPage from "./pages/interships/ApplicationFormPage.jsx";
 import SuccessPage from "./pages/interships/SuccessPage.jsx";
 import MyApplicationsPage from "./pages/interships/MyApplicationsPage.jsx";
 import AdminApplicationsPage from "./pages/Admin/AdminApplicationsPage.jsx";
+import CandidateDashboardPage from "./pages/Admin/CandidateDashboardPage.jsx";
 import CandidateDetailPage from "./pages/Admin/CandidateDetailPage.jsx";
 import { InternshipProvider } from "./context/internshipContext.jsx";
 import { Navigate } from "react-router-dom";
@@ -428,6 +429,7 @@ const Routes = () => {
               <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UsersTable /></ProtectedRoute>} />
               <Route path="/admin/mentorship" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminMentorship /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/internships/:internshipId/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminApplicationsPage /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/admin/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><CandidateDashboardPage /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/applications/:applicationId" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><CandidateDetailPage /></ProtectedLayout></ProtectedRoute>} />
 
               {/* Public Auth Page (no header) */}

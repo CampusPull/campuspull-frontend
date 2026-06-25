@@ -14,6 +14,7 @@ export const getApplications = async () => {
  * Route: GET /internships/:internshipId/applications
  */
 export const getInternshipApplications = async (internshipId) => {
+  // Week 2: response key is "applications" not "data"
   const res = await api.get(`/internships/${internshipId}/applications`);
   return res.data;
 };
@@ -23,7 +24,26 @@ export const getInternshipApplications = async (internshipId) => {
  * Route: GET /applications/:applicationId
  */
 export const getApplicationById = async (applicationId) => {
+  // Week 2: response key is "application" not "data"
   const res = await api.get(`/applications/${applicationId}`);
+  return res.data;
+};
+
+/**
+ * Fetch all applications for the admin dashboard.
+ * Route: GET /applications
+ */
+export const getAllApplications = async (params) => {
+  const res = await api.get("/applications", { params });
+  return res.data;
+};
+
+/**
+ * Fetch application statistics for the admin dashboard.
+ * Route: GET /applications/stats
+ */
+export const getApplicationStats = async () => {
+  const res = await api.get("/applications/stats");
   return res.data;
 };
 

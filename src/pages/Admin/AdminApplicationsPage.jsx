@@ -38,7 +38,7 @@ export default function AdminApplicationsPage() {
         })
       ]);
 
-      const appsList = appRes?.data || [];
+      const appsList = appRes?.applications || []; // Week 2: response key is "applications" not "data"
       const internshipData = intRes?.data || intRes || null;
 
       setApplications(appsList);
