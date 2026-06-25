@@ -90,15 +90,9 @@ export default function ApplicationFormPage() {
         console.log("Fetched internship object:", data);
 
         let formFields = data.applicationForm;
-        // Check if applicationForm is empty/null/undefined
-        if (!formFields || !Array.isArray(formFields) || formFields.length === 0) {
-          // TODO: remove mock
-          const mockQuestions = [
-            { label: "What is your CGPA?", type: "number", required: true },
-            { label: "Share your best AI project", type: "textarea", required: true },
-            { label: "LinkedIn Profile", type: "text", required: false }
-          ];
-          formFields = mockQuestions;
+        // Fallback to empty array if applicationForm is undefined or null
+        if (!formFields || !Array.isArray(formFields)) {
+          formFields = [];
         }
 
         const updatedInternship = {
