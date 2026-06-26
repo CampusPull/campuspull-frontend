@@ -96,3 +96,35 @@ export const updateApplicationNotes = async (applicationId, adminNotes) => {
   const res = await api.patch(`/applications/${applicationId}/notes`, { adminNotes });
   return res.data;
 };
+
+export const getDashboardStats = async () => {
+  const res = await api.get("/dashboard/stats");
+  return res.data;
+};
+
+export const getRecentApplications = async () => {
+  const res = await api.get("/dashboard/recent-applications");
+  return res.data;
+};
+
+export const getInternshipStats = async (internshipId) => {
+  const res = await api.get(`/internships/${internshipId}/stats`);
+  return res.data;
+};
+
+export const exportApplications = async (params = {}) => {
+  const res = await api.get("/applications/export", {
+    params,
+    responseType: "blob",
+  });
+  return res;
+};
+
+export const exportInternshipApplications = async (internshipId, params = {}) => {
+  const res = await api.get(`/internships/${internshipId}/export`, {
+    params,
+    responseType: "blob",
+  });
+  return res;
+};
+
