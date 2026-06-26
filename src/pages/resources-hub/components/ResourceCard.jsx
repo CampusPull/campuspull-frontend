@@ -96,12 +96,16 @@ const ResourceCard = ({
   };
 
   const getDifficultyColor = (difficulty) => {
+    const d = (difficulty || "").toLowerCase();
     const colors = {
       beginner: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
+      easy: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
       intermediate: "text-amber-600 bg-amber-50 border-amber-100/50",
+      medium: "text-amber-600 bg-amber-50 border-amber-100/50",
       advanced: "text-rose-600 bg-rose-50 border-rose-100/50",
+      hard: "text-rose-600 bg-rose-50 border-rose-100/50",
     };
-    return colors?.[difficulty] || colors?.beginner;
+    return colors?.[d] || "text-emerald-600 bg-emerald-50 border-emerald-100/50";
   };
 
   const accentColors = [
@@ -118,10 +122,6 @@ const ResourceCard = ({
   if (viewMode === "list") {
     return (
       <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 relative text-left">
-        {/* Accent line top */}
-        <div
-          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${accent} rounded-t-3xl`}
-        />
 
         <div className="flex items-start gap-3 sm:space-x-4 pt-1">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-slate-100 shadow-sm flex items-center justify-center">
@@ -150,7 +150,7 @@ const ResourceCard = ({
                 <h3 className="font-extrabold text-slate-800 text-base sm:text-lg line-clamp-1 transition-colors hover:text-indigo-600">
                   {resource?.title}
                 </h3>
-                <p className="text-sm text-slate-400 line-clamp-2 mt-1 font-semibold">
+                <p className="line-clamp-2 text-sm text-gray-500 mt-1 font-semibold">
                   {resource?.description}
                 </p>
               </div>
@@ -224,11 +224,7 @@ const ResourceCard = ({
 
   // GRID VIEW
   return (
-    <div className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative text-left">
-      {/* Dynamic top gradient accent line */}
-      <div
-        className={`h-1.5 bg-gradient-to-r ${accent} transition-transform duration-300 group-hover:scale-y-110 shrink-0`}
-      />
+    <div className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-h-[460px] relative text-left shadow-inner-sm">
 
       <div className="relative h-44 bg-slate-50 overflow-hidden shrink-0 border-b border-slate-100">
         {resource?.thumbnail ? (
@@ -285,7 +281,7 @@ const ResourceCard = ({
         <h3 className="font-extrabold text-slate-800 text-base mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors leading-snug">
           {resource?.title}
         </h3>
-        <p className="text-sm text-slate-400 line-clamp-3 mb-4 flex-1 font-semibold leading-relaxed">
+        <p className="line-clamp-2 text-sm text-gray-500 mb-4 flex-1 font-semibold leading-relaxed">
           {resource?.description}
         </p>
 
