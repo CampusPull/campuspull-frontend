@@ -38,7 +38,7 @@ export default function AdminApplicationsPage() {
         })
       ]);
 
-      const appsList = appRes?.applications || []; // Week 2: response key is "applications" not "data"
+      const appsList = appRes?.data || []; // Week 2: response key is "applications" not "data"
       const internshipData = intRes?.data || intRes || null;
 
       setApplications(appsList);
@@ -154,10 +154,10 @@ export default function AdminApplicationsPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Back Link */}
         <Link
-          to="/admin"
+          to="/internships"
           className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition"
         >
-          <FiArrowLeft size={14} /> Back to Dashboard
+          <FiArrowLeft size={14} /> Back to Internships
         </Link>
 
         {/* Title Block */}
