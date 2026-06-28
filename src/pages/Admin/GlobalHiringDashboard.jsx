@@ -10,7 +10,8 @@ export default function GlobalHiringDashboard() {
 
   const [stats, setStats] = useState(null);
   const [recentApplications, setRecentApplications] = useState([]);
-  const [activeInternships, setActiveInternships] = useState([]);
+  const [allInternships, setAllInternships] = useState([]);
+  const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,56 +19,48 @@ export default function GlobalHiringDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, recentRes, internshipsRes] = await Promise.all([
-        getDashboardStats().catch((err) => {
-          console.warn("Stats API failed or not ready, defaulting stats values:", err);
-          return {
-            activeInternships: 0,
-            totalApplications: 0,
-            applied: 0,
-            underReview: 0,
-            shortlisted: 0,
-            selected: 0,
-            rejected: 0,
-          };
-        }),
-        getRecentApplications().catch((err) => {
-          console.warn("Recent applications API failed or not ready, defaulting to empty list:", err);
-          return { data: [] };
-        }),
-        api.get("/internships").catch((err) => {
-          console.warn("Internships list API failed, defaulting to empty list:", err);
-          return { data: { data: [] } };
-        }),
+      const results = await Promise.allSettled([
+        getDashboardStats(),
+        getRecentApplications(),
+        api.get("/internships"),
       ]);
 
-      // Normalize stats in case some values are missing
-      const resolvedStats = {
-        activeInternships: statsRes?.activeInternships || 0,
-        totalApplications: statsRes?.totalApplications || 0,
-        applied: statsRes?.applied || 0,
-        underReview: statsRes?.underReview || 0,
-        shortlisted: statsRes?.shortlisted || 0,
-        selected: statsRes?.selected || 0,
-        rejected: statsRes?.rejected || 0,
-      };
+      const statsRes = results[0].status === "fulfilled" ? results[0].value : null;
+      const recentRes = results[1].status === "fulfilled" ? results[1].value : null;
+      const internshipsRes = results[2].status === "fulfilled" ? results[2].value : null;
 
-      setStats(resolvedStats);
+      // Support both nested { stats: ... } and flat structure from the stats response
+      const statsObj = statsRes?.stats || statsRes || {};
+      const resolvedStats = {
+        activeInternships: statsObj.activeInternships || 0,
+        totalApplications: statsObj.totalApplications || 0,
+        applied: statsObj.applied || 0,
+        underReview: statsObj.underReview || 0,
+        shortlisted: statsObj.shortlisted || 0,
+        selected: statsObj.selected || 0,
+        rejected: statsObj.rejected || 0,
+        closedInternships: statsObj.closedInternships ?? null,
+      };
 
       // Handle shape of recent applications
       const apps = recentRes?.data || recentRes?.applications || [];
       setRecentApplications(apps.slice(0, 10));
 
-      // Handle active internships (hiringStatus === 'OPEN' or status === 'open')
+      // Handle all internships
       const internshipsData = internshipsRes?.data?.data || internshipsRes?.data || [];
-      const openInternships = internshipsData.filter(
-        (item) =>
-          item.hiringStatus === "OPEN" ||
-          item.hiringStatus === "open" ||
-          item.status === "open" ||
-          item.status === "OPEN"
-      );
-      setActiveInternships(openInternships.slice(0, 5));
+      setAllInternships(internshipsData);
+
+      // Fallback for closedInternships if not returned by stats API
+      if (resolvedStats.closedInternships === null || resolvedStats.closedInternships === undefined) {
+        resolvedStats.closedInternships = internshipsData.filter((i) => {
+          const isOpen =
+            i.status?.toUpperCase() === "OPEN" ||
+            (i.status?.toUpperCase() !== "CLOSED" && i.hiringStatus?.toUpperCase() === "OPEN");
+          return !isOpen;
+        }).length;
+      }
+
+      setStats(resolvedStats);
     } catch (err) {
       console.error("Critical error in dashboard fetch:", err);
       setError("Failed to fetch hiring dashboard data. Please check your network connection.");
@@ -79,6 +72,16 @@ export default function GlobalHiringDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const filteredInternships = allInternships.filter((item) => {
+    const isOpen =
+      item.status?.toUpperCase() === "OPEN" ||
+      (item.status?.toUpperCase() !== "CLOSED" && item.hiringStatus?.toUpperCase() === "OPEN");
+
+    if (filter === "open") return isOpen;
+    if (filter === "closed") return !isOpen;
+    return true;
+  });
 
   const getStatusBadge = (status) => {
     const s = (status || "APPLIED").toUpperCase();
@@ -138,24 +141,33 @@ export default function GlobalHiringDashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Page Header */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Global Hiring Dashboard</h1>
-          <p className="text-sm font-medium text-gray-500 mt-1">
-            Overview of internship statistics, recent applications, and current openings.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Global Hiring Dashboard</h1>
+            <p className="text-sm font-medium text-gray-500 mt-1">
+              Overview of internship statistics, recent applications, and current openings.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/internships")}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-indigo-400 text-gray-700 hover:text-indigo-600 font-extrabold text-xs rounded-xl shadow-sm transition cursor-pointer w-fit sm:self-start"
+          >
+            <span>Browse Internships</span>
+            <Icon name="ExternalLink" size={14} />
+          </button>
         </div>
 
         {/* Section A: Stats Cards Row */}
         {loading && !stats ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm h-24" />
             ))}
           </div>
         ) : (
           stats && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Active Internships */}
+               {/* Active Internships */}
               <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-blue-500 flex items-center justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Active Internships</span>
@@ -231,125 +243,190 @@ export default function GlobalHiringDashboard() {
                   <Icon name="XCircle" size={20} />
                 </div>
               </div>
+
+              {/* Closed Internships */}
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-slate-500 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Closed Internships</span>
+                  <p className="text-2xl font-black text-slate-700">{stats.closedInternships}</p>
+                </div>
+                <div className="w-10 h-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center">
+                  <Icon name="Lock" size={20} />
+                </div>
+              </div>
             </div>
           )
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Section B: Recent Applications Table */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-extrabold text-gray-800">Recent Applications</h2>
+        {/* Section B: All Internships Table */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-lg font-extrabold text-gray-800">All Internships</h2>
             
-            {loading ? (
-              <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4 animate-pulse">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex justify-between items-center py-4 border-b border-gray-50 last:border-b-0">
-                    <div className="space-y-2">
-                      <div className="h-4 w-32 bg-gray-200 rounded" />
-                      <div className="h-3 w-48 bg-gray-100 rounded" />
-                    </div>
-                    <div className="h-8 w-20 bg-gray-200 rounded" />
+            {/* Toggle filter buttons */}
+            <div className="flex items-center bg-gray-200/50 p-1 rounded-xl border border-gray-200/60 w-fit">
+              {["all", "open", "closed"].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all capitalize cursor-pointer ${
+                    filter === f
+                      ? "bg-white text-gray-800 shadow-sm border border-slate-200/20"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex justify-between items-center py-4 border-b border-gray-50 last:border-b-0">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-gray-200 rounded" />
+                    <div className="h-3 w-48 bg-gray-100 rounded" />
                   </div>
-                ))}
-              </div>
-            ) : recentApplications.length === 0 ? (
-              <div className="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <span className="text-4xl block mb-2">📬</span>
-                <p className="text-gray-500 font-bold text-sm">No recent applications found</p>
-              </div>
-            ) : (
-              <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-100">
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Candidate Name</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Internship</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">College</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Applied Date</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {recentApplications.map((app) => (
-                        <tr key={app._id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-4 font-bold text-gray-800 text-sm whitespace-nowrap">{app.fullName}</td>
+                  <div className="h-8 w-20 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : filteredInternships.length === 0 ? (
+            <div className="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
+              <span className="text-4xl block mb-2">💼</span>
+              <p className="text-gray-500 font-bold text-sm">No internships found</p>
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Internship Title</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Company Name</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Openings</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Deadline</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Applications Count</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredInternships.map((internship) => {
+                      const isOpen =
+                        internship.status?.toUpperCase() === "OPEN" ||
+                        (internship.status?.toUpperCase() !== "CLOSED" && internship.hiringStatus?.toUpperCase() === "OPEN");
+
+                      return (
+                        <tr key={internship._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 font-bold text-gray-800 text-sm whitespace-nowrap">{internship.title}</td>
                           <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">
-                            {app.internshipTitle || app.internshipId?.title || app.internship?.title || "—"}
+                            {internship.companyName}
                           </td>
-                          <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">{app.college || "—"}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(app.status)}</td>
+                          <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">
+                            {internship.openings ?? "—"}
+                          </td>
                           <td className="px-6 py-4 text-gray-500 text-sm font-semibold whitespace-nowrap">
-                            {formatAppliedDate(app.appliedAt || app.createdAt)}
+                            {internship.deadline ? formatAppliedDate(internship.deadline) : "No deadline"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {isOpen ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-green-100 text-green-800 border-green-200">
+                                OPEN
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-red-100 text-red-800 border-red-200">
+                                CLOSED
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">
+                            {internship.applicationCount !== undefined && internship.applicationCount !== null
+                              ? internship.applicationCount
+                              : "—"}
                           </td>
                           <td className="px-6 py-4 text-center whitespace-nowrap">
                             <button
-                              onClick={() => navigate(`/admin/applications/${app._id}`)}
+                              onClick={() => navigate(`/admin/internships/${internship._id}/applications`)}
                               className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-600 font-bold text-xs rounded-lg transition cursor-pointer"
                             >
-                              View
+                              View Applications
                             </button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
 
-          {/* Section C: Active Internships List */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-gray-800">Active Internships</h2>
-
-            {loading ? (
-              <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4 animate-pulse">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded-xl" />
-                ))}
-              </div>
-            ) : activeInternships.length === 0 ? (
-              <div className="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <span className="text-4xl block mb-2">💼</span>
-                <p className="text-gray-500 font-bold text-sm">No active internships currently</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activeInternships.map((internship) => (
-                  <div
-                    key={internship._id}
-                    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-brand-sm transition-all"
-                  >
-                    <div>
-                      <h4 className="font-extrabold text-gray-850 text-sm">{internship.title}</h4>
-                      <p className="text-xs font-semibold text-gray-500 mt-0.5">{internship.companyName}</p>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs font-semibold text-gray-600">
-                      <div>
-                        <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wide">Openings</span>
-                        <span>{internship.openings || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wide">Deadline</span>
-                        <span>{formatAppliedDate(internship.deadline)}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => navigate(`/admin/internships/${internship._id}/applications`)}
-                      className="w-full py-2 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-600 font-bold text-xs rounded-xl transition text-center cursor-pointer"
-                    >
-                      View Applications
-                    </button>
+        {/* Section C: Recent Applications Table */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-extrabold text-gray-800">Recent Applications</h2>
+          
+          {loading ? (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex justify-between items-center py-4 border-b border-gray-50 last:border-b-0">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-gray-200 rounded" />
+                    <div className="h-3 w-48 bg-gray-100 rounded" />
                   </div>
-                ))}
+                  <div className="h-8 w-20 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : recentApplications.length === 0 ? (
+            <div className="p-12 text-center bg-white border border-gray-100 rounded-2xl shadow-sm">
+              <span className="text-4xl block mb-2">📬</span>
+              <p className="text-gray-500 font-bold text-sm">No recent applications found</p>
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Candidate Name</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Internship</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">College</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Applied Date</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {recentApplications.map((app) => (
+                      <tr key={app._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4 font-bold text-gray-800 text-sm whitespace-nowrap">{app.fullName}</td>
+                        <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">
+                          {app.internshipTitle || app.internshipId?.title || app.internship?.title || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-gray-600 text-sm font-semibold whitespace-nowrap">{app.college || "—"}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(app.status)}</td>
+                        <td className="px-6 py-4 text-gray-500 text-sm font-semibold whitespace-nowrap">
+                          {formatAppliedDate(app.appliedAt || app.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => navigate(`/admin/applications/${app._id}`)}
+                            className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-600 font-bold text-xs rounded-lg transition cursor-pointer"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
         </div>
 

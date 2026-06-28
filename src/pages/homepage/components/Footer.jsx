@@ -4,9 +4,6 @@ import Icon from '../../../components/AppIcon';
 
 const Footer = () => {
   const currentYear = new Date()?.getFullYear();
-
-  // Satyam, I removed links like "Press", "Copyright", and "Technical Support" 
-  // until you actually build those pages. 
   const footerSections = [
     {
       title: "Platform",
@@ -111,7 +108,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-slate-500 text-xs font-medium">
-            © {currentYear} CampusPull. Built with grit by Satyam.
+            © {currentYear} CampusPull. All rights reserved.
           </p>
           <div className="flex space-x-3">
             {socialLinks.map((social) => (

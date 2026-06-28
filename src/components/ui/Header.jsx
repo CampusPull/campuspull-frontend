@@ -90,6 +90,8 @@ const Header = () => {
   const menuRef = useRef(null);
   const mentorshipPath =
     user?.role === "alumni" ? "/mentorship/profile" : "/mentorship/mentors";
+  const isAdmin = user?.role === "admin";
+  const internshipsPath = isAdmin ? "/admin/hiring-dashboard" : "/internships";
 
   const allNavigationItems = [
     { name: "Resources Hub", path: "/resources-hub", icon: "BookOpen" },
@@ -106,7 +108,7 @@ const Header = () => {
     { name: "Alumni Stories", path: "/feedback", icon: "Quote" },
     { name: "Profile", path: "/profile", icon: "User" },
     { name: "About CampusPull", path: "/about-link-mate", icon: "Info" },
-    { name: "Internships", path: "/internships", icon: "Briefcase" },
+    { name: "Internships", path: internshipsPath, icon: "Briefcase" },
     { name: "My Applications", path: "/applications", icon: "ClipboardList" },
   ];
 
