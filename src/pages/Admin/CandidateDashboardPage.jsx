@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { getAllApplications, getApplicationStats } from "../../services/applicationService";
 import { FiSearch, FiFilter, FiUser, FiArrowLeft, FiAlertCircle, FiLoader, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { toast } from "react-toastify";
+import ExportButton from "../../components/ui/ExportButton";
 
 export default function CandidateDashboardPage() {
   const navigate = useNavigate();
@@ -247,11 +248,14 @@ export default function CandidateDashboardPage() {
     <div className="p-6 pt-28 md:pt-32 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Title */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Candidate Dashboard</h1>
-          <p className="text-sm font-medium text-gray-500 mt-1">
-            Manage all internship candidates, filter profiles, and track evaluation status.
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Candidate Dashboard</h1>
+            <p className="text-sm font-medium text-gray-500 mt-1">
+              Manage all internship candidates, filter profiles, and track evaluation status.
+            </p>
+          </div>
+          <ExportButton filters={{ search, status, college, branch, year }} />
         </div>
 
         {/* Section A: Stats Cards Row */}
