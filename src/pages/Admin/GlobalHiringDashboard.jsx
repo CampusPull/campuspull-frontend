@@ -30,7 +30,7 @@ export default function GlobalHiringDashboard() {
       const internshipsRes = results[2].status === "fulfilled" ? results[2].value : null;
 
       // Support both nested { stats: ... } and flat structure from the stats response
-      const statsObj = statsRes?.stats || statsRes || {};
+      const statsObj = statsRes?.data || {};
       const resolvedStats = {
         activeInternships: statsObj.activeInternships || 0,
         totalApplications: statsObj.totalApplications || 0,
@@ -150,10 +150,9 @@ export default function GlobalHiringDashboard() {
           </div>
           <button
             onClick={() => navigate("/internships")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:border-indigo-400 text-gray-700 hover:text-indigo-600 font-extrabold text-xs rounded-xl shadow-sm transition cursor-pointer w-fit sm:self-start"
-          >
-            <span>Browse Internships</span>
-            <Icon name="ExternalLink" size={14} />
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base rounded-xl shadow-sm transition cursor-pointer w-fit sm:self-start">
+            <span>All Internships</span>
+            <Icon name="ArrowRight" size={16} />
           </button>
         </div>
 
