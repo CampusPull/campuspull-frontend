@@ -143,7 +143,7 @@ const AlumniSpotlight = () => {
   if (!currentAlumni || alumniStories.length === 0) return null;
 
   const name = currentAlumni.name || 'Alumni Member';
-  const currentRole = currentAlumni.headline || (currentAlumni.experience?.length > 0 ? currentAlumni.experience[0].role : 'Professional');
+  const currentRole = currentAlumni.designation || currentAlumni.headline || (currentAlumni.experience?.length > 0 ? currentAlumni.experience[0].role : 'Professional');
   const company = currentAlumni.currentCompany || (currentAlumni.experience?.length > 0 ? currentAlumni.experience[0].company : 'Organization');
   const university = currentAlumni.college || (currentAlumni.education?.length > 0 ? currentAlumni.education[0].school : 'University');
   const profileImage = currentAlumni.profileImage || '/avatar.png';
@@ -205,67 +205,70 @@ const AlumniSpotlight = () => {
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="cursor-pointer bg-white/70 backdrop-blur-2xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80 p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center"
+              className="cursor-pointer bg-white/75 backdrop-blur-2xl rounded-[2rem] shadow-[0_12px_40px_rgba(0,0,0,0.03)] border border-white/90 p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center hover:shadow-[0_16px_48px_rgba(0,0,0,0.05)] transition-all duration-300"
             >
               
-              {/* Left Content Area (8 cols) */}
-              <div className="lg:col-span-7 flex flex-col h-full justify-center">
+              {/* Left Column: Profile Card Info (4 cols) */}
+              <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left border-b lg:border-b-0 lg:border-r border-slate-100 pb-8 lg:pb-0 lg:pr-8">
                 {/* Profile Badge & Image */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
-                  <div className="relative">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500">
-                      <Image
-                        src={profileImage}
-                        alt={name}
-                        className="w-full h-full object-cover rounded-full border-4 border-white"
-                      />
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border-2 border-white shadow-sm flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                      Available
-                    </div>
+                <div className="relative mb-6">
+                  <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500">
+                    <Image
+                      src={profileImage}
+                      alt={name}
+                      className="w-full h-full object-cover rounded-full border-4 border-white"
+                    />
                   </div>
-                  
+                  <div className="absolute -bottom-2 right-1/2 translate-x-1/2 lg:translate-x-0 lg:right-0 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border-2 border-white shadow-sm flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    Available
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">{name}</h3>
+                <p className="text-indigo-600 font-extrabold text-base leading-snug">{currentRole}</p>
+                <p className="text-slate-600 font-bold text-sm mt-1">{company}</p>
+                <p className="text-slate-400 font-bold text-xs mt-3 bg-slate-100/50 px-3 py-1.5 rounded-xl border border-slate-200/40">{university}</p>
+              </div>
+
+              {/* Right Column: Bio & Actions (8 cols) */}
+              <div className="lg:col-span-8 flex flex-col h-full justify-between lg:pl-4">
+                <div className="space-y-6">
+                  {/* Bio/Quote Box */}
+                  <div className="relative pl-6 border-l-4 border-indigo-200/80">
+                    <span className="absolute -top-4 -left-3 text-5xl text-indigo-100 font-serif leading-none">"</span>
+                    <p className="text-base sm:text-lg text-slate-750 italic leading-relaxed relative z-10 font-semibold">
+                      {bio}
+                    </p>
+                  </div>
+
+                  {/* Skills tags */}
                   <div>
-                    <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">{name}</h3>
-                    <p className="text-indigo-600 font-semibold text-lg">{currentRole}</p>
-                    <p className="text-slate-500 font-medium">{company}</p>
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Expertise</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {skills.map((skill, idx) => (
+                        <span 
+                          key={idx} 
+                          className="px-3.5 py-1.5 bg-slate-100/60 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 text-xs font-bold rounded-xl transition-colors border border-slate-200"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Quote Box */}
-                <div className="relative mb-8 pl-6 border-l-4 border-indigo-200">
-                  <span className="absolute -top-4 -left-3 text-5xl text-indigo-100 font-serif leading-none">"</span>
-                  <p className="text-lg sm:text-xl text-slate-700 italic leading-relaxed relative z-10">
-                    {bio}
-                  </p>
-                </div>
-
-                {/* Skills */}
-                <div className="mb-10">
-                  <div className="flex flex-wrap gap-2">
-                    {skills.map((skill, idx) => (
-                      <span 
-                        key={idx} 
-                        className="px-4 py-1.5 bg-slate-100/80 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 text-sm font-medium rounded-full transition-colors border border-slate-200/60"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                 {/* Action Buttons */}
-                <div className="mt-auto flex flex-col sm:flex-row gap-3">
+                {/* Action Buttons */}
+                <div className="mt-8 flex flex-col sm:flex-row gap-3">
                   <button 
                     onClick={handleConnectClick}
                     disabled={isPending}
-                    className={`group relative overflow-hidden flex-1 sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 ${
+                    className={`group relative overflow-hidden flex-1 sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-extrabold text-sm transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 ${
                       isConnected 
                         ? "bg-emerald-500 text-white shadow-emerald-500/25" 
                         : isPending 
                           ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
-                          : "bg-slate-900 text-white shadow-slate-900/20 hover:bg-slate-800"
+                          : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/20"
                     }`}
                   >
                     <Icon name={isConnected ? "MessageCircle" : isPending ? "Clock" : "UserPlus"} size={16} />
@@ -276,54 +279,11 @@ const AlumniSpotlight = () => {
 
                   <button 
                     onClick={handleMentorshipClick}
-                    className="group relative overflow-hidden flex-1 sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                    className="group relative overflow-hidden flex-1 sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                   >
                     <Icon name="Users" size={16} />
                     <span>Request Mentorship</span>
                   </button>
-                </div>
-              </div>
-
-              {/* Right Content Area: Journey Track (5 cols) */}
-              <div className="lg:col-span-5 bg-gradient-to-b from-indigo-5/50 to-purple-5/50 rounded-3xl p-6 sm:p-8 border border-white shadow-inner h-full flex flex-col justify-center">
-                <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-6">Career Journey</h4>
-                
-                <div className="relative">
-                  {/* Vertical Line */}
-                  <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-200 via-purple-200 to-transparent"></div>
-                  
-                  {/* Step 1 */}
-                  <div className="relative flex gap-5 mb-8 group">
-                    <div className="relative z-10 w-12 h-12 bg-white rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:border-indigo-300 transition-transform">
-                      <Icon name="GraduationCap" size={20} className="text-indigo-500" />
-                    </div>
-                    <div className="pt-2">
-                      <h5 className="text-base font-bold text-slate-900 leading-tight">{journeyCollege}</h5>
-                      <p className="text-sm text-slate-500">{university}</p>
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="relative flex gap-5 mb-8 group">
-                    <div className="relative z-10 w-12 h-12 bg-white rounded-2xl shadow-sm border border-purple-100 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:border-purple-300 transition-transform">
-                      <Icon name="Briefcase" size={20} className="text-purple-500" />
-                    </div>
-                    <div className="pt-2">
-                      <h5 className="text-base font-bold text-slate-900 leading-tight">{journeyFirstJob}</h5>
-                      <p className="text-sm text-slate-500">{firstJobCompany}</p>
-                    </div>
-                  </div>
-
-                  {/* Step 3 (Current) */}
-                  <div className="relative flex gap-5 group">
-                    <div className="relative z-10 w-12 h-12 bg-slate-900 rounded-2xl shadow-md border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <Icon name="Star" size={20} className="text-amber-400" />
-                    </div>
-                    <div className="pt-2">
-                      <h5 className="text-base font-bold text-slate-900 leading-tight">{currentRole}</h5>
-                      <p className="text-sm text-indigo-600 font-medium">{company}</p>
-                    </div>
-                  </div>
                 </div>
               </div>
 

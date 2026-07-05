@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useInternships } from "../../../context/internshipContext";
 import { useAuth } from "context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiUploadCloud, FiFile, FiCheck, FiBriefcase, FiAlertCircle } from "react-icons/fi";
+import { FiX, FiUploadCloud, FiFile, FiCheck, FiBriefcase, FiAlertCircle, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
@@ -22,7 +22,36 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
     companyName: "",
     companyWebsite: "",
     type: "remote",
+    applicationDeadline: "",
+    openings: 1,
+    hiringStatus: "OPEN",
+    applicationForm: [],
   });
+
+  const handleAddQuestion = () => {
+    setForm((prev) => ({
+      ...prev,
+      applicationForm: [
+        ...prev.applicationForm,
+        { label: "", type: "text", required: false },
+      ],
+    }));
+  };
+
+  const handleQuestionChange = (index, field, value) => {
+    setForm((prev) => {
+      const updatedForm = [...prev.applicationForm];
+      updatedForm[index] = { ...updatedForm[index], [field]: value };
+      return { ...prev, applicationForm: updatedForm };
+    });
+  };
+
+  const handleRemoveQuestion = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      applicationForm: prev.applicationForm.filter((_, i) => i !== index),
+    }));
+  };
 
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
@@ -96,6 +125,16 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
     formData.append("companyWebsite", form.companyWebsite);
     formData.append("createdBy", createdBy);
     formData.append("type", form.type);
+
+    // Application settings fields
+    if (form.applicationDeadline) {
+      formData.append("applicationDeadline", form.applicationDeadline);
+    } else {
+      formData.append("applicationDeadline", "");
+    }
+    formData.append("openings", Number(form.openings) || 1);
+    formData.append("hiringStatus", form.hiringStatus);
+    formData.append("applicationForm", JSON.stringify(form.applicationForm));
 
     if (logoFile) {
       formData.append("companyLogo", logoFile);
@@ -387,6 +426,140 @@ const CreateInternshipModal = ({ isOpen, onClose, onSuccess }) => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* ── Application Settings ── */}
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800/60">
+              <h3 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-4 flex items-center gap-2">
+                <FiBriefcase size={16} />
+                Application Settings
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Application Deadline */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Application Deadline</label>
+                  <input
+                    type="datetime-local"
+                    name="applicationDeadline"
+                    value={form.applicationDeadline}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800 dark:text-white"
+                  />
+                </div>
+
+                {/* Openings */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Openings</label>
+                  <input
+                    type="number"
+                    name="openings"
+                    min="1"
+                    placeholder="e.g. 5"
+                    value={form.openings}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800 dark:text-white"
+                    required
+                  />
+                </div>
+
+                {/* Hiring Status */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Hiring Status</label>
+                  <select
+                    name="hiringStatus"
+                    value={form.hiringStatus}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold text-slate-700 dark:text-slate-200"
+                  >
+                    <option value="OPEN">OPEN</option>
+                    <option value="CLOSED">CLOSED</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Custom Questions Form Builder ── */}
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800/60">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                  <FiPlus size={16} />
+                  Custom Application Questions
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleAddQuestion}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl transition-all"
+                >
+                  <FiPlus size={14} /> Add Question
+                </button>
+              </div>
+
+              {form.applicationForm.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-900 text-center">
+                  No custom questions added yet. Candidates will submit standard profile information (Resume, Email, Phone, College, etc.)
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {form.applicationForm.map((question, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-900 relative animate-fadeIn"
+                    >
+                      {/* Label Input */}
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Question Label</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. What is your CGPA? / Share your portfolio link"
+                          value={question.label}
+                          onChange={(e) => handleQuestionChange(index, "label", e.target.value)}
+                          className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Type Selector */}
+                      <div className="w-full md:w-[130px]">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Input Type</label>
+                        <select
+                          value={question.type}
+                          onChange={(e) => handleQuestionChange(index, "type", e.target.value)}
+                          className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-slate-700 dark:text-slate-200"
+                        >
+                          <option value="text">Short Answer</option>
+                          <option value="textarea">Paragraph</option>
+                          <option value="number">Number</option>
+                        </select>
+                      </div>
+
+                      {/* Required Checkbox */}
+                      <div className="flex items-center gap-2 self-start md:self-auto mt-2 md:mt-5">
+                        <input
+                          type="checkbox"
+                          id={`required-${index}`}
+                          checked={question.required}
+                          onChange={(e) => handleQuestionChange(index, "required", e.target.checked)}
+                          className="w-4 h-4 rounded text-indigo-600 border-slate-200 dark:border-slate-800 focus:ring-indigo-500"
+                        />
+                        <label htmlFor={`required-${index}`} className="text-xs font-bold text-slate-500 cursor-pointer">
+                          Required
+                        </label>
+                      </div>
+
+                      {/* Delete Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveQuestion(index)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all self-end md:self-auto mt-2 md:mt-5"
+                        title="Remove question"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Error display */}

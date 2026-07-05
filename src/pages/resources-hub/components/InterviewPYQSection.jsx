@@ -45,12 +45,16 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
   ];
 
   const getDifficultyColor = (difficulty) => {
+    const d = (difficulty || "").toUpperCase();
     const colors = {
-      Easy: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
-      Medium: "text-amber-600 bg-amber-50 border-amber-100/50",
-      Hard: "text-rose-600 bg-rose-50 border-rose-100/50",
+      BEGINNER: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
+      EASY: "text-emerald-600 bg-emerald-50 border-emerald-100/50",
+      INTERMEDIATE: "text-amber-600 bg-amber-50 border-amber-100/50",
+      MEDIUM: "text-amber-600 bg-amber-50 border-amber-100/50",
+      ADVANCED: "text-rose-600 bg-rose-50 border-rose-100/50",
+      HARD: "text-rose-600 bg-rose-50 border-rose-100/50",
     };
-    return colors?.[difficulty] || colors?.Medium;
+    return colors?.[d] || "text-emerald-600 bg-emerald-50 border-emerald-100/50";
   };
 
   const getDifficultyLabel = (val) =>
@@ -78,7 +82,12 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
           const ownerId = pyq?.uploadedBy?._id || pyq?.uploadedBy;
           const isOwner = !isGuest && user?._id === ownerId;
           const showActions = isOwner || isAdmin;
-          const accent = accentColors[(pyq.company?.charCodeAt(0) || 0) % accentColors.length];
+
+          // Process tags to split by comma, trim whitespace, and filter out empty strings
+          const cleanTags = (pyq?.tags || [])
+            .flatMap((tag) => (typeof tag === "string" ? tag.split(",") : []))
+            .map((t) => t.trim())
+            .filter(Boolean);
 
           // ==========================================
           // LIST VIEW ITEM
@@ -89,8 +98,6 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                 key={pyq._id}
                 className="group bg-white border border-slate-100 rounded-3xl p-5 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] relative transition-all duration-300"
               >
-                {/* Accent line top */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${accent} rounded-t-3xl`} />
                 
                 <div className="flex flex-col sm:flex-row items-start gap-5 pt-1">
                   <div className="flex-shrink-0 w-16 h-16 bg-slate-50 rounded-2xl shadow-sm border-2 border-slate-100 flex items-center justify-center overflow-hidden p-2 group-hover:scale-105 transition-transform">
@@ -128,12 +135,12 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                       </div>
                     </div>
 
-                    <p className="text-slate-400 text-sm mb-3 line-clamp-2 leading-relaxed font-semibold">
+                    <p className="line-clamp-2 text-sm text-gray-500 mb-3 leading-relaxed font-semibold">
                       {pyq.description || "No description provided."}
                     </p>
 
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {pyq.tags?.slice(0, 5).map((tag, i) => (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {cleanTags.slice(0, 3).map((tag, i) => (
                         <span
                           key={i}
                           className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] rounded-md border border-indigo-100/30 font-bold"
@@ -141,6 +148,11 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                           {tag}
                         </span>
                       ))}
+                      {cleanTags.length > 3 && (
+                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md border border-slate-200">
+                          +{cleanTags.length - 3}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -190,61 +202,54 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
           return (
             <div
               key={pyq?._id}
-              className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 flex flex-col h-full relative shadow-inner-sm text-left"
+              className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full min-h-[460px] relative text-left shadow-inner-sm"
             >
-              {/* Dynamic top gradient line */}
-              <div className={`h-1.5 bg-gradient-to-r ${accent} transition-transform duration-300 group-hover:scale-y-110 shrink-0`} />
-
-              <div className="relative h-32 rounded-xl overflow-hidden mb-4 border border-slate-100 bg-slate-50 shrink-0 mt-3 mx-3">
+              <div className="relative h-44 bg-slate-50 overflow-hidden border-b border-slate-100 shrink-0">
                 {pyq.thumbnail ? (
-                  <>
-                    <Image
-                      src={pyq.thumbnail}
-                      alt={pyq.company}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/10" />
-                  </>
+                  <Image
+                    src={pyq.thumbnail}
+                    alt={pyq.company}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                  />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-blue-50/50" />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-indigo-50/50 to-blue-50/50">
+                    <Icon name="Briefcase" size={48} className="text-indigo-400/80" />
+                  </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
-                <div className="relative z-10 p-4 h-full flex flex-col justify-end">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-slate-800 font-extrabold text-lg leading-tight drop-shadow-sm">
-                        {pyq.company}
-                      </h3>
-                      <p className="text-indigo-600 text-sm font-extrabold mt-0.5 drop-shadow-sm">
-                        {pyq.title}
-                      </p>
-                    </div>
+                <div className="absolute bottom-4 left-4 right-4 z-10 text-left">
+                  <h3 className="font-extrabold text-white text-xl mb-1 line-clamp-1 drop-shadow-md">
+                    {pyq.company}
+                  </h3>
+                  <p className="text-slate-100 text-sm font-extrabold opacity-95 drop-shadow-sm">
+                    {pyq.title}
+                  </p>
+                </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <div
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-white/95 shadow-sm ${getDifficultyColor(pyq?.difficulty).split(' ').slice(0,1).join(' ')}`}
-                      >
-                        {getDifficultyLabel(pyq?.difficulty)}
-                      </div>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-white/95 px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">
-                        <Icon name="Download" size={11} className="text-slate-400" />
-                        <span>{pyq.downloads || 0}</span>
-                      </div>
-                    </div>
+                <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+                  <div
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border bg-white/95 shadow-sm ${getDifficultyColor(pyq?.difficulty)}`}
+                  >
+                    {getDifficultyLabel(pyq?.difficulty)}
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-white/95 px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">
+                    <Icon name="Download" size={11} className="text-slate-400" />
+                    <span>{pyq.downloads || 0}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 flex-1 flex flex-col">
-                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 mb-4 flex-grow font-semibold text-slate-400 text-sm leading-relaxed">
-                  <p className="line-clamp-3">
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 mb-4 flex-1 font-semibold text-slate-400 text-sm leading-relaxed">
+                  <p className="line-clamp-2 text-sm text-gray-500">
                     {pyq?.description || "No description provided."}
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mb-5">
-                  {pyq?.tags?.length > 0 ? (
-                    pyq.tags.slice(0, 4).map((topic, index) => (
+                  {cleanTags.length > 0 ? (
+                    cleanTags.slice(0, 3).map((topic, index) => (
                       <span
                         key={index}
                         className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-md border border-indigo-100/30"
@@ -257,51 +262,51 @@ const InterviewPYQSection = ({ pyqs, viewMode = "grid", onEditClick, onDeleteCli
                       No topics listed.
                     </span>
                   )}
-                  {pyq?.tags?.length > 4 && (
+                  {cleanTags.length > 3 && (
                     <span className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md border border-slate-200">
-                      +{pyq?.tags?.length - 4}
+                      +{cleanTags.length - 3}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto pb-4">
-                  <div className="flex items-center space-x-2">
-                    <Image
-                      src={pyq?.uploadedBy?.profileImage}
-                      alt={pyq?.uploadedBy?.name}
-                      className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10"
-                    />
-                    <span className="text-xs text-slate-500 font-extrabold">
-                      by {pyq?.uploadedBy?.name}
-                    </span>
-                    {pyq?.uploadedBy?.verified && (
-                      <Icon name="BadgeCheck" size={14} className="text-blue-500" />
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
+                <div className="pt-4 border-t border-slate-100 mt-auto pb-0 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={pyq?.uploadedBy?.profileImage}
+                        alt={pyq?.uploadedBy?.name}
+                        className="w-6 h-6 rounded-full border border-slate-100 shadow-sm ring-2 ring-indigo-500/10 object-cover"
+                      />
+                      <span className="text-xs text-slate-500 font-extrabold">
+                        by {pyq?.uploadedBy?.name}
+                      </span>
+                      {pyq?.uploadedBy?.verified && (
+                        <Icon name="BadgeCheck" size={14} className="text-blue-500" />
+                      )}
+                    </div>
                     {showActions && (
-                      <>
+                      <div className="flex items-center gap-1 ml-auto">
                         <button
-                          className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold rounded-xl py-2 px-3 transition-all text-xs cursor-pointer bg-transparent"
+                          className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold rounded-xl py-1.5 px-3 transition-all text-xs cursor-pointer bg-transparent"
                           onClick={() => onEditClick(pyq)}
                         >
                           Edit
                         </button>
                         <button
-                          className="text-red-500 border border-red-200 hover:bg-red-50 hover:border-red-300 transition-all rounded-xl py-2 px-3 cursor-pointer bg-transparent border"
+                          className="text-red-500 border border-red-200 hover:bg-red-50 hover:border-red-300 transition-all rounded-xl py-1.5 px-2.5 cursor-pointer bg-transparent border flex items-center justify-center"
                           onClick={() => onDeleteClick(pyq)}
                         >
                           <Icon name="Trash2" size={14} />
                         </button>
-                      </>
+                      </div>
                     )}
-                    <button
-                      className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl py-2 px-4.5 active:scale-95 transition-all border-none text-xs cursor-pointer flex items-center justify-center shadow-md hover:shadow-lg"
-                      onClick={(e) => handleAccess(e, pyq)}
-                    >
-                      Access
-                    </button>
                   </div>
+                  <button
+                    className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl py-2.5 px-4.5 active:scale-95 transition-all border-none text-xs cursor-pointer flex items-center justify-center shadow-md hover:shadow-lg"
+                    onClick={(e) => handleAccess(e, pyq)}
+                  >
+                    Access
+                  </button>
                 </div>
               </div>
             </div>
