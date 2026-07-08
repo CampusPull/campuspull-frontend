@@ -27,14 +27,14 @@ const ChatPage = () => {
                             : null);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
+    <div className="flex h-[calc(100vh-4rem)] mt-16 bg-slate-50 overflow-hidden">
       
       <ChatSidebar />
 
       {/* Main Chat Container */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`flex-1 flex flex-col bg-white ${activeChat ? "flex" : "hidden"} md:flex`}>
         {activeChat && activeChatData ? (
-          <div className="flex-1 overflow-hidden bg-gray-50 relative">
+          <div className="flex-1 overflow-hidden bg-slate-50 relative">
              <ChatWindow 
                 recipientId={activeChat} 
                 recipientName={activeChatData?.chatWith?.name}
@@ -43,7 +43,7 @@ const ChatPage = () => {
           </div>
         ) : (
           /* Empty State */
-          <div className="flex h-full flex-col items-center justify-center text-gray-400 bg-gray-50">
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-gray-400 bg-slate-50">
             <FaUserCircle className="text-6xl mb-4 opacity-20" />
             <p className="text-lg font-medium">Select a conversation to start chatting</p>
           </div>
