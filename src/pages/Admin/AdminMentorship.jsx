@@ -15,6 +15,13 @@ const AdminMentorship = () => {
   const [sessions, setSessions] = useState([]);
   const [mentorshipRequests, setMentorshipRequests] = useState([]);
   const [mentors, setMentors] = useState([]);
+  const [revenueStats, setRevenueStats] = useState({
+    totalRevenue: 0,
+    successfulPayments: 0,
+    refunds: 0,
+    revenueThisMonth: 0,
+  });
+  const [payments, setPayments] = useState([]);
 
   const [requestsPagination, setRequestsPagination] = useState({
     totalPages: 1,
@@ -28,26 +35,30 @@ const AdminMentorship = () => {
   });
 
   const [mentorsPagination, setMentorsPagination] = useState({ totalPages: 1 });
+  const [paymentsPagination, setPaymentsPagination] = useState({ totalPages: 1 });
 
   // Loading & Error States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null); // Track which ID is being processed
+  const [refunding, setRefunding] = useState(null); // Track refund loading
+  const [completingSession, setCompletingSession] = useState(null); // Track session completion loading
 
   const [requestsPage, setRequestsPage] = useState(1);
   const [mentorshipRequestsPage, setMentorshipRequestsPage] = useState(1);
   const [sessionsPage, setSessionsPage] = useState(1);
   const [mentorsPage, setMentorsPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [requestsPage, mentorshipRequestsPage, sessionsPage, mentorsPage]);
+  }, [requestsPage, mentorshipRequestsPage, sessionsPage, mentorsPage, paymentsPage]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, reqsRes, mentorshipReqsRes, sessRes, mentors] =
+      const [statsRes, reqsRes, mentorshipReqsRes, sessRes, mentorsRes, revRes, paymentsRes] =
         await Promise.all([
           api.get("/admin/mentorship-stats"),
           api.get(`/admin/mentor-requests?page=${requestsPage}&limit=10`),
@@ -56,16 +67,17 @@ const AdminMentorship = () => {
           ),
           api.get(`/admin/sessions?page=${sessionsPage}&limit=10`),
           api.get(`/admin/mentors?page=${mentorsPage}&limit=10`),
+          api.get("/admin/revenue").catch(() => ({ data: { totalRevenue: 0, successfulPayments: 0, refunds: 0, revenueThisMonth: 0 } })),
+          api.get(`/admin/payments?page=${paymentsPage}&limit=10`).catch(() => ({ data: { data: [], pagination: { totalPages: 1 } } })),
         ]);
 
       setStats(statsRes.data || {});
       setRequests(reqsRes.data.data || []);
-
       setMentorshipRequests(mentorshipReqsRes.data.data || []);
-
       setSessions(sessRes.data.data || []);
-
-      setMentors(mentors.data.data || []);
+      setMentors(mentorsRes.data.data || []);
+      setRevenueStats(revRes.data || { totalRevenue: 0, successfulPayments: 0, refunds: 0, revenueThisMonth: 0 });
+      setPayments(paymentsRes.data?.data || paymentsRes.data || []);
 
       setRequestsPagination(
         reqsRes.data.pagination || {
@@ -86,7 +98,13 @@ const AdminMentorship = () => {
       );
 
       setMentorsPagination(
-        mentors.data.pagination || {
+        mentorsRes.data.pagination || {
+          totalPages: 1,
+        },
+      );
+
+      setPaymentsPagination(
+        paymentsRes.data?.pagination || {
           totalPages: 1,
         },
       );
@@ -140,6 +158,51 @@ const AdminMentorship = () => {
       toast.error(err.response?.data?.message || "Failed to reject mentor");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleMarkSessionComplete = async (sessionId) => {
+    if (!window.confirm("Are you sure you want to mark this session as completed?")) return;
+    setCompletingSession(sessionId);
+    try {
+      await api.patch(`/admin/sessions/${sessionId}/complete`);
+      toast.success("Session marked as completed successfully");
+      
+      // Update local sessions state
+      setSessions(prev => prev.map(s => s._id === sessionId ? { ...s, status: "COMPLETED", completedAt: new Date().toISOString() } : s));
+      
+      // Refresh Stats
+      setStats(prev => ({
+        ...prev,
+        completedSessions: (prev.completedSessions || 0) + 1,
+        scheduledSessions: Math.max(0, (prev.scheduledSessions || 1) - 1)
+      }));
+    } catch (err) {
+      console.error("Mark session complete error:", err);
+      toast.error(err.response?.data?.message || "Failed to complete session");
+    } finally {
+      setCompletingSession(null);
+    }
+  };
+
+  const handleIssueRefund = async (paymentId) => {
+    if (!window.confirm("Are you sure you want to issue a refund for this payment? This will refund ₹29 to the student.")) return;
+    setRefunding(paymentId);
+    try {
+      await api.post(`/admin/refund/${paymentId}`);
+      toast.success("Refund processed successfully");
+      
+      // Update local payments state
+      setPayments(prev => prev.map(p => p._id === paymentId ? { ...p, status: "REFUNDED", refundedAt: new Date().toISOString() } : p));
+      
+      // Refresh revenue stats
+      const revRes = await api.get("/admin/revenue").catch(() => null);
+      if (revRes) setRevenueStats(revRes.data);
+    } catch (err) {
+      console.error("Refund error:", err);
+      toast.error(err.response?.data?.message || "Failed to issue refund");
+    } finally {
+      setRefunding(null);
     }
   };
 
@@ -647,20 +710,31 @@ const AdminMentorship = () => {
                       {formatDateTime(sess.completedAt)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                      {sess.connectionLink ? (
-                        <a
-                          href={sess.connectionLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                        >
-                          Join Link ↗
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-xs italic">
-                          Pending link
-                        </span>
-                      )}
+                      <div className="flex flex-col gap-1.5">
+                        {sess.connectionLink ? (
+                          <a
+                            href={sess.connectionLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                          >
+                            Join Link ↗
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">
+                            Pending link
+                          </span>
+                        )}
+                        {sess.status !== "COMPLETED" && (
+                          <button
+                            onClick={() => handleMarkSessionComplete(sess._id)}
+                            disabled={completingSession === sess._id}
+                            className="text-green-600 hover:text-green-800 disabled:opacity-50 text-xs text-left font-bold transition-colors cursor-pointer"
+                          >
+                            {completingSession === sess._id ? "..." : "✓ Complete"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -896,6 +970,124 @@ const AdminMentorship = () => {
                 disabled={mentorsPage >= mentorsPagination.totalPages}
                 onClick={() => setMentorsPage((prev) => prev + 1)}
                 className="px-4 py-2 text-sm border rounded-md bg-white hover:bg-gray-100 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ══════════════════════════════════════
+          SECTION 6 — REVENUE & TRANSACTIONS
+      ══════════════════════════════════════ */}
+      <section className="mt-8 bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span>💰</span> Revenue & Payments Dashboard
+        </h2>
+
+        {/* Revenue Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Revenue</span>
+            <p className="text-2xl font-black text-slate-800">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.totalRevenue || 0)}
+            </p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Revenue This Month</span>
+            <p className="text-2xl font-black text-slate-800">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.revenueThisMonth || 0)}
+            </p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Successful Payments</span>
+            <p className="text-2xl font-black text-green-600">{revenueStats.successfulPayments || 0}</p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Refunded Payments</span>
+            <p className="text-2xl font-black text-red-650">{revenueStats.refunds || 0}</p>
+          </div>
+        </div>
+
+        {/* Payments Table */}
+        <h3 className="text-sm font-bold text-slate-700 mb-3 font-inter">Transactions Ledger</h3>
+        {payments.length === 0 ? (
+          <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-lg bg-slate-50">
+            <p className="text-xs text-slate-500 font-semibold">No transactions recorded yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden border rounded-lg">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mentor</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {payments.map((p) => {
+                    const studentName = p.studentId?.name || "Student";
+                    const mentorName = p.mentorId?.userId?.name || p.mentorId?.name || "Mentor";
+                    const formattedDate = formatDateTime(p.createdAt);
+                    const isPaid = p.status === "SUCCESS" || p.status === "PAID";
+                    
+                    return (
+                      <tr key={p._id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{studentName}</td>
+                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{mentorName}</td>
+                        <td className="px-4 py-2.5 text-xs font-extrabold text-slate-900">
+                          {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(p.amount || 29)}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs">
+                          <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full ${
+                            p.status === "SUCCESS" || p.status === "PAID"
+                              ? "bg-green-100 text-green-800"
+                              : p.status === "REFUNDED"
+                                ? "bg-gray-100 text-gray-800"
+                                : "bg-red-100 text-red-800"
+                          }`}>
+                            {p.status || "PENDING"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-slate-500">{formattedDate}</td>
+                        <td className="px-4 py-2.5 text-xs font-medium">
+                          {isPaid ? (
+                            <button
+                              onClick={() => handleIssueRefund(p._id)}
+                              disabled={refunding === p._id}
+                              className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer"
+                            >
+                              {refunding === p._id ? "..." : "Refund"}
+                            </button>
+                          ) : (
+                            <span className="text-slate-400 text-[10px] italic">No action</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50">
+              <button
+                disabled={paymentsPage === 1}
+                onClick={() => setPaymentsPage((prev) => prev - 1)}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-slate-600">Page {paymentsPage} of {paymentsPagination.totalPages}</span>
+              <button
+                disabled={paymentsPage >= paymentsPagination.totalPages}
+                onClick={() => setPaymentsPage((prev) => prev + 1)}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
               >
                 Next
               </button>

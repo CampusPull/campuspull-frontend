@@ -59,6 +59,8 @@ import UsersTable from './pages/Admin/usersTable';
 import AdminMentorship from './pages/Admin/AdminMentorship';
 import MentorDiscoveryPage from "pages/Mentorship/UI/menteePage.jsx";
 import MentorProfilePage from "pages/Mentorship/UI/mentorPage.jsx";
+import MentorshipSuccessPage from "pages/Mentorship/UI/MentorshipSuccessPage.jsx";
+import PaymentHistoryPage from "pages/Mentorship/UI/PaymentHistoryPage.jsx";
 import MyRequests from "pages/Mentorship/components/myRequest.jsx";
 import MentorSessions from "pages/Mentorship/components/mentorSessions.jsx";
 import { StartupProvider } from "./context/startupContext.jsx";
@@ -415,6 +417,26 @@ const Routes = () => {
       <ProtectedRoute requiredRole="alumni">
         <ProtectedLayout>
           <MentorProfilePage />
+        </ProtectedLayout>
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="success"
+    element={
+      <ProtectedRoute>
+        <ProtectedLayout>
+          <MentorshipSuccessPage />
+        </ProtectedLayout>
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="payments"
+    element={
+      <ProtectedRoute>
+        <ProtectedLayout>
+          <PaymentHistoryPage />
         </ProtectedLayout>
       </ProtectedRoute>
     }

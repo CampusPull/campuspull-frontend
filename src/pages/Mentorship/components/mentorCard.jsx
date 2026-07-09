@@ -13,7 +13,7 @@ const MentorCard = ({
   const request = myRequests?.find((r) => r.mentorId === mentor.userId._id);
 
   // ✅ MOVE LOGIC HERE (outside JSX)
-  let buttonText = "Request Mentorship";
+  let buttonText = "Request Mentorship • ₹29";
   let disabled = false;
 
   if (request) {
@@ -24,7 +24,7 @@ const MentorCard = ({
       buttonText = "Accepted";
       disabled = true;
     } else if (request.status === "REJECTED") {
-      buttonText = "Request Again";
+      buttonText = "Request Again • ₹29";
     }
   }
 
@@ -46,8 +46,7 @@ const MentorCard = ({
       onClick={handleCardClick}
       className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
     >
-       {/* Top gradient accent */}
-       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+
 
        {/* Avatar section */}
        <div className="flex flex-col items-center pt-6 px-5">
@@ -99,6 +98,9 @@ const MentorCard = ({
       <div className="mt-6 px-5 pb-5 flex flex-col gap-3">
         <div className="text-center text-xs text-slate-500">
           {mentor.sessionsCompleted ?? 0} Sessions Completed
+        </div>
+        <div className="text-center text-sm text-gray-500 flex items-center justify-center gap-1 font-semibold">
+          Session Fee: ₹29
         </div>
 
         {/* ✅ BUTTON ONLY HERE */}

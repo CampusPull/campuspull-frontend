@@ -101,7 +101,7 @@ const ChatWindow = ({ recipientId, recipientName, recipientImage }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
       
       {/* HEADER */}
       <div className="px-6 py-4 bg-white border-b border-gray-100 flex justify-between items-center shadow-sm">

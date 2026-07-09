@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react"; 
 import { useChat } from "../../context/chatContext";
+import { useAuth } from "../../context/AuthContext";
 import { FaCircle } from "react-icons/fa"; // Removed unused FaUserCircle
 import api from "../../utils/api"; // Import API
 
@@ -20,15 +21,29 @@ const formatLastMessageTime = (dateString) => {
 
 const ChatSidebar = () => {
   const { chatList, onlineUsers, loadMessages, activeChat, setActiveChat, unreadCounts, clearUnreadCount } = useChat();
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
+
+  // Helper to extract user details from chat item
+  const getChatUser = (chat, currentUserId) => {
+    if (!chat) return null;
+    return chat.chatWith || 
+           chat.user || 
+           (chat.participants && Array.isArray(chat.participants) 
+              ? chat.participants.find(p => (p?._id || p) !== currentUserId) 
+              : null) || 
+           chat;
+  };
 
   const filteredChats = useMemo(() => {
     console.log("ChatSidebar render: chatList =", chatList);
     if (!chatList) return [];
-    return chatList.filter(chat =>
-      chat?.chatWith?.name?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [chatList, search]);
+    return chatList.filter(chat => {
+      const chatUser = getChatUser(chat, currentUser?._id);
+      const displayName = chat?.name || chatUser?.name || "";
+      return displayName.toLowerCase().includes(search.toLowerCase());
+    });
+  }, [chatList, search, currentUser]);
 
   // Helper for dynamic image URL
   const getImageUrl = (path) => {
@@ -57,23 +72,25 @@ const ChatSidebar = () => {
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {filteredChats.map(chat => {
-          const chatUser = chat.chatWith;
-          if (!chatUser?._id) return null;
+          const chatUser = getChatUser(chat, currentUser?._id);
+          const userId = chatUser?._id || (typeof chatUser === "string" ? chatUser : null) || chat?._id;
+          if (!userId) return null;
           
-          const isOnline = onlineUsers.includes(chatUser._id);
-          const unreadCount = unreadCounts?.[chatUser._id] || 0;
-          const isActive = activeChat === chatUser._id;
-          const imgSrc = getImageUrl(chatUser.profileImage); // ✅ Use helper
-          const lastMsgTime = chat.lastMessageTime || chat.updatedAt;
+          const isOnline = onlineUsers.includes(userId);
+          const unreadCount = unreadCounts?.[userId] || 0;
+          const isActive = activeChat === userId;
+          const imgSrc = getImageUrl(chatUser?.profileImage || chat?.profileImage); 
+          const lastMsgTime = chat.lastMessageTime || chat.updatedAt || chat.lastMessage?.createdAt;
           const formattedTime = formatLastMessageTime(lastMsgTime);
+          const displayName = chat.name || chatUser?.name || "Unknown";
 
           return (
             <button
-              key={chatUser._id}
+              key={userId}
               onClick={() => {
-                setActiveChat(chatUser._id);
-                loadMessages(chatUser._id);
-                clearUnreadCount?.(chatUser._id);
+                setActiveChat(userId);
+                loadMessages(userId);
+                clearUnreadCount?.(userId);
               }}
               type="button"
               className={`flex items-center w-full p-3 rounded-xl transition-colors duration-150 border-b border-gray-100/50 ${
@@ -87,13 +104,13 @@ const ChatSidebar = () => {
                   {imgSrc ? (
                     <img 
                         src={imgSrc} 
-                        alt={chatUser.name} 
+                        alt={displayName} 
                         className="w-full h-full object-cover"
                         //SAFETY: Hides image if it fails to load (404)
                         onError={(e) => { e.target.style.display = 'none'; }} 
                     />
                   ) : (
-                    <span className="font-bold text-gray-600 text-sm">{chatUser.name?.charAt(0).toUpperCase()}</span>
+                    <span className="font-bold text-gray-600 text-sm">{displayName.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
                 {isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />}
@@ -101,7 +118,7 @@ const ChatSidebar = () => {
 
               <div className="ml-3 flex-1 min-w-0 text-left relative pr-10">
                 <div className="flex justify-between items-baseline mb-0.5">
-                  <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base pr-2">{chatUser.name || "Unknown"}</h4>
+                  <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base pr-2">{displayName}</h4>
                   <span className="text-xs text-gray-400 whitespace-nowrap absolute right-0 top-0.5">{formattedTime}</span>
                 </div>
                 <p className={`text-sm truncate ${unreadCount > 0 ? "font-bold text-gray-900" : "text-gray-500"}`}>
