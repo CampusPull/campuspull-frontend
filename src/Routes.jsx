@@ -410,6 +410,16 @@ const Routes = () => {
       </ProtectedRoute>
     }
   />
+  <Route
+    path="my-sessions"
+    element={
+      <ProtectedRoute>
+        <ProtectedLayout>
+          <MentorSessions />
+        </ProtectedLayout>
+      </ProtectedRoute>
+    }
+  />
 
   <Route
     path="profile"
