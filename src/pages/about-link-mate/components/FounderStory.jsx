@@ -4,7 +4,7 @@ import { Calendar, Compass, Target, GraduationCap } from "lucide-react";
 const FounderStory = () => {
   const storyPoints = [
     {
-      title: "Launched in 2023",
+      title: "Launched in 2025",
       detail: "CampusPull began as an ambitious idea by passionate students of ABES Institute of Technology (ABESIT) who wanted to change how peer learning works.",
       icon: Calendar,
       color: "text-indigo-600 bg-indigo-50 border-indigo-100"
