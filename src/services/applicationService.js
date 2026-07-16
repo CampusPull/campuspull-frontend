@@ -128,3 +128,49 @@ export const exportInternshipApplications = async (internshipId, params = {}) =>
   return res;
 };
 
+// ─── Week 2: Mentorship Payment & Session functions ──────────────────────────
+
+/**
+ * Fetch payment history for the logged-in student.
+ * Route: GET /payments/my-payments
+ */
+export const getMyPayments = async () => {
+  const res = await api.get("/payments/my-payments");
+  return res.data;
+};
+
+/**
+ * Fetch revenue stats for the admin dashboard.
+ * Route: GET /admin/revenue
+ */
+export const getAdminRevenue = async () => {
+  const res = await api.get("/admin/revenue");
+  return res.data;
+};
+
+/**
+ * Fetch all payment records for the admin dashboard.
+ * Route: GET /admin/payments
+ */
+export const getAdminPayments = async () => {
+  const res = await api.get("/admin/payments");
+  return res.data;
+};
+
+/**
+ * Issue a refund for a given payment (Admin authenticated).
+ * Route: POST /admin/refund/:paymentId
+ */
+export const issueRefund = async (paymentId) => {
+  const res = await api.post(`/admin/refund/${paymentId}`);
+  return res.data;
+};
+
+/**
+ * Mark a session as completed (Admin authenticated).
+ * Route: PATCH /admin/sessions/:sessionId/complete
+ */
+export const markSessionComplete = async (sessionId) => {
+  const res = await api.patch(`/admin/sessions/${sessionId}/complete`);
+  return res.data;
+};

@@ -18,7 +18,7 @@ const AdminMentorship = () => {
   const [revenueStats, setRevenueStats] = useState({
     totalRevenue: 0,
     successfulPayments: 0,
-    refunds: 0,
+    refundCount: 0,
     revenueThisMonth: 0,
   });
   const [payments, setPayments] = useState([]);
@@ -67,7 +67,7 @@ const AdminMentorship = () => {
           ),
           api.get(`/admin/sessions?page=${sessionsPage}&limit=10`),
           api.get(`/admin/mentors?page=${mentorsPage}&limit=10`),
-          api.get("/admin/revenue").catch(() => ({ data: { totalRevenue: 0, successfulPayments: 0, refunds: 0, revenueThisMonth: 0 } })),
+          api.get("/admin/revenue").catch(() => ({ data: { data: { totalRevenue: 0, successfulPayments: 0, refundCount: 0, revenueThisMonth: 0 } } })),
           api.get(`/admin/payments?page=${paymentsPage}&limit=10`).catch(() => ({ data: { data: [], pagination: { totalPages: 1 } } })),
         ]);
 
@@ -76,8 +76,17 @@ const AdminMentorship = () => {
       setMentorshipRequests(mentorshipReqsRes.data.data || []);
       setSessions(sessRes.data.data || []);
       setMentors(mentorsRes.data.data || []);
-      setRevenueStats(revRes.data || { totalRevenue: 0, successfulPayments: 0, refunds: 0, revenueThisMonth: 0 });
-      setPayments(paymentsRes.data?.data || paymentsRes.data || []);
+      // Revenue API returns { success, data: { totalRevenue, ... } } or flat
+      const revData = revRes.data?.data ?? revRes.data ?? {};
+      setRevenueStats({
+        totalRevenue: revData.totalRevenue || 0,
+        successfulPayments: revData.successfulPayments || 0,
+        refundCount: revData.refundCount ?? revData.refunds ?? 0,
+        revenueThisMonth: revData.revenueThisMonth || 0,
+      });
+      // Payments API returns { success, data: [...] } or { data: { data: [...] } }
+      const paymentsData = paymentsRes.data?.data;
+      setPayments(Array.isArray(paymentsData) ? paymentsData : (paymentsRes.data || []));
 
       setRequestsPagination(
         reqsRes.data.pagination || {
@@ -185,22 +194,33 @@ const AdminMentorship = () => {
     }
   };
 
-  const handleIssueRefund = async (paymentId) => {
-    if (!window.confirm("Are you sure you want to issue a refund for this payment? This will refund ₹29 to the student.")) return;
+  const handleIssueRefund = async (paymentId, studentName, amount) => {
+    const displayAmount = amount
+      ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(amount)
+      : "₹29";
+    if (!window.confirm(`Are you sure you want to refund ${displayAmount} to ${studentName || "this student"}?`)) return;
     setRefunding(paymentId);
     try {
       await api.post(`/admin/refund/${paymentId}`);
-      toast.success("Refund processed successfully");
+      toast.success("Refund initiated successfully");
       
       // Update local payments state
       setPayments(prev => prev.map(p => p._id === paymentId ? { ...p, status: "REFUNDED", refundedAt: new Date().toISOString() } : p));
       
       // Refresh revenue stats
       const revRes = await api.get("/admin/revenue").catch(() => null);
-      if (revRes) setRevenueStats(revRes.data);
+      if (revRes) {
+        const revData = revRes.data?.data ?? revRes.data ?? {};
+        setRevenueStats({
+          totalRevenue: revData.totalRevenue || 0,
+          successfulPayments: revData.successfulPayments || 0,
+          refundCount: revData.refundCount ?? revData.refunds ?? 0,
+          revenueThisMonth: revData.revenueThisMonth || 0,
+        });
+      }
     } catch (err) {
       console.error("Refund error:", err);
-      toast.error(err.response?.data?.message || "Failed to issue refund");
+      toast.error(err.response?.data?.message || "Refund failed. Please try again.");
     } finally {
       setRefunding(null);
     }
@@ -294,6 +314,142 @@ const AdminMentorship = () => {
           </button>
         </div>
       )}
+
+      {/* ══════════════════════════════════════
+          SECTION 0 — REVENUE DASHBOARD (TOP)
+      ══════════════════════════════════════ */}
+      <section className="mb-8 bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span>💰</span> Revenue Dashboard
+        </h2>
+
+        {/* Revenue Cards — 2 col mobile, 4 col desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Card 1: Total Revenue — indigo */}
+          <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100 shadow-sm">
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">Total Revenue</span>
+            <p className="text-2xl font-black text-indigo-700">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.totalRevenue || 0)}
+            </p>
+          </div>
+          {/* Card 2: Successful Payments — green */}
+          <div className="bg-green-50 p-5 rounded-xl border border-green-100 shadow-sm">
+            <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest block mb-1">Successful Payments</span>
+            <p className="text-2xl font-black text-green-700">{revenueStats.successfulPayments || 0}</p>
+          </div>
+          {/* Card 3: Refunds — red */}
+          <div className="bg-red-50 p-5 rounded-xl border border-red-100 shadow-sm">
+            <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest block mb-1">Refunds</span>
+            <p className="text-2xl font-black text-red-600">{revenueStats.refundCount || 0}</p>
+          </div>
+          {/* Card 4: Revenue This Month — blue */}
+          <div className="bg-blue-50 p-5 rounded-xl border border-blue-100 shadow-sm">
+            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mb-1">Revenue This Month</span>
+            <p className="text-2xl font-black text-blue-700">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.revenueThisMonth || 0)}
+            </p>
+          </div>
+        </div>
+
+        {/* Payment Records Table */}
+        <h3 className="text-sm font-bold text-gray-700 mb-3">Payment Records</h3>
+        {payments.length === 0 ? (
+          <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-lg bg-slate-50">
+            <p className="text-xs text-slate-500 font-semibold">No payment records found.</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden border rounded-lg">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mentor</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {payments.map((p) => {
+                    const studentName = p.studentId?.name || "Student";
+                    const mentorName = p.mentorId?.userId?.name || p.mentorId?.name || "Mentor";
+                    const formattedDate = formatDateTime(p.createdAt);
+                    const isSuccess = p.status === "SUCCESS" || p.status === "PAID";
+                    const isRefunded = p.status === "REFUNDED";
+                    
+                    return (
+                      <tr key={p._id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-2.5">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-800">{studentName}</p>
+                            {p.studentId?.email && (
+                              <p className="text-[10px] text-slate-400">{p.studentId.email}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{mentorName}</td>
+                        <td className="px-4 py-2.5 text-xs font-extrabold text-slate-900">
+                          {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(p.amount || 29)}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs">
+                          <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full ${
+                            isSuccess
+                              ? "bg-green-100 text-green-800"
+                              : isRefunded
+                                ? "bg-gray-100 text-gray-600"
+                                : p.status === "FAILED"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-amber-100 text-amber-800"
+                          }`}>
+                            {p.status || "PENDING"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-slate-500">{formattedDate}</td>
+                        <td className="px-4 py-2.5 text-xs font-medium">
+                          {isSuccess ? (
+                            <button
+                              onClick={() => handleIssueRefund(p._id, studentName, p.amount)}
+                              disabled={refunding === p._id}
+                              className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              {refunding === p._id ? (
+                                <><span className="animate-spin inline-block h-2.5 w-2.5 border border-white border-t-transparent rounded-full" /> Processing</>
+                              ) : "Issue Refund"}
+                            </button>
+                          ) : isRefunded ? (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">Refunded</span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px] italic">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50">
+              <button
+                disabled={paymentsPage === 1}
+                onClick={() => setPaymentsPage((prev) => prev - 1)}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-slate-600">Page {paymentsPage} of {paymentsPagination.totalPages}</span>
+              <button
+                disabled={paymentsPage >= paymentsPagination.totalPages}
+                onClick={() => setPaymentsPage((prev) => prev + 1)}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* ══════════════════════════════════════
           SECTION 1 — STATS
@@ -725,13 +881,15 @@ const AdminMentorship = () => {
                             Pending link
                           </span>
                         )}
-                        {sess.status !== "COMPLETED" && (
+                        {sess.status?.toUpperCase() !== "COMPLETED" && (
                           <button
                             onClick={() => handleMarkSessionComplete(sess._id)}
                             disabled={completingSession === sess._id}
-                            className="text-green-600 hover:text-green-800 disabled:opacity-50 text-xs text-left font-bold transition-colors cursor-pointer"
+                            className="text-green-600 hover:text-green-800 disabled:opacity-50 text-xs text-left font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
                           >
-                            {completingSession === sess._id ? "..." : "✓ Complete"}
+                            {completingSession === sess._id ? (
+                              <><span className="animate-spin inline-block h-2.5 w-2.5 border border-green-600 border-t-transparent rounded-full" /> Saving</>
+                            ) : "✓ Mark Complete"}
                           </button>
                         )}
                       </div>
@@ -978,123 +1136,7 @@ const AdminMentorship = () => {
         )}
       </section>
 
-      {/* ══════════════════════════════════════
-          SECTION 6 — REVENUE & TRANSACTIONS
-      ══════════════════════════════════════ */}
-      <section className="mt-8 bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span>💰</span> Revenue & Payments Dashboard
-        </h2>
-
-        {/* Revenue Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total Revenue</span>
-            <p className="text-2xl font-black text-slate-800">
-              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.totalRevenue || 0)}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Revenue This Month</span>
-            <p className="text-2xl font-black text-slate-800">
-              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(revenueStats.revenueThisMonth || 0)}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Successful Payments</span>
-            <p className="text-2xl font-black text-green-600">{revenueStats.successfulPayments || 0}</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Refunded Payments</span>
-            <p className="text-2xl font-black text-red-650">{revenueStats.refunds || 0}</p>
-          </div>
-        </div>
-
-        {/* Payments Table */}
-        <h3 className="text-sm font-bold text-slate-700 mb-3 font-inter">Transactions Ledger</h3>
-        {payments.length === 0 ? (
-          <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-lg bg-slate-50">
-            <p className="text-xs text-slate-500 font-semibold">No transactions recorded yet.</p>
-          </div>
-        ) : (
-          <div className="overflow-hidden border rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mentor</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-100">
-                  {payments.map((p) => {
-                    const studentName = p.studentId?.name || "Student";
-                    const mentorName = p.mentorId?.userId?.name || p.mentorId?.name || "Mentor";
-                    const formattedDate = formatDateTime(p.createdAt);
-                    const isPaid = p.status === "SUCCESS" || p.status === "PAID";
-                    
-                    return (
-                      <tr key={p._id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{studentName}</td>
-                        <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{mentorName}</td>
-                        <td className="px-4 py-2.5 text-xs font-extrabold text-slate-900">
-                          {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(p.amount || 29)}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs">
-                          <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full ${
-                            p.status === "SUCCESS" || p.status === "PAID"
-                              ? "bg-green-100 text-green-800"
-                              : p.status === "REFUNDED"
-                                ? "bg-gray-100 text-gray-800"
-                                : "bg-red-100 text-red-800"
-                          }`}>
-                            {p.status || "PENDING"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-slate-500">{formattedDate}</td>
-                        <td className="px-4 py-2.5 text-xs font-medium">
-                          {isPaid ? (
-                            <button
-                              onClick={() => handleIssueRefund(p._id)}
-                              disabled={refunding === p._id}
-                              className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer"
-                            >
-                              {refunding === p._id ? "..." : "Refund"}
-                            </button>
-                          ) : (
-                            <span className="text-slate-400 text-[10px] italic">No action</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 border-t bg-slate-50">
-              <button
-                disabled={paymentsPage === 1}
-                onClick={() => setPaymentsPage((prev) => prev - 1)}
-                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-xs text-slate-600">Page {paymentsPage} of {paymentsPagination.totalPages}</span>
-              <button
-                disabled={paymentsPage >= paymentsPagination.totalPages}
-                onClick={() => setPaymentsPage((prev) => prev + 1)}
-                className="px-3 py-1 text-xs border rounded bg-white hover:bg-slate-100 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+      {/* Revenue & Payments section has been moved to the TOP of the page (before Platform Stats) */}
     </div>
   );
 };

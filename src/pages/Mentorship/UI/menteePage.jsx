@@ -62,8 +62,14 @@ const PageContent = () => {
             </p>
           </div>
 
-          {/* Original Top-Right Navigation Buttons */}
+          {/* Top-Right Navigation Buttons */}
           <div className="flex gap-3">
+            <button
+              onClick={() => (isGuest ? setShowAuthModal(true) : navigate("/mentorship/payments"))}
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              Payment History
+            </button>
             <button
               onClick={() => (isGuest ? setShowAuthModal(true) : navigate("/mentorship/my-requests"))}
               className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
