@@ -174,3 +174,38 @@ export const markSessionComplete = async (sessionId) => {
   const res = await api.patch(`/admin/sessions/${sessionId}/complete`);
   return res.data;
 };
+
+export const getAnalyticsOverview = async (params = {}) => {
+  const res = await api.get("/admin/analytics/overview", { params });
+  return res.data;
+};
+
+export const getAnalyticsApis = async (params = {}) => {
+  const res = await api.get("/admin/analytics/apis", { params });
+  return res.data;
+};
+
+export const getAnalyticsModules = async (params = {}) => {
+  const res = await api.get("/admin/analytics/modules", { params });
+  return res.data;
+};
+
+export const getAnalyticsDaily = async (params = {}) => {
+  const res = await api.get("/admin/analytics/daily", { params });
+  return res.data;
+};
+
+export const getAnalyticsMonthly = async (params = {}) => {
+  const res = await api.get("/admin/analytics/monthly", { params });
+  return res.data;
+};
+
+export const getAnalyticsTopApis = async (params = {}) => {
+  const res = await api.get("/admin/analytics/top-apis", { params });
+  return res.data;
+};
+
+export const getAnalyticsActiveUsers = async (params = {}) => {
+  const res = await api.get("/admin/analytics/active-users", { params });
+  return res.data;
+};

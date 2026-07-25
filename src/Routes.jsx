@@ -75,6 +75,7 @@ import AdminApplicationsPage from "./pages/Admin/AdminApplicationsPage.jsx";
 import CandidateDashboardPage from "./pages/Admin/CandidateDashboardPage.jsx";
 import CandidateDetailPage from "./pages/Admin/CandidateDetailPage.jsx";
 import GlobalHiringDashboard from "./pages/Admin/GlobalHiringDashboard.jsx";
+import AdminAnalyticsDashboard from "./pages/Admin/AdminAnalyticsDashboard.jsx";
 import { InternshipProvider } from "./context/internshipContext.jsx";
 import { Navigate } from "react-router-dom";
 
@@ -463,6 +464,7 @@ const Routes = () => {
               <Route path="/admin/mentorship" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminMentorship /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/internships/:internshipId/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminApplicationsPage /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/hiring-dashboard" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><GlobalHiringDashboard /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminAnalyticsDashboard /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><CandidateDashboardPage /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/applications/:applicationId" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><CandidateDetailPage /></ProtectedLayout></ProtectedRoute>} />
 
