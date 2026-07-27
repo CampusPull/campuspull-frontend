@@ -94,7 +94,7 @@ const Header = () => {
   const internshipsPath = isAdmin ? "/admin/hiring-dashboard" : "/internships";
 
   const allNavigationItems = [
-    { name: "Resources Hub", path: "/resources-hub", icon: "BookOpen" },
+    { name: "Resources Hub", path: "/resources", icon: "BookOpen" },
     { name: "Explore", path: "/explore", icon: "Compass" },
     { name: "Mentorship", path: mentorshipPath, icon: "UsersRound" },
     { name: "Community", path: "/community", icon: "Users" },
