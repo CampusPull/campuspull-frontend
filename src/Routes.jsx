@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import AboutLinkMate from "./pages/about-link-mate";
 import OurMission from "./pages/about-link-mate/OurMission.jsx";
+import PartnersPage from "./pages/PartnersPage.jsx";
 import ResourcesHub from "./pages/resources-hub";
 import Homepage from "./pages/homepage";
 import Profile from "./pages/profile/Profile.jsx"; 
@@ -218,6 +219,14 @@ const Routes = () => {
                 element={
                   <Layout>
                     <OurMission />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/partners"
+                element={
+                  <Layout>
+                    <PartnersPage />
                   </Layout>
                 }
               />
