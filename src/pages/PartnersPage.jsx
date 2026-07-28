@@ -123,7 +123,7 @@ const PartnersPage = () => {
               {/* Left Column: Info & Action */}
               <div className="lg:col-span-5 flex flex-col space-y-6 text-left">
                 <a 
-                  href="https://hiregram.ai" 
+                  href="https://hiregram.ai?source=campuspull?source=campuspull" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-2 bg-slate-50 border border-slate-100 p-2.5 rounded-xl w-fit shadow-sm hover:border-indigo-200 transition-colors"
@@ -157,7 +157,7 @@ const PartnersPage = () => {
 
                 <div className="pt-2">
                   <a 
-                    href="https://hiregram.ai" 
+                    href="https://hiregram.ai?source=campuspull" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[1.01]"
