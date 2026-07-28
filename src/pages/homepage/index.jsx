@@ -4,6 +4,7 @@ import HeroSection from "./components/HeroSection";
 import AlumniSpotlight from "./components/AlumniSpotlight";
 import Footer from "./components/Footer";
 import PodcastSection from "./components/podcastSection";
+import PartnerSection from "./components/PartnerSection";
 
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -246,7 +247,7 @@ const Homepage = () => {
       <Header />
       
       {/* Main Content */}
-      <main className="pt-0 flex flex-col gap-24 relative z-10 pb-20">
+      <main className="pt-0 flex flex-col gap-12 relative z-10 pb-0">
         
         {/* HERO SECTION (100vh Immersive) */}
         <HeroSection />
@@ -262,15 +263,15 @@ const Homepage = () => {
           variants={revealVariants}
           className="max-w-6xl mx-auto px-6 w-full relative"
         >
-          {/* Glowing blur vector */}
-          <div className="absolute top-1/2 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+          {/* Soft background glow */}
+          <div className="absolute top-1/2 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4 relative z-10">
             <div className="text-left">
               <h2 className="text-3xl sm:text-5xl font-black font-poppins mt-3 text-white">
                 Featured Internships
               </h2>
-              <p className="text-sm text-slate-400 mt-2 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-xl font-medium">
                 Browse direct entry roles vetted by CampusPull. Apply using the official links attached to each opening.
               </p>
             </div>
@@ -280,38 +281,38 @@ const Homepage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
             {displayInternships.map((intern, i) => (
               <motion.div
                 key={i}
-                whileHover={prefersReducedMotion ? {} : { y: -6, scale: 1.02 }}
+                whileHover={prefersReducedMotion ? {} : { y: -6, scale: 1.01 }}
                 style={{ willChange: "transform" }}
-                className={`p-6 border border-white/5 bg-slate-900/20 backdrop-blur-md rounded-[32px] text-left transition-all duration-300 flex flex-col justify-between h-[360px] relative overflow-hidden group shadow-2xl bg-gradient-to-br ${intern.accent}`}
+                className="p-6 border border-slate-100 bg-white rounded-[32px] text-left transition-all duration-300 flex flex-col justify-between h-[360px] relative overflow-hidden group shadow-lg hover:shadow-2xl"
               >
-                {/* Glowing radial orb overlay */}
-                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-white/5 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-all duration-500" />
+                {/* Soft glow hover pattern inside the card */}
+                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-indigo-50/20 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-all duration-500" />
                 
                 <div>
                   <div className="flex justify-between items-start mb-6">
-                    <span className="px-3 py-1 rounded-full text-[9px] font-bold tracking-wider uppercase bg-white/5 text-slate-300 border border-white/5">
+                    <span className="px-3 py-1 rounded-full text-[9px] font-bold tracking-wider uppercase bg-slate-50 text-slate-600 border border-slate-200">
                       {intern.duration}
                     </span>
-                    <span className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wide">
+                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide">
                       {intern.company}
                     </span>
                   </div>
                   
-                  <h3 className="text-lg font-extrabold text-white mb-4 leading-snug group-hover:text-indigo-300 transition-colors">
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mb-4 leading-snug group-hover:text-indigo-600 transition-colors">
                     {intern.title}
                   </h3>
 
-                  <div className="space-y-2 text-xs text-slate-400 mb-6 font-medium">
+                  <div className="space-y-2 text-xs text-slate-500 mb-6 font-medium">
                     <div className="flex items-center gap-2">
-                      <FiMapPin className="text-slate-500" />
+                      <FiMapPin className="text-slate-400" />
                       <span>{intern.loc}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <FiDollarSign className="text-slate-500" />
+                      <FiDollarSign className="text-slate-400" />
                       <span>{intern.stipend}</span>
                     </div>
                   </div>
@@ -321,14 +322,14 @@ const Homepage = () => {
                   {/* Skill Badges */}
                   <div className="flex flex-wrap gap-1.5 mb-6">
                     {intern.skills.map((skill, j) => (
-                      <span key={j} className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-slate-300">
+                      <span key={j} className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-50 text-slate-600 border border-slate-100">
                         {skill}
                       </span>
                     ))}
                   </div>
 
                   <Link to={intern.id ? `/internships/${intern.id}` : "/internships"}>
-                    <button className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-2xl border border-white/5 group-hover:border-indigo-500/20 transition-all cursor-pointer">
+                    <button className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer">
                       Quick Apply
                     </button>
                   </Link>
@@ -337,6 +338,9 @@ const Homepage = () => {
             ))}
           </div>
         </motion.section>
+
+        {/* PARTNER SECTION */}
+        <PartnerSection />
 
         {/* ALUMNI SPOTLIGHT (Student Success Stories) */}
         <AlumniSpotlight />
