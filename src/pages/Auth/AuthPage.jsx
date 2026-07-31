@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom"; // 👈 CHANGE 1: Import Link and useLocation
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,7 +7,7 @@ import {
   FaUser, FaEnvelope, FaLock, FaUniversity, FaCalendarAlt,
   FaPhone, FaLinkedin, FaInfoCircle, FaTools, FaBuilding,
   FaIdBadge, FaLayerGroup, FaChalkboardTeacher, FaCheckCircle,
-  FaExclamationCircle, FaEye, FaEyeSlash, FaGraduationCap,
+  FaExclamationCircle, FaEye, FaEyeSlash,
   FaUsers, FaStar, FaBookOpen,
 } from "react-icons/fa";
 
@@ -49,7 +49,7 @@ const Badge = ({ label, met }) => (
 );
 
 // ─── Left Brand Panel ─────────────────────────────────────────────────────────────
-const BrandPanel = ({ isLogin }) => (
+const BrandPanel = () => (
   <div className="hidden lg:flex flex-col justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white p-12 rounded-l-3xl relative overflow-hidden">
     {/* Decorative circles */}
     <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
@@ -110,6 +110,7 @@ function Auth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, login, signup } = useAuth();
   const [role, setRole] = useState("student");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -118,15 +119,24 @@ function Auth() {
 
   const [form, setForm] = useState({
     name: "", email: "", password: "", confirmPassword: "", college: "ABESIT",
-    degree: "", department: "", section: "", year: "",
+    degree: "", department: "",
     graduationYear: "", designation: "", currentCompany: "",
     phone: "", linkedin: "", bio: "", skills: [],
   });
 
   const [loginError, setLoginError] = useState("");
 
+  const graduationYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let y = currentYear - 10; y <= currentYear + 7; y++) {
+      years.push(y);
+    }
+    return years;
+  }, []);
+
   const validations = useMemo(() => {
-    if (isLogin) return { isValid: form.email && form.password.length >= 6 };
+    if (isLogin) return { isValid: !!form.email && form.password.length >= 6 };
     const hasName = form.name.trim().length >= 3;
     const hasEmail = /\S+@\S+\.\S+/.test(form.email);
     const hasCap = /[A-Z]/.test(form.password);
@@ -134,17 +144,112 @@ function Auth() {
     const hasSpcial = /[\W_]/.test(form.password);
     const hasNocap = /[a-z]/.test(form.password);
     const hasLen = form.password.length >= 8;
-    const hasDept = !!form.department;
-    const isYearValid = form.year === "" || (Number(form.year) >= 1 && Number(form.year) <= 4);
-    const isPhoneValid = /^\d{10}$/.test(form.phone);
-    const hasLinkedin = form.linkedin.trim().length > 0;
-    const isBioValid = form.bio.length <= 500;
     const passwordMatch = form.password === form.confirmPassword && form.password.length > 0;
+
+    const hasCollege = !!form.college;
+    const hasDept = !!form.department;
+    const hasDegree = (role === "student" || role === "alumni") ? !!form.degree : true;
+    const hasGraduationYear = (role === "student" || role === "alumni") ? !!form.graduationYear : true;
+    const hasDesignation = role === "teacher" ? !!form.designation.trim() : true;
+    const hasCurrentCompany = role === "alumni" ? !!form.currentCompany.trim() : true;
+
+    const isPhoneValid = form.phone === "" || /^\d{10}$/.test(form.phone);
+    const isBioValid = form.bio.length <= 500;
+
+    const isValid = 
+      hasName && 
+      hasEmail && 
+      hasCap && 
+      hasNocap && 
+      hasNum && 
+      hasLen && 
+      hasSpcial && 
+      passwordMatch &&
+      hasCollege &&
+      hasDept &&
+      hasDegree &&
+      hasGraduationYear &&
+      hasDesignation &&
+      hasCurrentCompany &&
+      isPhoneValid && 
+      isBioValid;
+
     return {
-      hasName, hasEmail, hasCap, hasNocap, hasNum, hasLen, hasSpcial, hasDept, isPhoneValid, hasLinkedin, isBioValid, isYearValid, passwordMatch,
-      isValid: hasName && hasEmail && hasCap && hasNocap && hasNum && hasLen && hasSpcial && hasDept && isPhoneValid && hasLinkedin && isBioValid && isYearValid && passwordMatch
+      hasName, hasEmail, hasCap, hasNocap, hasNum, hasLen, hasSpcial, passwordMatch,
+      hasCollege, hasDept, hasDegree, hasGraduationYear, hasDesignation, hasCurrentCompany,
+      isPhoneValid, isBioValid, isValid
     };
-  }, [form, isLogin]);
+  }, [form, isLogin, role]);
+
+  const getClientErrors = () => {
+    const errs = {};
+    if (!form.name.trim()) {
+      errs.name = "Full Name is required.";
+    } else if (form.name.trim().length < 3) {
+      errs.name = "Name must be at least 3 characters.";
+    }
+
+    if (!form.email) {
+      errs.email = "Email Address is required.";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errs.email = "Enter a valid email.";
+    }
+
+    if (!form.password) {
+      errs.password = "Password is required.";
+    } else {
+      if (form.password.length < 8) {
+        errs.password = "Password must contain at least 8 characters.";
+      } else if (!/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password)) {
+        errs.password = "Password must contain both uppercase and lowercase letters.";
+      } else if (!/[0-9]/.test(form.password)) {
+        errs.password = "Password must contain at least one number.";
+      } else if (!/[\W_]/.test(form.password)) {
+        errs.password = "Password must contain at least one special character.";
+      }
+    }
+
+    if (!form.confirmPassword) {
+      errs.confirmPassword = "Confirm Password is required.";
+    } else if (form.password !== form.confirmPassword) {
+      errs.confirmPassword = "Passwords do not match.";
+    }
+
+    if (!form.college) {
+      errs.college = "College is required.";
+    }
+
+    if (!form.department) {
+      errs.department = "Department is required.";
+    }
+
+    if (role === "student" || role === "alumni") {
+      if (!form.degree) {
+        errs.degree = "Degree is required.";
+      }
+      if (!form.graduationYear) {
+        errs.graduationYear = "Graduation Year is required.";
+      }
+    }
+
+    if (role === "teacher" && !form.designation.trim()) {
+      errs.designation = "Designation is required.";
+    }
+
+    if (role === "alumni" && !form.currentCompany.trim()) {
+      errs.currentCompany = "Current Company is required.";
+    }
+
+    if (form.phone && !/^\d{10}$/.test(form.phone)) {
+      errs.phone = "Enter a valid 10-digit phone number.";
+    }
+
+    if (form.bio && form.bio.length > 500) {
+      errs.bio = "Bio cannot exceed 500 characters.";
+    }
+
+    return errs;
+  };
 
   const strengthScore = useMemo(() => {
     if (isLogin) return 0;
@@ -158,48 +263,117 @@ function Auth() {
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setLoginError("");
-    setForm({ name: "", email: "", password: "", confirmPassword: "", college: "ABESIT", degree: "", department: "", section: "", year: "", graduationYear: "", designation: "", currentCompany: "", phone: "", linkedin: "", bio: "", skills: [] });
+    setFieldErrors({});
+    setForm({ name: "", email: "", password: "", confirmPassword: "", college: "ABESIT", degree: "", department: "", graduationYear: "", designation: "", currentCompany: "", phone: "", linkedin: "", bio: "", skills: [] });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "year") {
-      const val = Number(value);
-      if (value === "" || (val >= 1 && val <= 4)) setForm(prev => ({ ...prev, [name]: value === "" ? "" : val }));
-      else toast.error("Year must be between 1 and 4", { id: "year-error" });
-      return;
-    }
+    setFieldErrors(prev => ({ ...prev, [name]: "" }));
+
     if (name === "phone") { const onlyNums = value.replace(/\D/g, ""); if (onlyNums.length <= 10) setForm(prev => ({ ...prev, [name]: onlyNums })); return; }
     if (name === "bio") { if (value.length <= 500) setForm(prev => ({ ...prev, [name]: value })); return; }
-    if (name === "skills") setForm({ ...form, skills: value.split(",").map((s) => s.trim()) });
-    else if (name === "graduationYear") setForm({ ...form, [name]: Number(value) });
-    else setForm({ ...form, [name]: value });
+    if (name === "skills") setForm(prev => ({ ...prev, skills: value.split(",").map((s) => s.trim()) }));
+    else if (name === "graduationYear") setForm(prev => ({ ...prev, [name]: value ? Number(value) : "" }));
+    else setForm(prev => ({ ...prev, [name]: value }));
   };
 
   useEffect(() => { if (!user) setForm((prev) => ({ ...prev, email: "", password: "" })); }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoginError("");
-    if (!validations.isValid) { toast.error("Please complete all required fields correctly."); return; }
+    setFieldErrors({});
+
+    if (isLogin) {
+      if (!validations.isValid) { 
+        toast.error("Please complete all required fields correctly."); 
+        return; 
+      }
+    } else {
+      const clientErrors = getClientErrors();
+      if (Object.keys(clientErrors).length > 0) {
+        setFieldErrors(clientErrors);
+        toast.error("Please correct the errors in the form.");
+        return;
+      }
+    }
+
     setLoading(true);
     const loadToast = toast.loading(isLogin ? "Signing in..." : "Creating account...");
     try {
       if (isLogin) {
         await login({ email: form.email, password: form.password });
-        toast.success("Welcome Back! 👋", { id: loadToast });
+        toast.success("Welcome Back!", { id: loadToast });
       } else {
-        await signup({ ...form, role });
-        toast.success("Account Created! Check your email to verify. 📧", { id: loadToast, duration: 5000 });
+        const signupPayload = {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          college: form.college,
+          department: form.department,
+          role,
+        };
+
+        if (role === "student" || role === "alumni") {
+          signupPayload.degree = form.degree;
+          signupPayload.graduationYear = Number(form.graduationYear);
+        }
+
+        if (role === "alumni") {
+          signupPayload.currentCompany = form.currentCompany.trim();
+        }
+
+        if (role === "teacher") {
+          signupPayload.designation = form.designation.trim();
+        }
+
+        if (form.phone.trim()) signupPayload.phone = form.phone.trim();
+        if (form.linkedin.trim()) signupPayload.linkedin = form.linkedin.trim();
+        if (form.bio.trim()) signupPayload.bio = form.bio.trim();
+        if (form.skills && form.skills.length > 0) {
+          const filteredSkills = form.skills.filter(s => s.trim().length > 0);
+          if (filteredSkills.length > 0) {
+            signupPayload.skills = filteredSkills;
+          }
+        }
+
+        await signup(signupPayload);
+        toast.success("Account Created! Check your email to verify.", { id: loadToast, duration: 5000 });
         navigate('/check-email', { state: { email: form.email } });
         setIsLogin(true);
       }
     } catch (err) {
       const data = err.response?.data;
-      if (data?.type === "VALIDATION_ERROR" && data.errors) {
-        Object.values(data.errors).forEach((messages) => toast.error(messages[0], { id: loadToast }));
+      let backendErrors = {};
+      if (data) {
+        if (data.field && data.message) {
+          backendErrors[data.field] = data.message;
+        } else if (Array.isArray(data)) {
+          data.forEach(e => {
+            if (e.field && e.message) backendErrors[e.field] = e.message;
+          });
+        } else if (data.errors) {
+          if (Array.isArray(data.errors)) {
+            data.errors.forEach(e => {
+              if (e.field && e.message) backendErrors[e.field] = e.message;
+            });
+          } else if (typeof data.errors === "object") {
+            Object.keys(data.errors).forEach(k => {
+              const val = data.errors[k];
+              backendErrors[k] = Array.isArray(val) ? val[0] : val;
+            });
+          }
+        }
+      }
+
+      if (Object.keys(backendErrors).length > 0) {
+        setFieldErrors(backendErrors);
+        toast.error("Please correct the errors in the form.", { id: loadToast });
         return;
       }
+
       const msg = data?.message || "Something went wrong";
       toast.error(msg, { id: loadToast });
       if (isLogin) {
@@ -210,9 +384,9 @@ function Auth() {
 
   const departments = ["CSE", "CS-DS", "AI", "IT", "IOT"];
   const roles = [
-    { id: "student", label: "Student", emoji: "🎓" },
-    { id: "alumni", label: "Alumni", emoji: "🧑‍💼" },
-    { id: "teacher", label: "Teacher", emoji: "📚" },
+    { id: "student", label: "Student", icon: FaUser },
+    { id: "alumni", label: "Alumni", icon: FaBuilding },
+    { id: "teacher", label: "Teacher", icon: FaChalkboardTeacher },
   ];
 
   return (
@@ -242,7 +416,7 @@ function Auth() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => { setIsLogin(i === 0); setLoginError(""); }}
+                  onClick={() => { setIsLogin(i === 0); setLoginError(""); setFieldErrors({}); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                     isLogin === (i === 0)
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
@@ -265,7 +439,7 @@ function Auth() {
                 {/* Heading */}
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-800">
-                    {isLogin ? "Welcome back 👋" : "Create your account 🚀"}
+                    {isLogin ? "Welcome back" : "Create your account"}
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {isLogin ? "Sign in to access your campus network." : "Join CampusPull and start your journey."}
@@ -274,24 +448,28 @@ function Auth() {
 
                 {/* Role Selector — only on signup */}
                 {!isLogin && (
-                  <div className="mb-6">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">I am a...</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {roles.map((r) => (
-                        <button
-                          key={r.id}
-                          type="button"
-                          onClick={() => setRole(r.id)}
-                          className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
-                            role === r.id
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
-                              : "border-gray-200 bg-white text-gray-500 hover:border-indigo-200"
-                          }`}
-                        >
-                          <span className="text-xl">{r.emoji}</span>
-                          <span className="text-xs">{r.label}</span>
-                        </button>
-                      ))}
+                  <div className="space-y-1 mb-6">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">I am a...</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                        <FaUser className="text-indigo-400" size={14} />
+                      </div>
+                      <select
+                        name="role"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        required
+                        className="w-full pl-11 pr-10 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none text-gray-700 shadow-sm"
+                      >
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -299,25 +477,26 @@ function Auth() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name — signup only */}
                   {!isLogin && (
-                    <InputField icon={FaUser} type="text" name="name" placeholder="Full Name" onChange={handleChange} required />
+                    <InputField icon={FaUser} type="text" name="name" placeholder="Full Name" value={form.name} onChange={handleChange} error={fieldErrors.name} required />
                   )}
 
                   {/* Email */}
-                  <InputField icon={FaEnvelope} type="email" name="email" placeholder="Email Address" onChange={handleChange} required />
+                  <InputField icon={FaEnvelope} type="email" name="email" placeholder="Email Address" value={form.email} onChange={handleChange} error={fieldErrors.email} required />
 
                   {/* Password */}
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                      <FaLock className={`${(loginError && isLogin) || (!isLogin && form.password.length > 0 && (!validations.hasLen || !validations.hasCap || !validations.hasNocap || !validations.hasNum || !validations.hasSpcial)) ? 'text-red-400' : 'text-indigo-400'}`} size={15} />
+                      <FaLock className={`${(loginError && isLogin) || (!isLogin && fieldErrors.password) || (!isLogin && form.password.length > 0 && (!validations.hasLen || !validations.hasCap || !validations.hasNocap || !validations.hasNum || !validations.hasSpcial)) ? 'text-red-400' : 'text-indigo-400'}`} size={15} />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       placeholder="Password"
+                      value={form.password}
                       onChange={(e) => { setLoginError(""); handleChange(e); }}
                       required
                       className={`w-full pl-11 pr-12 py-3 bg-white/80 border rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 transition-all text-sm font-medium ${
-                        (loginError && isLogin) || (!isLogin && form.password.length > 0 && (!validations.hasLen || !validations.hasCap || !validations.hasNocap || !validations.hasNum || !validations.hasSpcial))
+                        (loginError && isLogin) || (!isLogin && fieldErrors.password) || (!isLogin && form.password.length > 0 && (!validations.hasLen || !validations.hasCap || !validations.hasNocap || !validations.hasNum || !validations.hasSpcial))
                           ? 'border-red-400 focus:ring-red-100 focus:border-red-500'
                           : 'border-gray-200 focus:ring-indigo-100 focus:border-indigo-400'
                       }`}
@@ -335,6 +514,11 @@ function Auth() {
                   {isLogin && loginError && (
                     <div className="text-xs font-semibold text-red-500 pl-1 animate-fade-in-up">
                        {loginError}
+                    </div>
+                  )}
+                  {!isLogin && fieldErrors.password && (
+                    <div className="text-xs font-semibold text-red-500 pl-1 animate-fade-in-up">
+                       {fieldErrors.password}
                     </div>
                   )}
                   {!isLogin && form.password.length > 0 && (
@@ -388,27 +572,13 @@ function Auth() {
                         type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         placeholder="Confirm Password"
+                        value={form.confirmPassword}
                         onChange={handleChange}
                         required
                         rightIcon={showConfirmPassword ? FaEyeSlash : FaEye}
                         onRightIconClick={() => setShowConfirmPassword(p => !p)}
-                        error={form.confirmPassword && form.confirmPassword !== form.password ? "Passwords do not match" : ""}
+                        error={form.confirmPassword && form.confirmPassword !== form.password ? "Passwords do not match" : fieldErrors.confirmPassword}
                       />
-
-                      {/* Phone & LinkedIn */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-1">
-                        <InputField
-                          icon={FaPhone}
-                          type="text"
-                          name="phone"
-                          value={form.phone}
-                          placeholder="Phone Number"
-                          onChange={handleChange}
-                          required
-                          error={form.phone && !validations.isPhoneValid ? "Enter a valid 10-digit number" : ""}
-                        />
-                        <InputField icon={FaLinkedin} type="url" name="linkedin" placeholder="LinkedIn URL" onChange={handleChange} required />
-                      </div>
 
                       <div className="pt-2 pb-1">
                         <div className="flex items-center gap-3">
@@ -419,82 +589,142 @@ function Auth() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {/* College (readonly) */}
+                        {/* College Dropdown */}
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                            <FaUniversity className="text-indigo-300" size={14} />
+                            <FaUniversity className="text-indigo-400" size={14} />
                           </div>
-                          <input
-                            type="text"
+                          <select
                             name="college"
-                            value="ABESIT"
-                            readOnly
-                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 font-medium cursor-not-allowed text-sm"
-                          />
+                            value={form.college}
+                            onChange={handleChange}
+                            required
+                            className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.college ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none text-gray-700 shadow-sm`}
+                          >
+                            <option value="ABESIT">ABESIT</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                          {fieldErrors.college && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.college}</p>}
                         </div>
 
-                        {/* Department */}
+                        {/* Department Dropdown */}
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                             <FaLayerGroup className="text-indigo-400" size={14} />
                           </div>
                           <select
                             name="department"
+                            value={form.department}
                             onChange={handleChange}
                             required
-                            defaultValue=""
-                            className={`w-full pl-11 pr-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.department === "" ? "text-gray-400" : "text-gray-700"}`}
+                            className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.department ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.department === "" ? "text-gray-400" : "text-gray-700"}`}
                           >
                             <option value="" disabled>Department</option>
                             {departments.map((dept) => <option key={dept} value={dept}>{dept}</option>)}
                           </select>
+                          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                          {fieldErrors.department && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.department}</p>}
                         </div>
                       </div>
 
-                      {/* Student/Alumni specific */}
+                      {/* Student/Alumni specific dropdowns */}
                       {(role === "student" || role === "alumni") && (
-                        <div className="grid grid-cols-2 gap-3">
-                          <InputField icon={FaIdBadge} type="text" name="degree" placeholder="Degree" onChange={handleChange} required />
-                          <InputField icon={FaCalendarAlt} type="number" name="graduationYear" placeholder={role === "student" ? "Grad Year " : "Grad Year"} onChange={handleChange} required />
-                        </div>
-                      )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Degree Dropdown */}
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                              <FaIdBadge className="text-indigo-400" size={14} />
+                            </div>
+                            <select
+                              name="degree"
+                              value={form.degree}
+                              onChange={handleChange}
+                              required
+                              className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.degree ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.degree === "" ? "text-gray-400" : "text-gray-700"}`}
+                            >
+                              <option value="" disabled>Degree</option>
+                              <option value="B.Tech">B.Tech</option>
+                              <option value="M.Tech">M.Tech</option>
+                              <option value="MBA">MBA</option>
+                              <option value="BCA">BCA</option>
+                              <option value="MCA">MCA</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            {fieldErrors.degree && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.degree}</p>}
+                          </div>
 
-                      {role === "student" && (
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* Current Year Selection */}
+                          {/* Graduation Year Dropdown */}
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                               <FaCalendarAlt className="text-indigo-400" size={14} />
                             </div>
                             <select
-                              name="year"
+                              name="graduationYear"
+                              value={form.graduationYear}
                               onChange={handleChange}
                               required
-                              defaultValue=""
-                              className={`w-full pl-11 pr-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.year === "" ? "text-gray-400" : "text-gray-700"}`}
+                              className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.graduationYear ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.graduationYear === "" ? "text-gray-400" : "text-gray-700"}`}
                             >
-                              <option value="" disabled>Current Year</option>
-                              <option value="1">1st Year</option>
-                              <option value="2">2nd Year</option>
-                              <option value="3">3rd Year</option>
-                              <option value="4">4th Year</option>
+                              <option value="" disabled>Graduation Year</option>
+                              {graduationYears.map((year) => (
+                                <option key={year} value={year}>{year}</option>
+                              ))}
                             </select>
+                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            {fieldErrors.graduationYear && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.graduationYear}</p>}
                           </div>
-                          <InputField icon={FaLayerGroup} type="text" name="section" placeholder="Section" onChange={handleChange} required />
                         </div>
                       )}
 
-                      {role === "teacher" && <InputField icon={FaChalkboardTeacher} type="text" name="designation" placeholder="Designation" onChange={handleChange} required />}
-                      {role === "alumni" && <InputField icon={FaBuilding} type="text" name="currentCompany" placeholder="Current Company" onChange={handleChange} />}
+                      {/* Designation (Teacher specific) */}
+                      {role === "teacher" && (
+                        <InputField icon={FaChalkboardTeacher} type="text" name="designation" placeholder="Designation" value={form.designation} onChange={handleChange} required error={fieldErrors.designation} />
+                      )}
+                      
+                      {/* Current Company (Alumni specific) */}
+                      {role === "alumni" && (
+                        <InputField icon={FaBuilding} type="text" name="currentCompany" placeholder="Current Company" value={form.currentCompany} onChange={handleChange} required error={fieldErrors.currentCompany} />
+                      )}
 
                       <div className="pt-2 pb-1">
                         <div className="flex items-center gap-3">
                           <div className="flex-1 h-px bg-gray-200" />
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Optional Details</span>
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Optional Information</span>
                           <div className="flex-1 h-px bg-gray-200" />
                         </div>
                       </div>
 
+                      {/* Phone & LinkedIn moved under Optional details */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <InputField
+                          icon={FaPhone}
+                          type="text"
+                          name="phone"
+                          value={form.phone}
+                          placeholder="Phone Number (optional)"
+                          onChange={handleChange}
+                          error={fieldErrors.phone}
+                        />
+                        <InputField
+                          icon={FaLinkedin}
+                          type="url"
+                          name="linkedin"
+                          value={form.linkedin}
+                          placeholder="LinkedIn URL (optional)"
+                          onChange={handleChange}
+                          error={fieldErrors.linkedin}
+                        />
+                      </div>
+
+                      {/* Bio */}
                       <div className="relative">
                         <div className="absolute top-3 left-4 pointer-events-none z-10">
                           <FaInfoCircle className="text-indigo-400" size={14} />
@@ -505,15 +735,17 @@ function Auth() {
                           placeholder="Short Bio / Headline (optional)"
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3 bg-white/80 border rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium resize-none h-20 ${
-                            form.bio.length >= 500 ? "border-orange-400" : "border-gray-200"
+                            fieldErrors.bio ? "border-red-400" : form.bio.length >= 500 ? "border-orange-400" : "border-gray-200"
                           }`}
                         />
                         <span className={`absolute bottom-2 right-3 text-[10px] font-bold ${form.bio.length >= 500 ? "text-red-500" : "text-gray-400"}`}>
                           {form.bio.length}/500
                         </span>
                       </div>
+                      {fieldErrors.bio && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.bio}</p>}
 
-                      <InputField icon={FaTools} type="text" name="skills" placeholder="Skills (comma separated)" onChange={handleChange} />
+                      {/* Skills */}
+                      <InputField icon={FaTools} type="text" name="skills" placeholder="Skills (comma separated, optional)" value={form.skills.join(", ")} onChange={handleChange} error={fieldErrors.skills} />
                     </>
                   )}
 
@@ -525,7 +757,7 @@ function Auth() {
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : isLogin ? "Sign In" : `Join as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+                    ) : isLogin ? "Sign In" : "Create Account"}
                   </button>
                 </form>
 
