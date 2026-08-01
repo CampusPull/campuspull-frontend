@@ -107,7 +107,6 @@ function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { user, login, signup } = useAuth();
   const [role, setRole] = useState("student");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -127,13 +126,19 @@ function Auth() {
   const [loginError, setLoginError] = useState("");
 
   const graduationYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = 2026;
     const years = [];
-    for (let y = currentYear - 10; y <= currentYear + 7; y++) {
-      years.push(y);
+    if (role === "student") {
+      for (let y = currentYear; y <= currentYear + 6; y++) {
+        years.push(y);
+      }
+    } else if (role === "alumni") {
+      for (let y = currentYear; y >= currentYear - 6; y--) {
+        years.push(y);
+      }
     }
     return years;
-  }, []);
+  }, [role]);
 
   const validations = useMemo(() => {
     if (isLogin) return { isValid: !!form.email && form.password.length >= 6 };
@@ -229,6 +234,13 @@ function Auth() {
       }
       if (!form.graduationYear) {
         errs.graduationYear = "Graduation Year is required.";
+      } else {
+        const yearNum = Number(form.graduationYear);
+        if (role === "student" && (yearNum < 2026 || yearNum > 2032)) {
+          errs.graduationYear = "Graduation Year must be between 2026 and 2032.";
+        } else if (role === "alumni" && (yearNum < 2020 || yearNum > 2026)) {
+          errs.graduationYear = "Graduation Year must be between 2020 and 2026.";
+        }
       }
     }
 
@@ -267,6 +279,18 @@ function Auth() {
     setForm({ name: "", email: "", password: "", confirmPassword: "", college: "ABESIT", degree: "", department: "", graduationYear: "", designation: "", currentCompany: "", phone: "", linkedin: "", bio: "", skills: [] });
   };
 
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setFieldErrors({});
+    setForm(prev => ({
+      ...prev,
+      graduationYear: "",
+      degree: "",
+      designation: "",
+      currentCompany: "",
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFieldErrors(prev => ({ ...prev, [name]: "" }));
@@ -282,7 +306,6 @@ function Auth() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return;
     setLoginError("");
     setFieldErrors({});
 
@@ -446,30 +469,29 @@ function Auth() {
                   </p>
                 </div>
 
-                {/* Role Selector — only on signup */}
+                {/* Role Selector — tabs layout */}
                 {!isLogin && (
-                  <div className="space-y-1 mb-6">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">I am a...</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                        <FaUser className="text-indigo-400" size={14} />
-                      </div>
-                      <select
-                        name="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        required
-                        className="w-full pl-11 pr-10 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none text-gray-700 shadow-sm"
-                      >
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.label}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                      </div>
+                  <div className="mb-6">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-1">I am a...</p>
+                    <div className="flex border-b border-gray-200">
+                      {roles.map((r) => {
+                        const Icon = r.icon;
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => { handleRoleChange(r.id); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 text-sm font-bold transition-all duration-200 ${
+                              role === r.id
+                                ? "border-indigo-600 text-indigo-600 bg-indigo-50/50"
+                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                            }`}
+                          >
+                            <Icon size={15} />
+                            <span>{r.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -477,11 +499,11 @@ function Auth() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Name — signup only */}
                   {!isLogin && (
-                    <InputField icon={FaUser} type="text" name="name" placeholder="Full Name" value={form.name} onChange={handleChange} error={fieldErrors.name} required />
+                    <InputField icon={FaUser} type="text" name="name" placeholder="Enter name" value={form.name} onChange={handleChange} error={fieldErrors.name} required />
                   )}
 
                   {/* Email */}
-                  <InputField icon={FaEnvelope} type="email" name="email" placeholder="Email Address" value={form.email} onChange={handleChange} error={fieldErrors.email} required />
+                  <InputField icon={FaEnvelope} type="email" name="email" placeholder="Enter email" value={form.email} onChange={handleChange} error={fieldErrors.email} required />
 
                   {/* Password */}
                   <div className="relative">
@@ -491,7 +513,7 @@ function Auth() {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      placeholder="Password"
+                      placeholder="Pass@123"
                       value={form.password}
                       onChange={(e) => { setLoginError(""); handleChange(e); }}
                       required
@@ -566,17 +588,15 @@ function Auth() {
                   {/* ── SIGNUP EXTRA FIELDS ── */}
                   {!isLogin && (
                     <>
-                      {/* Confirm Password */}
+                      {/* Confirm Password (NO toggle eye icon) */}
                       <InputField
                         icon={FaLock}
-                        type={showConfirmPassword ? "text" : "password"}
+                        type="password"
                         name="confirmPassword"
-                        placeholder="Confirm Password"
+                        placeholder="Pass@123"
                         value={form.confirmPassword}
                         onChange={handleChange}
                         required
-                        rightIcon={showConfirmPassword ? FaEyeSlash : FaEye}
-                        onRightIconClick={() => setShowConfirmPassword(p => !p)}
                         error={form.confirmPassword && form.confirmPassword !== form.password ? "Passwords do not match" : fieldErrors.confirmPassword}
                       />
 
@@ -599,7 +619,7 @@ function Auth() {
                             value={form.college}
                             onChange={handleChange}
                             required
-                            className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.college ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none text-gray-700 shadow-sm`}
+                            className="w-full pl-11 pr-10 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none text-gray-700 shadow-sm"
                           >
                             <option value="ABESIT">ABESIT</option>
                           </select>
@@ -671,7 +691,7 @@ function Auth() {
                               required
                               className={`w-full pl-11 pr-10 py-3 bg-white/80 border ${fieldErrors.graduationYear ? 'border-red-400' : 'border-gray-200'} rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium appearance-none ${form.graduationYear === "" ? "text-gray-400" : "text-gray-700"}`}
                             >
-                              <option value="" disabled>Graduation Year</option>
+                              <option value="" disabled>Graduation year</option>
                               {graduationYears.map((year) => (
                                 <option key={year} value={year}>{year}</option>
                               ))}
@@ -686,12 +706,12 @@ function Auth() {
 
                       {/* Designation (Teacher specific) */}
                       {role === "teacher" && (
-                        <InputField icon={FaChalkboardTeacher} type="text" name="designation" placeholder="Designation" value={form.designation} onChange={handleChange} required error={fieldErrors.designation} />
+                        <InputField icon={FaChalkboardTeacher} type="text" name="designation" placeholder="Assistant Professor" value={form.designation} onChange={handleChange} required error={fieldErrors.designation} />
                       )}
                       
                       {/* Current Company (Alumni specific) */}
                       {role === "alumni" && (
-                        <InputField icon={FaBuilding} type="text" name="currentCompany" placeholder="Current Company" value={form.currentCompany} onChange={handleChange} required error={fieldErrors.currentCompany} />
+                        <InputField icon={FaBuilding} type="text" name="currentCompany" placeholder="Your current company name" value={form.currentCompany} onChange={handleChange} required error={fieldErrors.currentCompany} />
                       )}
 
                       <div className="pt-2 pb-1">
@@ -709,7 +729,7 @@ function Auth() {
                           type="text"
                           name="phone"
                           value={form.phone}
-                          placeholder="Phone Number (optional)"
+                          placeholder="Phone No."
                           onChange={handleChange}
                           error={fieldErrors.phone}
                         />
@@ -718,7 +738,7 @@ function Auth() {
                           type="url"
                           name="linkedin"
                           value={form.linkedin}
-                          placeholder="LinkedIn URL (optional)"
+                          placeholder="Linkedin URL"
                           onChange={handleChange}
                           error={fieldErrors.linkedin}
                         />
@@ -732,7 +752,7 @@ function Auth() {
                         <textarea
                           name="bio"
                           value={form.bio}
-                          placeholder="Short Bio / Headline (optional)"
+                          placeholder="Tell us about yourself"
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3 bg-white/80 border rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium resize-none h-20 ${
                             fieldErrors.bio ? "border-red-400" : form.bio.length >= 500 ? "border-orange-400" : "border-gray-200"
@@ -745,7 +765,7 @@ function Auth() {
                       {fieldErrors.bio && <p className="text-red-500 text-xs mt-1 pl-1">{fieldErrors.bio}</p>}
 
                       {/* Skills */}
-                      <InputField icon={FaTools} type="text" name="skills" placeholder="Skills (comma separated, optional)" value={form.skills.join(", ")} onChange={handleChange} error={fieldErrors.skills} />
+                      <InputField icon={FaTools} type="text" name="skills" placeholder="Comma-separated skills" value={form.skills.join(", ")} onChange={handleChange} error={fieldErrors.skills} />
                     </>
                   )}
 
