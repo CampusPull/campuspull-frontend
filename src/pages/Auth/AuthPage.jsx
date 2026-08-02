@@ -227,6 +227,26 @@ const HoverLink = ({ onClick, children, className = "" }) => (
   </button>
 );
 
+function generateGraduationYears(role) {
+  const currentYear = new Date().getFullYear();
+  
+  if (role === "student") {
+    const years = [];
+    for (let i = 0; i <= 6; i++) {
+      years.push(currentYear + i);
+    }
+    return years.sort((a, b) => a - b);
+  }
+  if (role === "alumni") {
+    const years = [];
+    for (let i = 16; i >= 0; i--) {
+      years.push(currentYear - i);
+    }
+    return years.sort((a, b) => a - b);
+  }
+  return [];
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────────
 function Auth() {
   const navigate = useNavigate();
@@ -330,18 +350,7 @@ function Auth() {
   const [loginError, setLoginError] = useState("");
 
   const graduationYears = useMemo(() => {
-    const currentYear = 2026;
-    const years = [];
-    if (role === "student") {
-      for (let y = currentYear; y <= currentYear + 6; y++) {
-        years.push(y);
-      }
-    } else if (role === "alumni") {
-      for (let y = currentYear; y >= currentYear - 6; y--) {
-        years.push(y);
-      }
-    }
-    return years;
+    return generateGraduationYears(role);
   }, [role]);
 
   const validations = useMemo(() => {
@@ -440,10 +449,11 @@ function Auth() {
         errs.graduationYear = "Graduation Year is required.";
       } else {
         const yearNum = Number(form.graduationYear);
-        if (role === "student" && (yearNum < 2026 || yearNum > 2032)) {
-          errs.graduationYear = "Graduation Year must be between 2026 and 2032.";
-        } else if (role === "alumni" && (yearNum < 2020 || yearNum > 2026)) {
-          errs.graduationYear = "Graduation Year must be between 2020 and 2026.";
+        const currentYear = new Date().getFullYear();
+        if (role === "student" && (yearNum < currentYear || yearNum > currentYear + 6)) {
+          errs.graduationYear = `Graduation Year must be between ${currentYear} and ${currentYear + 6}.`;
+        } else if (role === "alumni" && (yearNum < currentYear - 16 || yearNum > currentYear)) {
+          errs.graduationYear = `Graduation Year must be between ${currentYear - 16} and ${currentYear}.`;
         }
       }
     }
