@@ -8,6 +8,7 @@ import AboutLinkMate from "./pages/about-link-mate";
 import OurMission from "./pages/about-link-mate/OurMission.jsx";
 import PartnersPage from "./pages/PartnersPage.jsx";
 import ResourcesHub from "./pages/resources-hub";
+import ResourceLibrary from "./pages/ResourceLibrary";
 import Homepage from "./pages/homepage";
 import Profile from "./pages/profile/Profile.jsx"; 
 import PublicProfile from "./pages/profile/publicProfile.jsx";
@@ -53,7 +54,6 @@ const Layout = ({ children }) => {
 import { FeedProvider } from "./context/feedContext.jsx";
 import { FeedbackProvider } from "./context/feedbackContext.jsx";
 import FeedbackPage from "pages/feedback/feedbackPage.jsx";
-import { ResourceProvider } from "./context/resourceContext.jsx"; 
 import { AnnouncementProvider } from "./context/announcementContext.jsx"; 
 import AdminDashboard from './pages/Admin/adminDashboard';
 import UsersTable from './pages/Admin/usersTable';
@@ -101,7 +101,6 @@ const Routes = () => {
         <ExploreProvider>
         <ProfileProvider>
         <FeedProvider>
-        <ResourceProvider>
         <AnnouncementProvider>
         <ChatProvider>
         <FeedbackProvider>
@@ -252,15 +251,13 @@ const Routes = () => {
               />
 
               <Route
-                path="/resources-hub"
-                element={
-                  
-                    <ProtectedLayout>
-                      <ResourcesHub />
-                    </ProtectedLayout>
-                 
-                }
-              />
+  path="/resources"
+  element={
+    <ProtectedLayout>
+      <ResourceLibrary />
+    </ProtectedLayout>
+  }
+/>
               <Route
                 path="/profile"
                 element={
@@ -458,7 +455,6 @@ const Routes = () => {
         </FeedbackProvider>
         </ChatProvider>
         </AnnouncementProvider>
-        </ResourceProvider>
         </FeedProvider>
         </ProfileProvider>
         </ExploreProvider>
