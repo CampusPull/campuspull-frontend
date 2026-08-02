@@ -1,5 +1,5 @@
 import { ChevronRight, Home } from "lucide-react";
-import { useResource } from "../../../context/ResourceContext";
+import { useAcademic} from "../../../context/AcademicContext";
 
 const Breadcrumbs = () => {
   const {
@@ -8,7 +8,7 @@ const Breadcrumbs = () => {
     fetchFolderTree,
     fetchFolderContents,
     clearCurrentSection,
-  } = useResource();
+  } = useAcademic();
 
   const breadcrumbs = folderContents?.breadcrumbs || [];
 

@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 
-import { useResource } from "../../../../context/ResourceContext";
+import { useAcademic } from "../../../../context/AcademicContext";
 
 import FolderHeader from "./FolderHeader";
 import FolderGrid from "./FolderGrid";
@@ -8,7 +8,7 @@ import ResourceGrid from "./ResourceGrid";
 import EmptyState from "./EmptyState";
 
 const FolderContents = ({ onUpload, onEdit, onDelete }) => {
-  const { folderContents, loading } = useResource();
+  const { folderContents, loading } = useAcademic();
 
   const {
     folders = [],

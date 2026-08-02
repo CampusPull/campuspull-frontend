@@ -5,7 +5,7 @@ import {
   Folder,
 } from "lucide-react";
 
-import { useResource } from "../../../context/ResourceContext";
+import { useAcademic } from "../../../context/AcademicContext";
 
 const SECTIONS = [
   {
@@ -34,7 +34,7 @@ const ResourceNavigator = () => {
   const {
     currentSection,
     fetchFolderTree,
-  } = useResource();
+  } = useAcademic();
 
   return (
     <div className="flex justify-center">

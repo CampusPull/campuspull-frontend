@@ -4,14 +4,14 @@ import {
   GraduationCap,
 } from "lucide-react";
 
-import { useResource } from "../../../../context/ResourceContext";
+import { useAcademic } from "../../../../context/AcademicContext";
 
 const FolderCard = ({ folder }) => {
   const {
     currentFolder,
     fetchFolderContents,
     fetchTeacherFolderContents,
-  } = useResource();
+  } = useAcademic();
 
   const isTeacherFolder =
     folder.type === "TEACHER_FOLDER";

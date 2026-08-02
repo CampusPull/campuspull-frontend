@@ -4,10 +4,10 @@ import {
   Upload,
 } from "lucide-react";
 
-import { useResource } from "../../../../context/ResourceContext";
+import { useAcademic } from "../../../../context/AcademicContext";
 
 const FolderHeader = ({ onUpload }) => {
-  const { folderContents } = useResource();
+  const { folderContents } = useAcademic();
 
   const { folder, teacher, canUpload } = folderContents;
 

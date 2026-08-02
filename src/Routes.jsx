@@ -8,7 +8,7 @@ import AboutLinkMate from "./pages/about-link-mate";
 import OurMission from "./pages/about-link-mate/OurMission.jsx";
 import PartnersPage from "./pages/PartnersPage.jsx";
 import ResourcesHub from "./pages/resources-hub";
-import ResourceLibrary from "./pages/ResourceLibrary";
+// import ResourceLibrary from "./pages/ResourceLibrary";
 import Homepage from "./pages/homepage";
 import Profile from "./pages/profile/Profile.jsx"; 
 import PublicProfile from "./pages/profile/publicProfile.jsx";
@@ -30,6 +30,8 @@ import Contact from "./pages/Support/contact.jsx";
 import Feedback from "./pages/Support/feedback.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CommunityProvider } from "./context/communityContext.jsx";
+import { AcademicProvider } from "./context/AcademicContext.jsx";
+import { ResourceProvider } from "./context/resourceContext.jsx";
 import { EventProvider } from "./context/eventContext.jsx"; 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";   
 import { ExploreProvider } from "./context/exploreContext.jsx";
@@ -253,9 +255,11 @@ const Routes = () => {
               <Route
   path="/resources"
   element={
-    <ProtectedLayout>
-      <ResourceLibrary />
-    </ProtectedLayout>
+    <ResourceProvider>
+      <ProtectedLayout>
+        <ResourcesHub />
+      </ProtectedLayout>
+    </ResourceProvider>
   }
 />
               <Route

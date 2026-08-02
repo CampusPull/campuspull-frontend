@@ -2,11 +2,11 @@ import { useState } from "react";
 import { FileText, Link2 } from "lucide-react";
 
 import FileDropzone from "./FileDropzone";
-import { useResource } from "../../../../context/ResourceContext";
+import { useAcademic } from "../../../../context/AcademicContext";
 
 const UploadForm = ({ onClose, mode = "create", initialData = null }) => {
   const { folderContents, uploadResource, updateResource, loading } =
-    useResource();
+    useAcademic();
   const isEdit = mode === "edit";
   const folderId = folderContents?.folder?._id;
 

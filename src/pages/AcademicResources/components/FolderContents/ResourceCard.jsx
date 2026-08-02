@@ -6,11 +6,11 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { useResource } from "../../../../context/ResourceContext";
+import { useAcademic } from "../../../../context/AcademicContext";
 import { useAuth } from "../../../../context/AuthContext";
 
 const ResourceCard = ({ resource, onEdit, onDelete }) => {
-  const { folderContents, downloadResource } = useResource();
+  const { folderContents, downloadResource } = useAcademic();
   const { user } = useAuth();
 
   const canEdit =

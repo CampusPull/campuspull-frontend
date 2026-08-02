@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-import { ResourceProvider, useResource } from "../../context/ResourceContext";
+import { AcademicProvider, useAcademic } from "../../context/AcademicContext";
 import { useAuth } from "../../context/AuthContext";
 
 import ResourceNavigator from "./components/ResourceNavigator";
@@ -24,7 +24,7 @@ const ResourcePage = () => {
     editFolder,
     removeFolder,
     removeResource,
-  } = useResource();
+  } = useAcademic();
 
   const { user } = useAuth();
   const isTeacherFolder = Boolean(folderContents?.teacher);
@@ -319,12 +319,12 @@ const ResourcePage = () => {
   );
 };
 
-const ResourceLibrary = () => {
+const AcademicResources = () => {
   return (
-    <ResourceProvider>
+    <AcademicProvider>
       <ResourcePage />
-    </ResourceProvider>
+    </AcademicProvider>
   );
 };
 
-export default ResourceLibrary;
+export default AcademicResources;
