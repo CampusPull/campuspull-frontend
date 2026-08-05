@@ -8,8 +8,9 @@ import EditInternshipModal from "./components/editInternshipModal";
 import { useAuth } from "../../context/AuthContext";
 import SignupModal from "../../components/ui/SignupModal";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FiBriefcase, FiSearch, FiSliders, FiX, FiPlus, FiArrowRight, FiFileText } from "react-icons/fi";
+import OpenInternshipsPage from "./OpenInternshipsPage";
 
 // ─── Skeleton Card ─────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
@@ -61,6 +62,14 @@ const Internships = () => {
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Tab State syncing with Search Params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "campus";
+
+  const handleTabChange = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
@@ -183,7 +192,7 @@ const Internships = () => {
             </div>
 
             <div className="flex items-center gap-4 flex-wrap">
-              <StatPill value={internships.length || "—"} label="Listings" />
+              <StatPill value={activeTab === "campus" ? (internships.length || "—") : "—"} label="Listings" />
               <StatPill value="100%" label="Verified" />
               {!isGuest && (user?.role === "student" || user?.role === "alumni" || user?.role === "teacher") && (
                 <Link
@@ -232,61 +241,93 @@ const Internships = () => {
       {/* ── Main Content ── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
-        {/* Mobile filter toggle */}
-        <div className="lg:hidden mb-6">
-          <button
-            onClick={() => setMobileFilterOpen(true)}
-            className="flex items-center gap-2.5 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-700 shadow-sm hover:border-indigo-400 hover:shadow-brand-sm transition-all duration-300 cursor-pointer"
-          >
-            <FiSliders size={15} className="text-indigo-500" />
-            Filters
-          </button>
-        </div>
-
-        {/* Mobile filter drawer */}
-        {mobileFilterOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setMobileFilterOpen(false)} />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="absolute left-0 top-0 bottom-0 w-80 bg-slate-50 shadow-2xl overflow-y-auto z-10 flex flex-col"
+        {/* ── Tabs Bar ── */}
+        <div className="flex justify-center sm:justify-start mb-8">
+          <div className="bg-white/60 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-1 flex gap-2 shadow-sm">
+            <button
+              onClick={() => handleTabChange("campus")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeTab === "campus"
+                  ? "text-indigo-600 bg-indigo-50/80 shadow-brand-sm"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+              }`}
             >
-              <div className="flex items-center justify-between p-5 bg-white border-b border-slate-100">
-                <h2 className="font-extrabold text-slate-800 tracking-tight">Filters</h2>
-                <button onClick={() => setMobileFilterOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">
-                  <FiX size={18} />
-                </button>
-              </div>
-              <div className="p-5 flex-grow">
-                <InternshipFilter onFilter={handleFilter} />
-              </div>
-            </motion.div>
+              Campus Internships
+            </button>
+            <button
+              onClick={() => handleTabChange("open")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeTab === "open"
+                  ? "text-indigo-600 bg-indigo-50/80 shadow-brand-sm"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+              }`}
+            >
+              Open Internships
+            </button>
           </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sticky Sidebar Filter */}
-          <aside className="hidden lg:block w-72 flex-shrink-0">
-            <div className="sticky top-24">
-              <InternshipFilter onFilter={handleFilter} />
-            </div>
-          </aside>
-
-          {/* Internship List */}
-          <main className="flex-grow min-w-0">
-            {/* Result count */}
-            {!loading && internships.length > 0 && (
-              <p className="text-sm text-slate-500 font-semibold mb-6 flex items-center gap-1.5 bg-white/40 border border-slate-100 rounded-xl px-4 py-2 w-max">
-                Showing <strong className="text-slate-800 font-extrabold">{internships.length}</strong> active opportunity{internships.length !== 1 ? "ies" : ""}
-                {Object.keys(filters).some(k => filters[k]) ? " matching filters" : ""}
-              </p>
-            )}
-            {renderInternshipContent()}
-          </main>
         </div>
+
+        {activeTab === "campus" ? (
+          <>
+            {/* Mobile filter toggle */}
+            <div className="lg:hidden mb-6">
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                className="flex items-center gap-2.5 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-700 shadow-sm hover:border-indigo-400 hover:shadow-brand-sm transition-all duration-300 cursor-pointer"
+              >
+                <FiSliders size={15} className="text-indigo-500" />
+                Filters
+              </button>
+            </div>
+
+            {/* Mobile filter drawer */}
+            {mobileFilterOpen && (
+              <div className="fixed inset-0 z-50 lg:hidden">
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setMobileFilterOpen(false)} />
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "-100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 220 }}
+                  className="absolute left-0 top-0 bottom-0 w-80 bg-slate-50 shadow-2xl overflow-y-auto z-10 flex flex-col"
+                >
+                  <div className="flex items-center justify-between p-5 bg-white border-b border-slate-100">
+                    <h2 className="font-extrabold text-slate-800 tracking-tight">Filters</h2>
+                    <button onClick={() => setMobileFilterOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors">
+                      <FiX size={18} />
+                    </button>
+                  </div>
+                  <div className="p-5 flex-grow">
+                    <InternshipFilter onFilter={handleFilter} />
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Sticky Sidebar Filter */}
+              <aside className="hidden lg:block w-72 flex-shrink-0">
+                <div className="sticky top-24">
+                  <InternshipFilter onFilter={handleFilter} />
+                </div>
+              </aside>
+
+              {/* Internship List */}
+              <main className="flex-grow min-w-0">
+                {/* Result count */}
+                {!loading && internships.length > 0 && (
+                  <p className="text-sm text-slate-500 font-semibold mb-6 flex items-center gap-1.5 bg-white/40 border border-slate-100 rounded-xl px-4 py-2 w-max">
+                    Showing <strong className="text-slate-800 font-extrabold">{internships.length}</strong> active opportunity{internships.length !== 1 ? "ies" : ""}
+                    {Object.keys(filters).some(k => filters[k]) ? " matching filters" : ""}
+                  </p>
+                )}
+                {renderInternshipContent()}
+              </main>
+            </div>
+          </>
+        ) : (
+          <OpenInternshipsPage isEmbedded={true} />
+        )}
       </div>
 
       {/* Admin Modal */}
