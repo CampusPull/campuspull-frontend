@@ -69,7 +69,7 @@ const ResourcesHub = () => {
   );
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
   const [activeSection, setActiveSection] = useState(
-    searchParams.get("type") || "academic",
+    searchParams.get("type") || (isGuest ? "notes" : "academic"),
   );
   const [viewMode, setViewMode] = useState("grid");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -78,7 +78,7 @@ const ResourcesHub = () => {
   const [deletingResource, setDeletingResource] = useState(null);
 
   const [filters, setFilters] = useState({
-    type: searchParams.get("type") || "academic",
+    type: searchParams.get("type") || (isGuest ? "notes" : "academic"),
     verifiedOnly: searchParams.get("verified") === "true",
     branch: getParamArray("branch"),
     semester: getParamArray("semester"),
@@ -133,7 +133,8 @@ const ResourcesHub = () => {
     const params = {};
     if (searchQuery) params.search = searchQuery;
     if (sortBy && sortBy !== "newest") params.sortBy = sortBy;
-    if (activeSection && activeSection !== "academic") params.type = activeSection;
+    if (activeSection && activeSection !== "academic")
+      params.type = activeSection;
     if (filters.verifiedOnly) params.verified = "true";
 
     if (activeSection === "notes") {
@@ -290,9 +291,9 @@ const ResourcesHub = () => {
 
   const handleClearAllFilters = () => {
     setSearchQuery("");
-    setActiveSection("all");
+    setActiveSection(isGuest ? "notes" : "academic");
     setFilters({
-      type: "academic",
+      type: isGuest ? "notes" : "academic",
       verifiedOnly: false,
       branch: [],
       semester: [],
@@ -477,8 +478,7 @@ const ResourcesHub = () => {
                   </span>
                 </h1>
                 <p className="text-slate-300 text-sm sm:text-base font-semibold max-w-md leading-relaxed">
-                  Discover study notes, Verified Teacher notes, roadmaps, and
-                  Interview PYQs.
+                  Explore Academic Notes, General Notes, Career Roadmaps and Company Interview PYQs in one organized learning hub.
                 </p>
               </div>
 
@@ -538,22 +538,28 @@ const ResourcesHub = () => {
 
           {/* Main Content Pane */}
           <div className="w-full space-y-6">
-            <SearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onFilterToggle={() => setIsMobileFilterOpen(true)}
-              isMobile={true}
-              hideFilterButton={activeSection === "bookmarks"}
-            />
+            {activeSection !== "academic" && (
+              <SearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onFilterToggle={() => setIsMobileFilterOpen(true)}
+                isMobile={true}
+                hideFilterButton={activeSection === "bookmarks"}
+              />
+            )}
 
             {/* Tabs Section */}
             <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none flex-nowrap px-4">
               {[
-                {
-                  key: "academic",
-                  label: "Academic",
-                  icon: "GraduationCap",
-                },
+                ...(!isGuest
+                  ? [
+                      {
+                        key: "academic",
+                        label: "Academic",
+                        icon: "GraduationCap",
+                      },
+                    ]
+                  : []),
 
                 {
                   key: "notes",
@@ -615,23 +621,27 @@ const ResourcesHub = () => {
             </div>
 
             {/* Active Filter Chips */}
-            <ActiveFilters
-              filters={{ ...filters, search: searchQuery }}
-              onRemoveFilter={handleRemoveFilter}
-              onClearAll={handleClearAllFilters}
-            />
+            {activeSection !== "academic" && (
+              <ActiveFilters
+                filters={{ ...filters, search: searchQuery }}
+                onRemoveFilter={handleRemoveFilter}
+                onClearAll={handleClearAllFilters}
+              />
+            )}
 
             {/* View Toggle Bar (includes SortDropdown and ViewMode) */}
-            <ViewToggle
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              totalResults={displayedCount}
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-            />
+            {activeSection !== "academic" && (
+              <ViewToggle
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                totalResults={displayedCount}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+              />
+            )}
 
             {/* Empty State Banner */}
-            {displayedCount === 0 && (
+            { activeSection !== "academic" && displayedCount === 0 && (
               <div className="flex flex-col items-center justify-center p-16 bg-white rounded-3xl border border-dashed border-slate-200 text-center shadow-sm">
                 <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 border border-indigo-100/50 shadow-inner">
                   <Icon
@@ -663,11 +673,12 @@ const ResourcesHub = () => {
               </div>
             )}
 
-            {activeSection === "academic" && (
+            {activeSection === "academic" ? (
               <AcademicProvider>
                 <AcademicResources />
               </AcademicProvider>
-            )}
+            ):(
+              <>
 
             {/* BOOKMARKS */}
             {displayedCount > 0 &&
@@ -713,7 +724,7 @@ const ResourcesHub = () => {
 
             {/* NOTES */}
             {displayedCount > 0 &&
-               activeSection === "notes" &&
+              activeSection === "notes" &&
               sortedResources.length > 0 && (
                 <div className="space-y-8 text-left">
                   {activeSection === "all" && (
@@ -781,7 +792,7 @@ const ResourcesHub = () => {
 
             {/* ROADMAPS */}
             {displayedCount > 0 &&
-              ( activeSection === "roadmaps") &&
+              activeSection === "roadmaps" &&
               sortedRoadmaps.length > 0 && (
                 <div className="space-y-4 text-left">
                   {activeSection === "all" && (
@@ -823,7 +834,7 @@ const ResourcesHub = () => {
 
             {/* PYQS */}
             {displayedCount > 0 &&
-              ( activeSection === "pyqs") &&
+              activeSection === "pyqs" &&
               sortedPyqs.length > 0 && (
                 <div className="space-y-4 text-left">
                   {activeSection === "all" && (
@@ -844,11 +855,13 @@ const ResourcesHub = () => {
                   />
                 </div>
               )}
+              </>
+            )}
           </div>
         </div>
 
         {/* Floating bottom Upload button */}
-        {canUpload && (
+        {canUpload && activeSection !== "academic" && (
           <button
             onClick={() => setIsUploadOpen(true)}
             className="group fixed bottom-6 right-6 z-50 flex items-center gap-2 overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 md:hover:w-36 md:hover:px-5 justify-center md:hover:justify-start border border-indigo-400/20"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -14,12 +14,13 @@ import DeleteFolderModal from "./components/Folder/DeleteFolderModal";
 import UploadModal from "./components/Resource/UploadModal";
 import DeleteResourceModal from "./components/Resource/DeleteResourceModal";
 
-const ResourcePage = () => {
+const ResourcePage = ({ embedded = false }) => {
   const {
     currentSection,
     currentFolder,
     folderTree,
     folderContents,
+    fetchFolderTree,
     addFolder,
     editFolder,
     removeFolder,
@@ -48,6 +49,10 @@ const ResourcePage = () => {
   const [deleteResourceModal, setDeleteResourceModal] = useState(false);
   const [deletingResource, setDeletingResource] = useState(null);
   const [isDeletingResource, setIsDeletingResource] = useState(false);
+
+  useEffect(() => {
+  fetchFolderTree("ACADEMIC");
+}, []);
 
   const openCreateResourceModal = () => {
     setEditingResource(null);
@@ -178,7 +183,7 @@ const ResourcePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pt-24">
       <div className="mx-auto max-w-[1600px] px-6 pb-10">
-        {/* Hero */}
+        {/* Hero
         <div className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 p-8 text-white shadow-xl">
           <div className="max-w-3xl">
             <span className="inline-flex items-center rounded-full bg-white/15 px-4 py-1 text-sm font-medium backdrop-blur">
@@ -192,9 +197,9 @@ const ResourcePage = () => {
               notes organised into sections and folders.
             </p>
           </div>
-        </div>
+        </div> */}
 
-        {/* Navigation */}
+        {/* Navigation
         <div className="mb-8 flex items-center justify-center gap-8">
           <ResourceNavigator />
 
@@ -210,7 +215,7 @@ const ResourcePage = () => {
               New Folder
             </button>
           )}
-        </div>
+        </div> */}
 
         <FolderModal
           open={showFolderModal}
@@ -301,7 +306,7 @@ const ResourcePage = () => {
             </>
           )}
 
-          {!currentSection && (
+          {/* {!currentSection && (
             <div className="py-24 text-center">
               <h2 className="text-2xl font-bold text-slate-800">
                 Select a Resource Section
@@ -312,7 +317,7 @@ const ResourcePage = () => {
                 browsing.
               </p>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
