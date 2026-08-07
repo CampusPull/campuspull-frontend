@@ -204,13 +204,23 @@ const Internships = () => {
                 </Link>
               )}
               {!isGuest && user?.role === "admin" && (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="flex items-center gap-2.5 px-6 py-4 bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-extrabold text-sm rounded-2xl hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all duration-300 active:scale-98 cursor-pointer border border-indigo-400/20"
-                >
-                  <FiPlus size={16} />
-                  Add Internship
-                </button>
+                activeTab === "campus" ? (
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2.5 px-6 py-4 bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-extrabold text-sm rounded-2xl hover:shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5 transition-all duration-300 active:scale-98 cursor-pointer border border-indigo-400/20"
+                  >
+                    <FiPlus size={16} />
+                    Add Campus Internship
+                  </button>
+                ) : (
+                  <Link
+                    to="/admin/open-internships"
+                    className="flex items-center gap-2.5 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-sm rounded-2xl hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5 transition-all duration-300 active:scale-98 cursor-pointer border border-emerald-400/20"
+                  >
+                    <FiPlus size={16} />
+                    Manage Open Internships
+                  </Link>
+                )
               )}
             </div>
           </div>
@@ -223,7 +233,7 @@ const Internships = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100 shadow-brand-lg p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4"
+            className="bg-white/95 backdrop-blur-xl rounded-2xl border border-indigo-100 shadow-brand-lg p-5 flex flex-col sm:flex-row items-center justify-between gap-4"
           >
             <p className="text-slate-700 font-semibold text-sm text-center sm:text-left leading-relaxed">
               👋 <strong className="text-indigo-600 font-extrabold">Browsing as guest.</strong> Create a free account to apply directly for verified internships.

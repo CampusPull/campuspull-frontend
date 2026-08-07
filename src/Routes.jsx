@@ -78,6 +78,7 @@ import { InternshipProvider } from "./context/internshipContext.jsx";
 import { Navigate } from "react-router-dom";
 import OpenInternshipsPage from "./pages/interships/OpenInternshipsPage.jsx";
 import AdminOpenInternships from "./pages/Admin/AdminOpenInternships.jsx";
+import OpenInternshipDetailPage from "./pages/interships/OpenInternshipDetailPage.jsx";
 
 
 
@@ -127,6 +128,15 @@ const Routes = () => {
   element={
     <ProtectedLayout>
       <OpenInternshipsPage />
+    </ProtectedLayout>
+  }
+/>
+
+<Route
+  path="/internships/open/:id"
+  element={
+    <ProtectedLayout>
+      <OpenInternshipDetailPage />
     </ProtectedLayout>
   }
 />

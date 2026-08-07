@@ -114,20 +114,22 @@ export default function AdminOpenInternships() {
         {/* ── SECTION A — HEADER + ACTION ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 bg-white border border-slate-100 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm shrink-0">
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm shrink-0">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-800 leading-tight">Open Internship Management</h1>
-              <p className="text-xs font-semibold text-slate-400 mt-0.5">Create, edit, and delete external postings</p>
+              <h1 className="text-2xl font-black text-slate-800 leading-tight">Manage Open Internships</h1>
+              <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                Open Internships: External opportunities linked from other platforms (students apply on original websites)
+              </p>
             </div>
           </div>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-extrabold text-sm rounded-2xl hover:shadow-lg hover:shadow-indigo-500/20 transition-all cursor-pointer border border-indigo-400/20 active:scale-98 shrink-0"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-sm rounded-2xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all cursor-pointer border border-emerald-400/20 active:scale-98 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Add New Internship
+            Add Open Internship
           </button>
         </div>
 
