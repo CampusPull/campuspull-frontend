@@ -76,6 +76,10 @@ import CandidateDetailPage from "./pages/Admin/CandidateDetailPage.jsx";
 import GlobalHiringDashboard from "./pages/Admin/GlobalHiringDashboard.jsx";
 import { InternshipProvider } from "./context/internshipContext.jsx";
 import { Navigate } from "react-router-dom";
+import OpenInternshipsPage from "./pages/interships/OpenInternshipsPage.jsx";
+import AdminOpenInternships from "./pages/Admin/AdminOpenInternships.jsx";
+import OpenInternshipDetailPage from "./pages/interships/OpenInternshipDetailPage.jsx";
+
 
 
 const ProtectedLayout = ({ children }) => {
@@ -115,6 +119,24 @@ const Routes = () => {
   element={
     <ProtectedLayout>
       <Internships />
+    </ProtectedLayout>
+  }
+/>
+
+<Route
+  path="/internships/open"
+  element={
+    <ProtectedLayout>
+      <OpenInternshipsPage />
+    </ProtectedLayout>
+  }
+/>
+
+<Route
+  path="/internships/open/:id"
+  element={
+    <ProtectedLayout>
+      <OpenInternshipDetailPage />
     </ProtectedLayout>
   }
 />
@@ -438,6 +460,7 @@ const Routes = () => {
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UsersTable /></ProtectedRoute>} />
               <Route path="/admin/mentorship" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminMentorship /></ProtectedLayout></ProtectedRoute>} />
+              <Route path="/admin/open-internships" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminOpenInternships /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/internships/:internshipId/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminApplicationsPage /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/hiring-dashboard" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><GlobalHiringDashboard /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/applications" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><CandidateDashboardPage /></ProtectedLayout></ProtectedRoute>} />

@@ -128,3 +128,30 @@ export const exportInternshipApplications = async (internshipId, params = {}) =>
   return res;
 };
 
+// Public APIs
+export const getOpenInternships = async (params = {}) => {
+  const res = await api.get("/open-internships", { params });
+  return res.data;
+};
+
+export const getOpenInternshipById = async (id) => {
+  const res = await api.get(`/open-internships/${id}`);
+  return res.data;
+};
+
+// Admin APIs
+export const createOpenInternship = async (data) => {
+  const res = await api.post("/open-internships", data);
+  return res.data;
+};
+
+export const updateOpenInternship = async (id, data) => {
+  const res = await api.put(`/open-internships/${id}`, data);
+  return res.data;
+};
+
+export const deleteOpenInternship = async (id) => {
+  const res = await api.delete(`/open-internships/${id}`);
+  return res.data;
+};
+
