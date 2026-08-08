@@ -115,69 +115,15 @@ export default function OpenInternshipsPage({ isEmbedded = false }) {
 
       const res = await getOpenInternships(params);
       if (res && res.success) {
-        const fetchedData = res.data || [];
-        if (fetchedData.length === 0) {
-          const mockData = [
-            {
-              _id: "mock123",
-              title: "Software Engineer Intern",
-              companyName: "Google",
-              location: "Remote",
-              stipend: "₹50,500/month",
-              deadline: "2026-12-31T00:00:00.000Z",
-              applyLink: "https://careers.google.com",
-              description: "Develop the next generation of technologies that change how millions of users connect, explore, and interact with information.",
-            },
-            {
-              _id: "mock456",
-              title: "Frontend Developer Intern",
-              companyName: "Vercel",
-              location: "Delhi, India",
-              stipend: "₹30,000/month",
-              deadline: "2026-08-10T00:00:00.000Z",
-              applyLink: "https://vercel.com/careers",
-              description: "Collaborate with product design, engineers, and developer advocates to iterate on tools that enable front-end developers to do their best work.",
-            }
-          ];
-          setInternships(mockData);
-          setTotalPages(1);
-          setTotalItems(2);
-        } else {
-          setInternships(fetchedData);
-          setTotalPages(res.totalPages || 1);
-          setTotalItems(res.totalItems || 0);
-        }
+        setInternships(res.data || []);
+        setTotalPages(res.totalPages || 1);
+        setTotalItems(res.totalItems || 0);
       } else {
         throw new Error(res?.message || "Failed to load internships");
       }
     } catch (err) {
       console.error(err);
-      // Fallback mock data for preview if backend is not deployed/responding
-      const mockData = [
-        {
-          _id: "mock123",
-          title: "Software Engineer Intern",
-          companyName: "Google",
-          location: "Remote",
-          stipend: "₹50,500/month",
-          deadline: "2026-12-31T00:00:00.000Z",
-          applyLink: "https://careers.google.com",
-          description: "Develop the next generation of technologies that change how millions of users connect, explore, and interact with information.",
-        },
-        {
-          _id: "mock456",
-          title: "Frontend Developer Intern",
-          companyName: "Vercel",
-          location: "Delhi, India",
-          stipend: "₹30,000/month",
-          deadline: "2026-08-10T00:00:00.000Z",
-          applyLink: "https://vercel.com/careers",
-          description: "Collaborate with product design, engineers, and developer advocates to iterate on tools that enable front-end developers to do their best work.",
-        }
-      ];
-      setInternships(mockData);
-      setTotalPages(1);
-      setTotalItems(2);
+      setError("Failed to fetch internships. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
