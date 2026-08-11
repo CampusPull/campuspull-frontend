@@ -143,9 +143,9 @@ export default function GlobalHiringDashboard() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Global Hiring Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Manage Campus Internships</h1>
             <p className="text-sm font-medium text-gray-500 mt-1">
-              Overview of internship statistics, recent applications, and current openings.
+              Campus Internships: Created within CampusPull platform (students apply directly on this portal)
             </p>
           </div>
           <button
