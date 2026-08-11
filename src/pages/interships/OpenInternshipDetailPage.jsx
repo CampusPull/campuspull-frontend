@@ -60,35 +60,11 @@ export default function OpenInternshipDetailPage() {
       }
     } catch (err) {
       console.error(err);
-      if (id === "mock123") {
-        setInternship({
-          _id: "mock123",
-          title: "Software Engineer Intern",
-          companyName: "Google",
-          location: "Remote",
-          stipend: "₹50,500/month",
-          deadline: "2026-12-31T00:00:00.000Z",
-          applyLink: "https://careers.google.com",
-          description: "As a Software Engineering Intern, you will work on our core systems, databases, and client products. You will write robust, readable, high-performance code, collaborate with our international product team, and help solve complex algorithmic puzzles.\n\nMinimum Qualifications:\n- Currently pursuing a BS, MS or PhD in Computer Science or related technical field.\n- Programming experience in Java, C++, Python or Go.\n\nPreferred Qualifications:\n- Strong problem-solving and communication skills.\n- Experience with cloud architecture or system performance scaling.",
-        });
-      } else if (id === "mock456") {
-        setInternship({
-          _id: "mock456",
-          title: "Frontend Developer Intern",
-          companyName: "Vercel",
-          location: "Delhi, India",
-          stipend: "₹30,000/month",
-          deadline: "2026-08-10T00:00:00.000Z",
-          applyLink: "https://vercel.com/careers",
-          description: "We are looking for a Frontend Engineering Intern to join our framework team. You will work on Next.js, improve the speed and usability of Vercel UI components, and coordinate with developer relations to document core features.\n\nMinimum Qualifications:\n- Solid understanding of React.js and Next.js\n- Excellent skills in standard HTML, CSS, and Tailwind CSS.\n- Familiarity with TypeScript.",
-        });
-      } else {
-        setError(
-          err.response?.status === 404 
-            ? "Open internship not found" 
-            : "Failed to load open internship details. Please try again."
-        );
-      }
+      setError(
+        err.response?.status === 404 
+          ? "Open internship not found" 
+          : "Failed to load open internship details. Please try again."
+      );
     } finally {
       setLoading(false);
     }
