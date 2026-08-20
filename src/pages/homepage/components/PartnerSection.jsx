@@ -50,7 +50,7 @@ const PartnerSection = () => {
               Official Partner
             </span>
             <a 
-              href="https://hiregram.ai" 
+              href="https://hiregram.ai?source=campuspull" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center space-x-1.5 hover:opacity-85 transition-opacity focus:outline-none"
@@ -89,7 +89,7 @@ const PartnerSection = () => {
             Learn More
           </Link>
           <a 
-            href="https://hiregram.ai" 
+            href="https://hiregram.ai?source=campuspull" 
             target="_blank" 
             rel="noopener noreferrer"
             className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all duration-300 inline-flex items-center justify-center w-fit focus:outline-none shadow-sm hover:scale-[1.01]"
