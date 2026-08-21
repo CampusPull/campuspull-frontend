@@ -12,7 +12,7 @@ export const FeedbackProvider = ({ children }) => {
         setLoading(true);
         try {
             // Using 'api' instance instead of raw axios
-            const res = await api.get('/feedback/all');
+            const res = await api.get('/feedback');
             
             // Safety check for production stability
             if (Array.isArray(res.data)) {
@@ -32,7 +32,7 @@ export const FeedbackProvider = ({ children }) => {
     // Submit new feedback
     const addFeedback = async (message) => {
         try {
-            const res = await api.post('/feedback/submit', { message });
+            const res = await api.post('/feedback', { message });
             
             // Refresh the list so the new post appears immediately
             if (res.data.success) {
