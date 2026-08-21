@@ -16,7 +16,7 @@ const Contact = () => {
               </div>
               <div>
                 <p className="font-bold">Email Us</p>
-                <p className="text-gray-500 text-sm">support@campuspull.com</p>
+                <p className="text-gray-500 text-sm">info@campuspull.in</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -25,7 +25,7 @@ const Contact = () => {
               </div>
               <div>
                 <p className="font-bold">Location</p>
-                <p className="text-gray-500 text-sm">Meerut, Uttar Pradesh, India</p>
+                <p className="text-gray-500 text-sm">Ghaziabad, Uttar Pradesh, India</p>
               </div>
             </div>
           </div>
@@ -34,7 +34,7 @@ const Contact = () => {
         <form className="bg-gray-50 p-8 rounded-3xl border border-gray-100">
           <div className="mb-4">
             <label className="block text-sm font-bold mb-2">Your Name</label>
-            <input type="text" className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-400 outline-none" placeholder="Satyam" />
+            <input type="text" className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-400 outline-none" placeholder="Enter Your Name" />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-bold mb-2">Message</label>
