@@ -3,6 +3,7 @@ import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
 import { ResourceContext } from "../../../context/resourceContext";
+import ViewRoadmapModal from "./ViewRoadmapModal";
 
 const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteClick, isGuest, onRestrictedAction }) => {
   const { toggleBookmark, toggleLessonProgress, incrementView, user } = useContext(ResourceContext);
@@ -10,6 +11,7 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
   const [expandedModules, setExpandedModules] = useState({});
   const [isBookmarked, setIsBookmarked] = useState(roadmap?.isBookmarked || false);
   const [isTogglingLesson, setIsTogglingLesson] = useState(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   const { _id, title, description, modules, uploadedBy, thumbnail } = roadmap;
 
@@ -100,10 +102,16 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
   // LIST VIEW
   if (viewMode === "list") {
     return (
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 mb-4 relative text-left">
+      <div 
+        onClick={() => setIsViewOpen(true)}
+        className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 mb-4 relative text-left cursor-pointer"
+      >
         
         <div className="flex flex-col md:flex-row items-start space-x-0 md:space-x-4 space-y-4 md:space-y-0 pt-1">
-          <div className="flex-shrink-0 w-full md:w-48 h-32 bg-slate-50 rounded-2xl overflow-hidden relative border-2 border-slate-100 shadow-sm flex items-center justify-center">
+          <div 
+            onClick={() => setIsViewOpen(true)}
+            className="flex-shrink-0 w-full md:w-48 h-32 bg-slate-50 rounded-2xl overflow-hidden relative border-2 border-slate-100 shadow-sm flex items-center justify-center cursor-pointer"
+          >
             {thumbnail ? (
               <Image src={thumbnail} alt={title} className="w-full h-full object-cover" />
             ) : (
@@ -114,7 +122,12 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
           <div className="flex-1 min-w-0 w-full">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h3 className="font-extrabold text-slate-800 text-lg mb-1 leading-snug hover:text-indigo-600 transition-colors">{title}</h3>
+                <h3 
+                  onClick={() => setIsViewOpen(true)}
+                  className="font-extrabold text-slate-800 text-lg mb-1 leading-snug hover:text-indigo-600 transition-colors cursor-pointer"
+                >
+                  {title}
+                </h3>
                 <p className="line-clamp-2 text-sm text-gray-500 mb-3 font-semibold">{description}</p>
               </div>
               <button 
@@ -159,28 +172,48 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
               <div className="flex space-x-2">
                 {canEdit && (
                   <button 
-                    onClick={() => onEditClick(roadmap)} 
+                    onClick={(e) => { e.stopPropagation(); onEditClick(roadmap); }} 
                     className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold text-xs py-2 px-3.5 rounded-xl bg-transparent cursor-pointer"
                   >
                     Edit
                   </button>
                 )}
-                <Button variant="default" size="sm" className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl border-none shadow-sm hover:shadow-lg text-xs cursor-pointer">
+                <Button 
+                  onClick={() => setIsViewOpen(true)}
+                  variant="default" 
+                  size="sm" 
+                  className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold rounded-xl border-none shadow-sm hover:shadow-lg text-xs cursor-pointer"
+                >
                   View Roadmap
                 </Button>
               </div>
             </div>
           </div>
         </div>
+
+        {/* View Roadmap Modal */}
+        <ViewRoadmapModal
+          isOpen={isViewOpen}
+          onClose={() => setIsViewOpen(false)}
+          roadmap={roadmap}
+          isGuest={isGuest}
+          onRestrictedAction={onRestrictedAction}
+        />
       </div>
     );
   }
 
   // GRID VIEW
   return (
-    <div className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 flex flex-col h-full min-h-[460px] relative text-left shadow-inner-sm">
+    <div 
+      onClick={() => setIsViewOpen(true)}
+      className="group bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-[0_12px_30px_-8px_rgba(79,70,229,0.12)] transition-all duration-300 flex flex-col h-full min-h-[460px] relative text-left shadow-inner-sm cursor-pointer"
+    >
 
-      <div className="relative h-44 bg-slate-50 overflow-hidden border-b border-slate-100 shrink-0">
+      <div 
+        onClick={() => setIsViewOpen(true)}
+        className="relative h-44 bg-slate-50 overflow-hidden border-b border-slate-100 shrink-0 cursor-pointer"
+      >
         {thumbnail ? (
           <Image src={thumbnail} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
         ) : (
@@ -262,7 +295,7 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
           {canEdit && (
             <div className="flex items-center gap-1 ml-auto">
               <button 
-                onClick={() => onEditClick(roadmap)} 
+                onClick={(e) => { e.stopPropagation(); onEditClick(roadmap); }} 
                 className="border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-bold text-xs py-1.5 px-3 rounded-xl bg-transparent cursor-pointer"
               >
                 Edit
@@ -276,10 +309,22 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
             </div>
           )}
         </div>
-        <button className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl border-none shadow-sm hover:shadow-lg cursor-pointer flex items-center justify-center">
+        <button 
+          onClick={() => setIsViewOpen(true)}
+          className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl border-none shadow-sm hover:shadow-lg cursor-pointer flex items-center justify-center"
+        >
           View Roadmap
         </button>
       </div>
+      
+      {/* View Roadmap Modal */}
+      <ViewRoadmapModal
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+        roadmap={roadmap}
+        isGuest={isGuest}
+        onRestrictedAction={onRestrictedAction}
+      />
     </div>
   );
 };

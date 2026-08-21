@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import { motion } from "framer-motion";
+import { ResourceContext } from "../../../context/resourceContext";
 
 const ResourcePreviewGrid = () => {
   const [hoveredResource, setHoveredResource] = useState(null);
@@ -32,92 +33,160 @@ const ResourcePreviewGrid = () => {
         }
       };
 
-  const trendingResources = [
-    {
-      id: 1,
-      title: "Data Structures & Algorithms Complete Guide",
-      type: "Study Material",
-      subject: "Computer Science",
-      downloads: 2847,
-      rating: 4.9,
-      difficulty: "Intermediate",
-      thumbnail: "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400",
-      author: "Campus Pull",
-      authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["DSA", "Coding", "Interviews"],
-      lastUpdated: "2 days ago"
-    },
-    {
-      id: 2,
-      title: "Google Software Engineer Interview Questions 2024",
-      type: "Interview PYQs",
-      subject: "Technical Interviews",
-      downloads: 1923,
-      rating: 4.8,
-      difficulty: "Advanced",
-      thumbnail: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400",
-      author: "Campus pull",
-      authorAvatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["Google", "System Design", "Coding"],
-      lastUpdated: "1 week ago"
-    },
-    {
-      id: 3,
-      title: "Full Stack Developer Roadmap 2024",
-      type: "Career Roadmap",
-      subject: "Web Development",
-      downloads: 3156,
-      rating: 4.9,
-      difficulty: "Beginner",
-      thumbnail: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&q=80",
-      author: "Campus pull",
-      authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["React", "Node.js", "MongoDB"],
-      lastUpdated: "3 days ago"
-    },
-    {
-      id: 4,
-      title: "Machine Learning Mathematics Essentials",
-      type: "Study Material",
-      subject: "Mathematics",
-      downloads: 1654,
-      rating: 4.7,
-      difficulty: "Advanced",
-      thumbnail: "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400",
-      author: "Campus pull",
-      authorAvatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["Linear Algebra", "Statistics", "ML"],
-      lastUpdated: "5 days ago"
-    },
-    {
-      id: 5,
-      title: "Product Management Case Studies",
-      type: "Career Roadmap",
-      subject: "Business",
-      downloads: 987,
-      rating: 4.6,
-      difficulty: "Intermediate",
-      thumbnail: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400",
-      author: "Campus pull",
-      authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["Strategy", "Analytics", "Leadership"],
-      lastUpdated: "1 day ago"
-    },
-    {
-      id: 6,
-      title: "GATE Computer Science Previous Year Papers",
-      type: "Interview PYQs",
-      subject: "Competitive Exams",
-      downloads: 4231,
-      rating: 4.9,
-      difficulty: "Advanced",
-      thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80",
-      author: "Campuss pull",
-      authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
-      tags: ["GATE", "CS", "Preparation"],
-      lastUpdated: "4 days ago"
+  const { resources, roadmaps, pyqs } = useContext(ResourceContext);
+
+  const trendingResources = useMemo(() => {
+    const items = [];
+    
+    // Notes
+    resources?.forEach(r => {
+      items.push({
+        ...r,
+        id: r._id,
+        type: "Study Material",
+        subject: r.subject || "Computer Science",
+        downloads: r.downloads || 0,
+        rating: 4.8,
+        difficulty: r.difficulty || "Intermediate",
+        thumbnail: r.thumbnail || "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=400&q=80",
+        author: r.uploadedBy?.name || "Campus pull",
+        authorAvatar: r.uploadedBy?.profileImage || "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: r.tags || ["Notes"],
+        lastUpdated: "Recently"
+      });
+    });
+
+    // Roadmaps
+    roadmaps?.forEach(r => {
+      items.push({
+        ...r,
+        id: r._id,
+        type: "Career Roadmap",
+        subject: r.subject || "Web Development",
+        downloads: r.downloads || 0,
+        rating: 4.9,
+        difficulty: "Intermediate",
+        thumbnail: r.thumbnail || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&q=80",
+        author: r.uploadedBy?.name || "Campus pull",
+        authorAvatar: r.uploadedBy?.profileImage || "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: r.tags || ["Roadmap"],
+        lastUpdated: "Recently"
+      });
+    });
+
+    // PYQs
+    pyqs?.forEach(r => {
+      items.push({
+        ...r,
+        id: r._id,
+        type: "Interview PYQs",
+        subject: r.company || "Technical Interviews",
+        downloads: r.downloads || 0,
+        rating: 4.7,
+        difficulty: r.difficulty || "Advanced",
+        thumbnail: r.thumbnail || "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400",
+        author: r.uploadedBy?.name || "Campus pull",
+        authorAvatar: r.uploadedBy?.profileImage || "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: r.tags || ["Interview"],
+        lastUpdated: "Recently"
+      });
+    });
+
+    // Sort by downloads desc
+    const sorted = items.sort((a, b) => b.downloads - a.downloads);
+    
+    // Fallback if no actual resources in database
+    if (sorted.length > 0) {
+      return sorted.slice(0, 6);
     }
-  ];
+
+    return [
+      {
+        id: 1,
+        title: "Data Structures & Algorithms Complete Guide",
+        type: "Study Material",
+        subject: "Computer Science",
+        downloads: 2847,
+        rating: 4.9,
+        difficulty: "Intermediate",
+        thumbnail: "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400",
+        author: "Campus Pull",
+        authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["DSA", "Coding", "Interviews"],
+        lastUpdated: "2 days ago"
+      },
+      {
+        id: 2,
+        title: "Google Software Engineer Interview Questions 2024",
+        type: "Interview PYQs",
+        subject: "Technical Interviews",
+        downloads: 1923,
+        rating: 4.8,
+        difficulty: "Advanced",
+        thumbnail: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400",
+        author: "Campus pull",
+        authorAvatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["Google", "System Design", "Coding"],
+        lastUpdated: "1 week ago"
+      },
+      {
+        id: 3,
+        title: "Full Stack Developer Roadmap 2024",
+        type: "Career Roadmap",
+        subject: "Web Development",
+        downloads: 3156,
+        rating: 4.9,
+        difficulty: "Beginner",
+        thumbnail: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&q=80",
+        author: "Campus pull",
+        authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["React", "Node.js", "MongoDB"],
+        lastUpdated: "3 days ago"
+      },
+      {
+        id: 4,
+        title: "Machine Learning Mathematics Essentials",
+        type: "Study Material",
+        subject: "Mathematics",
+        downloads: 1654,
+        rating: 4.7,
+        difficulty: "Advanced",
+        thumbnail: "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400",
+        author: "Campus pull",
+        authorAvatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["Linear Algebra", "Statistics", "ML"],
+        lastUpdated: "5 days ago"
+      },
+      {
+        id: 5,
+        title: "Product Management Case Studies",
+        type: "Career Roadmap",
+        subject: "Business",
+        downloads: 987,
+        rating: 4.6,
+        difficulty: "Intermediate",
+        thumbnail: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400",
+        author: "Campus pull",
+        authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["Strategy", "Analytics", "Leadership"],
+        lastUpdated: "1 day ago"
+      },
+      {
+        id: 6,
+        title: "GATE Computer Science Previous Year Papers",
+        type: "Interview PYQs",
+        subject: "Competitive Exams",
+        downloads: 4231,
+        rating: 4.9,
+        difficulty: "Advanced",
+        thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80",
+        author: "Campuss pull",
+        authorAvatar: "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=100",
+        tags: ["GATE", "CS", "Preparation"],
+        lastUpdated: "4 days ago"
+      }
+    ];
+  }, [resources, roadmaps, pyqs]);
 
   const getTypeIcon = (type) => {
     switch (type) {
@@ -167,6 +236,12 @@ const ResourcePreviewGrid = () => {
           {trendingResources?.map((resource) => (
             <motion.div
               key={resource.id}
+              onClick={() => {
+                const targetType = 
+                  resource.type === 'Career Roadmap' ? 'roadmaps' :
+                  resource.type === 'Interview PYQs' ? 'pyqs' : 'notes';
+                navigate(`/resources-hub?type=${targetType}&search=${encodeURIComponent(resource.title)}`);
+              }}
               whileHover={prefersReducedMotion ? {} : { y: -6, scale: 1.02 }}
               style={{ willChange: "transform" }}
               className="knowledge-card bg-slate-900/20 backdrop-blur-md rounded-[32px] overflow-hidden border border-white/5 hover:border-indigo-500/30 group cursor-pointer transition-all duration-300 shadow-2xl relative flex flex-col justify-between h-[420px]"
