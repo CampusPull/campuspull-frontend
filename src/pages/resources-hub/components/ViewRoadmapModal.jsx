@@ -66,12 +66,24 @@ const ViewRoadmapModal = ({ isOpen, onClose, roadmap, isGuest, onRestrictedActio
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-2xl bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl max-h-[90vh] text-slate-800 transition-all duration-300">
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl bg-white border border-slate-100 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl max-h-[90vh] text-slate-800 transition-all duration-300"
+      >
         
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           className="absolute top-5 right-5 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-400 hover:text-slate-600 focus:outline-none transition-all duration-200 cursor-pointer z-10"
         >
           <Icon name="X" size={16} />

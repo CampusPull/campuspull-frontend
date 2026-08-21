@@ -190,6 +190,15 @@ const CareerRoadmapCard = ({ roadmap, viewMode = "grid", onEditClick, onDeleteCl
             </div>
           </div>
         </div>
+
+        {/* View Roadmap Modal */}
+        <ViewRoadmapModal
+          isOpen={isViewOpen}
+          onClose={() => setIsViewOpen(false)}
+          roadmap={roadmap}
+          isGuest={isGuest}
+          onRestrictedAction={onRestrictedAction}
+        />
       </div>
     );
   }
