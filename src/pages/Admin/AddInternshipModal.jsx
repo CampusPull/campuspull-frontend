@@ -32,8 +32,9 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
   const validateForm = () => {
     const errors = {};
     if (!form.title.trim()) errors.title = "Title is required";
-    if (!form.companyName.trim()) errors.companyName = "Company name is required";
-    
+    if (!form.companyName.trim())
+      errors.companyName = "Company name is required";
+
     // Validate applyLink URL
     if (!form.applyLink.trim()) {
       errors.applyLink = "Apply link is required";
@@ -44,14 +45,13 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
           errors.applyLink = "Apply link must start with http:// or https://";
         }
       } catch (_) {
-        errors.applyLink = "Please enter a valid URL (e.g., https://company.com/apply)";
+        errors.applyLink =
+          "Please enter a valid URL (e.g., https://company.com/apply)";
       }
     }
 
-    // Validate deadline date is in the future
-    if (!form.deadline) {
-      errors.deadline = "Deadline is required";
-    } else {
+    // Validate deadline date is in the future when provided
+    if (form.deadline) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const selected = new Date(form.deadline);
@@ -98,7 +98,11 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || err.message || "Failed to create internship");
+      toast.error(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to create internship",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -130,8 +134,12 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                 <Briefcase className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-slate-800 leading-tight">Add New Internship</h2>
-                <p className="text-xs font-semibold text-slate-400 mt-0.5">Post an external internship listing</p>
+                <h2 className="text-xl font-extrabold text-slate-800 leading-tight">
+                  Add New Internship
+                </h2>
+                <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                  Post an external internship listing
+                </p>
               </div>
             </div>
             <button
@@ -143,8 +151,10 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-            
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 overflow-y-auto p-6 space-y-5"
+          >
             {/* Title & Company */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -161,7 +171,9 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                   required
                 />
                 {validationErrors.title && (
-                  <p className="text-[11px] font-bold text-rose-500 mt-1">{validationErrors.title}</p>
+                  <p className="text-[11px] font-bold text-rose-500 mt-1">
+                    {validationErrors.title}
+                  </p>
                 )}
               </div>
 
@@ -179,7 +191,9 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                   required
                 />
                 {validationErrors.companyName && (
-                  <p className="text-[11px] font-bold text-rose-500 mt-1">{validationErrors.companyName}</p>
+                  <p className="text-[11px] font-bold text-rose-500 mt-1">
+                    {validationErrors.companyName}
+                  </p>
                 )}
               </div>
             </div>
@@ -200,25 +214,27 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                   required
                 />
                 {validationErrors.applyLink && (
-                  <p className="text-[11px] font-bold text-rose-500 mt-1">{validationErrors.applyLink}</p>
+                  <p className="text-[11px] font-bold text-rose-500 mt-1">
+                    {validationErrors.applyLink}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">
-                  Deadline <span className="text-rose-500">*</span>
+                <label
+                  htmlFor="deadline"
+                  className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5"
+                >
+                  Deadline (Optional)
                 </label>
                 <input
+                  id="deadline"
                   type="date"
                   name="deadline"
                   value={form.deadline}
                   onChange={handleChange}
                   className={`w-full px-4 py-3 bg-slate-50 border ${validationErrors.deadline ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/20" : "border-slate-100 focus:border-indigo-500 focus:ring-indigo-500/20"} rounded-2xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 transition-all cursor-pointer`}
-                  required
                 />
-                {validationErrors.deadline && (
-                  <p className="text-[11px] font-bold text-rose-500 mt-1">{validationErrors.deadline}</p>
-                )}
               </div>
             </div>
 
@@ -259,7 +275,9 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                 <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
                   Description (Optional)
                 </label>
-                <span className={`text-[10px] font-bold ${form.description.length > 500 ? "text-rose-500" : "text-slate-400"}`}>
+                <span
+                  className={`text-[10px] font-bold ${form.description.length > 500 ? "text-rose-500" : "text-slate-400"}`}
+                >
                   {form.description.length} / 500
                 </span>
               </div>
@@ -272,7 +290,9 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                 className={`w-full px-4 py-3 bg-slate-50 border ${validationErrors.description ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/20" : "border-slate-100 focus:border-indigo-500 focus:ring-indigo-500/20"} rounded-2xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all resize-none`}
               />
               {validationErrors.description && (
-                <p className="text-[11px] font-bold text-rose-500 mt-1">{validationErrors.description}</p>
+                <p className="text-[11px] font-bold text-rose-500 mt-1">
+                  {validationErrors.description}
+                </p>
               )}
             </div>
 
@@ -301,7 +321,6 @@ export default function AddInternshipModal({ isOpen, onClose, onSuccess }) {
                 )}
               </button>
             </div>
-
           </form>
         </motion.div>
       </div>
