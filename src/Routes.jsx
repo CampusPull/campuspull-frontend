@@ -456,8 +456,10 @@ const Routes = () => {
 
 
 
-              
-              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+            
+          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<Navigate to="/admin" replace />} />
+              <Route path="/analytics" element={<Navigate to="/admin" replace />} />
               <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UsersTable /></ProtectedRoute>} />
               <Route path="/admin/mentorship" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminMentorship /></ProtectedLayout></ProtectedRoute>} />
               <Route path="/admin/open-internships" element={<ProtectedRoute requiredRole="admin"><ProtectedLayout><AdminOpenInternships /></ProtectedLayout></ProtectedRoute>} />

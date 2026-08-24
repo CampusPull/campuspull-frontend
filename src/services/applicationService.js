@@ -98,12 +98,12 @@ export const updateApplicationNotes = async (applicationId, adminNotes) => {
 };
 
 export const getDashboardStats = async () => {
-  const res = await api.get("/dashboard/stats");
+  const res = await api.get("/admin/dashboard/stats");
   return res.data;
 };
 
 export const getRecentApplications = async () => {
-  const res = await api.get("/dashboard/recent-applications");
+  const res = await api.get("/admin/dashboard/recent-applications");
   return res.data;
 };
 
