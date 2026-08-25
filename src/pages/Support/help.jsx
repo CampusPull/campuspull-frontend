@@ -983,9 +983,7 @@ const Help = () => {
           </div>
         )}
 
-        {/* =========================================================================
-            CONTACT CHANNELS FOOTER CARDS
-        ========================================================================= */}
+        
         <div className="border-t border-slate-200 pt-10">
           <div className="text-center mb-8">
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Still have questions?</h2>
