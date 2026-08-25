@@ -9,6 +9,7 @@ import {
 } from "react";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import LoadingScreen from "../components/ui/LoadingScreen";
 
 export const AuthContext = createContext();
 
@@ -130,7 +131,7 @@ export const AuthProvider = ({ children }) => {
 
   // Important: wait until auth check finishes
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen />;
   }
 
   return (

@@ -18,6 +18,7 @@ import {
 import api from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 import { useExplore } from "../../context/exploreContext";
+import { LoadingSpinner } from "../../components/ui/LoadingScreen";
 
 // ✅ Reusable Card Component
 const Card = ({ children, className = "" }) => (
@@ -63,8 +64,8 @@ const PublicProfile = () => {
 
   if (loading)
     return (
-      <div className="p-20 text-center text-gray-500 font-medium">
-        Loading Profile...
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="md" color="indigo" text="Loading Profile..." />
       </div>
     );
   if (!profile)

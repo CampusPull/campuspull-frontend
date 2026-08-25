@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import StartupList from "./component/startupList";
 import AddStartupModal from "./component/addStartupModal";
 import SignupModal from "../../components/ui/SignupModal";
+import { LoadingSpinner } from "../../components/ui/LoadingScreen";
 
 const StartupPage = () => {
   const {
@@ -61,7 +62,11 @@ const StartupPage = () => {
 
       <div className="max-w-7xl mx-auto">
 
-        {loading && <p>Loading startups...</p>}
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner size="md" color="indigo" text="Loading startups..." />
+          </div>
+        )}
         {error && <p className="text-red-500">{error}</p>}
 
         {!loading && !error && (

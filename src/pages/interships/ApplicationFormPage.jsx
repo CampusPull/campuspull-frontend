@@ -19,6 +19,7 @@ import {
   FiGlobe,
   FiLoader
 } from "react-icons/fi";
+import { LoadingSpinner } from "../../components/ui/LoadingScreen";
 
 // Input style shared across the form
 const inputCls =
@@ -264,10 +265,7 @@ export default function ApplicationFormPage() {
   if (loadingInternship || loadingAppliedCheck) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 flex flex-col items-center justify-center pt-16">
-        <FiLoader className="animate-spin text-indigo-600 mb-3" size={36} />
-        <p className="text-gray-500 font-semibold animate-pulse text-sm">
-          Loading application form...
-        </p>
+        <LoadingSpinner size="md" color="indigo" text="Loading application form..." />
       </div>
     );
   }
