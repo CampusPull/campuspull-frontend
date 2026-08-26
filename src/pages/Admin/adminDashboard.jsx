@@ -30,13 +30,13 @@ const AdminDashboard = () => {
     fetchStats();
   }, []);
 
-  // 2. Fetch Filtered Users (Runs every time selectedYear changes)
+  // 2. Fetch Filtered Users (Runs every time selectedYear and selectedGradYear change)
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        // Passing the year as a query parameter
-        const res = await api.get(`/admin/users?year=${selectedYear}`);
+        // Passing both year and graduationYear as query parameters
+        const res = await api.get(`/admin/users?year=${selectedYear}&graduationYear=${selectedGradYear}`);
         setUsers(res.data);
       } catch (err) {
         console.error("Error fetching users");
