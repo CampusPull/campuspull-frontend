@@ -142,6 +142,15 @@ const Routes = () => {
 />
 
 <Route
+  path="/open-internships/:id"
+  element={
+    <ProtectedLayout>
+      <OpenInternshipDetailPage />
+    </ProtectedLayout>
+  }
+/>
+
+<Route
   path="/internships/:id"
   element={
     <ProtectedLayout>

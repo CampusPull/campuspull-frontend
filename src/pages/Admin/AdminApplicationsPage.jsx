@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getInternshipApplications, getInternshipStats } from "../../services/applicationService";
 import { getInternshipById } from "../../services/internshipService";
+import api from "../../utils/api";
 import { FiSearch, FiFilter, FiUser, FiArrowLeft, FiAlertCircle, FiLoader } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ExportButton from "../../components/ui/ExportButton";
@@ -48,7 +49,16 @@ export default function AdminApplicationsPage() {
         })
       ]);
 
-      const appsList = appRes?.data || appRes?.applications || [];
+      const rawAppsList = appRes?.data || appRes?.applications || [];
+      const appsList = Array.isArray(rawAppsList)
+        ? rawAppsList.filter(app => {
+            const id1 = typeof app.internshipId === 'object' ? app.internshipId?._id : app.internshipId;
+            const id2 = typeof app.internship === 'object' ? app.internship?._id : app.internship;
+            const targetId = id1 || id2;
+            if (!targetId) return true;
+            return targetId === internshipId;
+          })
+        : [];
       const internshipData = intRes?.data || intRes || null;
 
       setApplications(appsList);

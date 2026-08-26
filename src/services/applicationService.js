@@ -15,8 +15,14 @@ export const getApplications = async () => {
  */
 export const getInternshipApplications = async (internshipId) => {
   // Week 2: response key is "applications" not "data"
-  const res = await api.get(`/internships/${internshipId}/applications`);
-  return res.data;
+  try {
+    const res = await api.get(`/internships/${internshipId}/applications`);
+    return res.data;
+  } catch (err) {
+    console.warn("getInternshipApplications failed on direct endpoint, trying /applications?internshipId fallback:", err);
+    const res = await api.get("/applications", { params: { internshipId } });
+    return res.data;
+  }
 };
 
 /**
